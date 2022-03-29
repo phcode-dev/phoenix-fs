@@ -13,6 +13,7 @@
   "license": "GNU-AGPL3.0",
   "scripts": {
     "eslint": "eslint src example",
+    "eslint:fix": "eslint src example --fix",
     "test": "npm run eslint",
     "build-example": "copyfiles -u 1 example/index* dist",
     "build-sw": "parcel build src/fslib.js --detailed-report",

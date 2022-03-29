@@ -22,9 +22,9 @@
 /*eslint strict: ["error", "global"]*/
 
 
-import {Errors} from "./errno.js";
-import MountPointsStore from "./mount_point_storage.js";
-import Constants from "./constants.js";
+import {Errors} from './errno.js';
+import MountPointsStore from './mount_point_storage.js';
+import Constants from './constants.js';
 
 const MOUNT_POINT_CHANGED_NOTIFICATION = 'PHOENIX_MOUNT_POINT_CHANGED_NOTIFICATION';
 

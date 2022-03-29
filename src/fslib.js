@@ -21,12 +21,12 @@
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
-import ERR_CODES, {Errors} from "./errno.js";
-import NativeFS from "./fslib_native.js";
-import Constants from "./constants.js";
-import Mounts from "./fslib_mounts.js";
-import FsWatch from "./fslib_watch.js";
-import filerCopy from "./filerlib_copy.js";
+import ERR_CODES, {Errors} from './errno.js';
+import NativeFS from './fslib_native.js';
+import Constants from './constants.js';
+import Mounts from './fslib_mounts.js';
+import FsWatch from './fslib_watch.js';
+import filerCopy from './filerlib_copy.js';
 
 let filerLib = null;
 let filerShell = null;

@@ -17,14 +17,14 @@
  */
 
 // jshint ignore: start
-/*global Blob, Response, TextDecoder, buffer*/
+/*global TextDecoder, buffer*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
-import Mounts from "./fslib_mounts.js";
-import {Errors} from "./errno.js";
-import Constants from "./constants.js";
-import Utils from "./utils.js";
+import Mounts from './fslib_mounts.js';
+import {Errors} from './errno.js';
+import Constants from './constants.js';
+import Utils from './utils.js';
 
 
 async function _listDir(handle, callback) {

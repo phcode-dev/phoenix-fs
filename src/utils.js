@@ -20,7 +20,7 @@
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
-import Constants from "./constants.js";
+import Constants from './constants.js';
 
 function _dateFromMs(ms) {
     if(ms === null || ms === undefined){

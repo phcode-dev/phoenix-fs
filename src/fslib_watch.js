@@ -24,7 +24,7 @@
 
 let _channel = null;
 let _watchListeners = [];
-let _globmatch = require("./thirdparty/globmatch");
+let _globmatch = require('./thirdparty/globmatch');
 
 const WATCH_EVENT_NOTIFICATION = 'PHOENIX_WATCH_EVENT_NOTIFICATION';
 const WATCH_EVENT_CREATED = 'created';
@@ -80,7 +80,7 @@ function _processFsWatchEvent(event, broadcast=true) {
 function _listenToExternalFsWatchEvents() {
     _setupBroadcastChannel();
     _channel.onmessage = async function(event) {
-        console.log("External fs watch event: ", event.data);
+        console.log('External fs watch event: ', event.data);
         _processFsWatchEvent(event.data, false);
     };
 }

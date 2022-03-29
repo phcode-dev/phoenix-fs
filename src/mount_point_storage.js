@@ -24,7 +24,7 @@
 /**
  * Persists serialised mounted native file system handles to indexed db to usage across tabs and sessions.
 **/
-import Constants from "./constants.js";
+import Constants from './constants.js';
 
 const PHOENIX_MOUNTS_DB_NAME = 'PHOENIX_MOUNTS';
 const STORE_NAME = 'FS_ACCESS';

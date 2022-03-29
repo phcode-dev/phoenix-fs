@@ -130,7 +130,7 @@ async function _copyFolder(srcFolder, dst) {
     }
 }
 
-async function copy(src, dst, callback, recursive = true) {
+async function copy(src, dst, callback) {
     try {
         let srcStat = await _stat(src);
         if(!srcStat){
