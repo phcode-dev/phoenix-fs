@@ -1,7 +1,7 @@
 {
   "name": "phoenix-fs",
   "description": "Phoenix virtual file system over filer/ browser fs access APIs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "keywords": [
     "phoenix",
     "browser",
@@ -12,16 +12,18 @@
   "homepage": "https://github.com/phcode-dev/phoenix-fs",
   "license": "GNU-AGPL3.0",
   "scripts": {
-    "eslint": "eslint src example",
-    "eslint:fix": "eslint src example --fix",
-    "test": "npm run eslint",
-    "build-example": "copyfiles -u 1 example/index* dist",
+    "eslint": "eslint src test",
+    "eslint:fix": "eslint src test --fix",
+    "test": "npm run eslint && npm run build && npm run dev ",
+    "build-example": "copyfiles -u 1 test/index* dist",
     "build-sw": "parcel build src/fslib.js --detailed-report",
     "prebuild": "npm run build-example",
     "build": "npm run build-sw",
     "predev": "npm run build",
-    "dev": "http-server dist/",
-    "release": "run.env release-it"
+    "dev": "http-server dist/ -c-1",
+    "bumpPatchVersion": "npm --no-git-tag-version version patch",
+    "bumpPatchVersionWithGitTag": "npm version patch",
+    "release": "npm run bumpPatchVersionWithGitTag"
   },
   "repository": {
     "type": "git",
@@ -39,7 +41,6 @@
     "http-server": "14.1.0",
     "parcel": "2.4.0",
     "process": "0.11.10",
-    "release-it": "14.13.1",
     "run.env": "1.1.0",
     "workbox-window": "4.2.0"
   }
