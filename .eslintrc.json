@@ -7,6 +7,9 @@
         "node": true,
         "worker": true
     },
+    "globals": {
+        "chai": "readonly"
+    },
     "extends": "eslint:recommended",
     "parserOptions": {
         "ecmaVersion": 2019,
