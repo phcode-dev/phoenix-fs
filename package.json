@@ -32,15 +32,15 @@
     "dist/fslib.js.map"
   ],
   "devDependencies": {
-    "browser-mime": "^1.0.1",
-    "copyfiles": "^2.1.0",
-    "eslint": "^5.16.0",
-    "filer": "^1.4.1",
-    "http-server": "^14.1.0",
-    "parcel": "^2.4.0",
-    "process": "^0.11.10",
-    "release-it": "^14.13.1",
-    "run.env": "^1.1.0",
-    "workbox-window": "^4.2.0"
+    "browser-mime": "1.0.1",
+    "copyfiles": "2.4.1",
+    "eslint": "5.16.0",
+    "filer": "1.4.1",
+    "http-server": "14.1.0",
+    "parcel": "2.4.0",
+    "process": "0.11.10",
+    "release-it": "14.13.1",
+    "run.env": "1.1.0",
+    "workbox-window": "4.2.0"
   }
 }
