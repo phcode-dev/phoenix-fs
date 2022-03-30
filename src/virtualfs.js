@@ -1,6 +1,7 @@
 /*global globalObject, virtualfs*/
 
 const Filer = require('filer');
+const buffer = require('./thirdparty/buffer-min');
 
 let virtualGlobalObject = {};
 let env = 'browser';
@@ -27,6 +28,7 @@ setupGlobalObject();
 
 const urlParams = new URLSearchParams(location.search);
 globalObject.Filer = Filer;
+globalObject.buffer = buffer;
 globalObject.virtualfs = {
     urlParams : urlParams,
     debugMode : urlParams.get('debug'),

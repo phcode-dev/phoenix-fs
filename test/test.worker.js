@@ -1,13 +1,29 @@
-/* global expect */
+/* global expect,fs */
 
 describe('web worker tests', function () {
-    let worker = new Worker('worker-task.js?debug=true');
-    console.log(worker);
+    let worker;
     let messageFromWorker = null;
-    worker.onmessage= function (event) {
-        console.log('From Worker:', event);
-        messageFromWorker = event.data;
-    };
+    async function _requestWritePerm() {
+        return new Promise((resolve, reject)=>{
+            fs.writeFile(`${window.mountTestPath}/forTestPermissionOnFolder.txt`, 'hello World', 'utf8', (err)=>{
+                if(err){
+                    console.log(err);
+                    reject(err);
+                } else {
+                    resolve();
+                }
+            });
+        });
+    }
+    before(async function () {
+        await _requestWritePerm();
+        worker = new Worker(`worker-task.js?debug=true&mountTestPath=${window.mountTestPath}`);
+        console.log(worker);
+        worker.onmessage= function (event) {
+            console.log('From Worker:', event);
+            messageFromWorker = event.data;
+        };
+    });
 
     async function waitForWorkerMessage(message, timeoutMs) {
         let startTime = Date.now();
@@ -39,6 +55,13 @@ describe('web worker tests', function () {
         messageFromWorker = null;
         worker.postMessage('phoenixFsCheck');
         let status = await waitForWorkerMessage('phoenixFsCheck.ok', 1000);
+        expect(status).to.be.true;
+    });
+
+    it('Should phoenix native read write in worker', async function () {
+        messageFromWorker = null;
+        worker.postMessage('RWMountCheck');
+        let status = await waitForWorkerMessage('RWMountCheck.ok', 1000);
         expect(status).to.be.true;
     });
 });

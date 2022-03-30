@@ -17,7 +17,7 @@
  */
 
 // jshint ignore: start
-/*global BroadcastChannel*/
+/*global BroadcastChannel, globalObject*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
@@ -37,7 +37,7 @@ function _setupBroadcastChannel() {
     }
     if(typeof BroadcastChannel === 'undefined'){
         /* eslint no-console: 0 */
-        console.warn('window.BroadcastChannel not supported. File system watch events across tabs wont be synced.');
+        console.warn('BroadcastChannel not supported. File system watch events across tabs wont be synced.');
         return;
     }
     _channel = new BroadcastChannel(WATCH_EVENT_NOTIFICATION);
@@ -60,7 +60,7 @@ function _isAnIgnoredPath(path, ignoreGlobList) {
 }
 
 function _isSameOrSubDirectory(parent, child) {
-    return !(window.path.relative(parent, child).startsWith('..'));
+    return !(globalObject.path.relative(parent, child).startsWith('..'));
 }
 
 // event{ path, eventName}
@@ -97,7 +97,7 @@ function watch(path, ignoreGlobList, changeCallback, callback) {
 }
 
 function _triggerEvent(path, eventType) {
-    let pathLib = window.path;
+    let pathLib = globalObject.path;
     path = pathLib.normalize(path);
     let event = {
         event: eventType,

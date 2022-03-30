@@ -19,10 +19,37 @@
 
 <script src="../dist/virtualfs.js"></script>
 <script src="testInit.js"></script>
-<script src="test.worker.js"></script>
 <script src="test.browser.js"></script>
+<script src="test.worker.js"></script>
 <script class="mocha-exec">
-    mocha.run();
+    function openFolderAndRunTests() {
+        function mountNative() {
+            fs.mountNativeFolder((err, mountTestPath)=>{
+                if(!mountTestPath[0]) return;
+                window.mountTestPath = mountTestPath[0];
+                localStorage.setItem('mountTestPath', mountTestPath[0]);
+                document.getElementById('openFolderButton').style = "display:none";
+                mocha.run();
+            });
+        }
+
+        let mountTestPath = localStorage.getItem('mountTestPath');
+        if(!mountTestPath) {
+            mountNative();
+            return;
+        }
+        fs.readdir(mountTestPath, (err, contents)=>{
+            console.log("Checking if any mounted paths exists: ",err, contents);
+            if(err){
+                mountNative();
+                return;
+            }
+            window.mountTestPath = mountTestPath;
+            document.getElementById('openFolderButton').style = "display:none";
+            mocha.run();
+        });
+    }
 </script>
+<button id="openFolderButton" onclick="openFolderAndRunTests()">Open any blank folder to start tests</button>
 </body>
 </html>
