@@ -33,11 +33,9 @@ globalObject.virtualfs = {
     env: env
 };
 
-console.log('virtual fs started on environment: ', virtualfs.env);
+console.log(`virtual fs started in debugMode:${virtualfs.debugMode} on environment: ${virtualfs.env}`);
 if(!virtualfs.debugMode){
     console.log = function () {
         // dont log anything
     };
-} else {
-    console.log('virtualFs started in debug mode');
 }
