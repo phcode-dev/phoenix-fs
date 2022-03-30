@@ -39,3 +39,6 @@ if(!virtualfs.debugMode){
         // dont log anything
     };
 }
+
+const {initFsLib} = require('./fslib');
+initFsLib(Filer);

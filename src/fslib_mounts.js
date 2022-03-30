@@ -17,7 +17,7 @@
  */
 
 // jshint ignore: start
-/*global BroadcastChannel*/
+/*global BroadcastChannel, globalObject*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
@@ -41,7 +41,7 @@ function isMountSubPath(path) {
     }
     let mntSubPathStart = '/mnt/';
     if (path) {
-        path = window.path.normalize(path);
+        path = globalObject.path.normalize(path);
         if (path.startsWith(mntSubPathStart) && path.length > mntSubPathStart.length) {
             return true;
         }
@@ -58,7 +58,7 @@ function isMountPath(path) {
         return false;
     }
     if (path) {
-        path = window.path.normalize(path);
+        path = globalObject.path.normalize(path);
         if (path === Constants.MOUNT_POINT_ROOT) {
             return true;
         }
@@ -73,7 +73,7 @@ function _setupBroadcastChannel() {
     }
     if(typeof BroadcastChannel === 'undefined'){
         /* eslint no-console: 0 */
-        console.warn('window.BroadcastChannel not supported. Mount point changes wont reflect across tabs.');
+        console.warn('BroadcastChannel not supported. Mount point changes wont reflect across tabs.');
         return;
     }
     _channel = new BroadcastChannel(MOUNT_POINT_CHANGED_NOTIFICATION);
@@ -186,7 +186,7 @@ function mountNativeFolder(optionalDirHandle, callback) {
     let mountedPath = null;
     let error = null;
     MountPointsStore.refreshMountPoints()
-        .then(() => optionalDirHandle || window.showDirectoryPicker())
+        .then(() => optionalDirHandle || globalObject.showDirectoryPicker())
         .then((directoryHandle) => _mountHandle(directoryHandle))
         .then( mountPath => mountedPath = mountPath)
         .then(() => _broadcastMountPointChanged())

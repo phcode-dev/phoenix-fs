@@ -17,7 +17,7 @@
  */
 
 // jshint ignore: start
-/*global fs*/
+/*global fs, globalObject*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
@@ -80,8 +80,8 @@ async function _copyFileContents(src, dst) {
 async function _copyFile(srcFile, dst) {
     let dstStat = await _stat(dst);
     if(!dstStat){
-        let parentDir= window.path.dirname(dst);
-        let dstFileName= window.path.basename(dst);
+        let parentDir= globalObject.path.dirname(dst);
+        let dstFileName= globalObject.path.basename(dst);
         dstStat = await _stat(parentDir);
         if(dstStat && dstStat.isDirectory()){
             let dstFilePath =`${parentDir}/${dstFileName}`;
@@ -92,7 +92,7 @@ async function _copyFile(srcFile, dst) {
         }
     }
 
-    let srcFileName= window.path.basename(srcFile);
+    let srcFileName= globalObject.path.basename(srcFile);
     if(dstStat && dstStat.isDirectory()){
         let dstFilePath =`${dst}/${srcFileName}`;
         await _copyFileContents(srcFile, dstFilePath);
@@ -149,7 +149,7 @@ async function copy(src, dst, callback) {
 }
 
 function filerCopy(src, dst, cb) {
-    copy(window.path.normalize(src), window.path.normalize(dst), cb);
+    copy(globalObject.path.normalize(src), globalObject.path.normalize(dst), cb);
 }
 
 module.exports ={

@@ -34,4 +34,11 @@ describe('web worker tests', function () {
         let status = await waitForWorkerMessage('fsCheck.ok', 1000);
         expect(status).to.be.true;
     });
+
+    it('Should load phoenix fs in worker', async function () {
+        messageFromWorker = null;
+        worker.postMessage('phoenixFsCheck');
+        let status = await waitForWorkerMessage('phoenixFsCheck.ok', 1000);
+        expect(status).to.be.true;
+    });
 });

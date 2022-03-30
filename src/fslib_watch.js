@@ -24,7 +24,7 @@
 
 let _channel = null;
 let _watchListeners = [];
-const globMatch = require('thirdparty/globmatch');
+const globMatch = require('./thirdparty/globmatch');
 
 const WATCH_EVENT_NOTIFICATION = 'PHOENIX_WATCH_EVENT_NOTIFICATION';
 const WATCH_EVENT_CREATED = 'created';

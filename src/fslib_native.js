@@ -17,7 +17,7 @@
  */
 
 // jshint ignore: start
-/*global TextDecoder, buffer*/
+/*global TextDecoder, buffer, globalObject*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
@@ -60,9 +60,9 @@ function mkdir(path, mode, callback) {
         callback = mode;
     }
 
-    path = window.path.normalize(path);
-    let dirname= window.path.dirname(path);
-    let subdirName= window.path.basename(path);
+    path = globalObject.path.normalize(path);
+    let dirname= globalObject.path.dirname(path);
+    let subdirName= globalObject.path.basename(path);
     Mounts.getHandleFromPath(dirname, (err, handle) => {
         if(err){
             callback(err);
@@ -76,7 +76,7 @@ function mkdir(path, mode, callback) {
 
 
 function readdir(path, options, callback) {
-    path = window.path.normalize(path);
+    path = globalObject.path.normalize(path);
     if (typeof options !== 'function') {
         throw new Errors.ENOSYS('Filer readdir options are not yet supported');
     }
@@ -138,7 +138,7 @@ function _validateFileOptions(options, enc, fileMode){
 }
 
 function readFile(path, options, callback) {
-    path = window.path.normalize(path);
+    path = globalObject.path.normalize(path);
 
     callback = arguments[arguments.length - 1];
     options = _validateFileOptions(options, null, 'r');
@@ -156,7 +156,7 @@ function readFile(path, options, callback) {
 
 
 function stat(path, callback) {
-    path = window.path.normalize(path);
+    path = globalObject.path.normalize(path);
     Mounts.getHandleFromPath(path, (err, handle) => {
         if(err){
             callback(err);
@@ -198,9 +198,9 @@ function writeFile (path, data, options, callback) {
         }
     }
 
-    path = window.path.normalize(path);
-    let dirname= window.path.dirname(path);
-    let fileName= window.path.basename(path);
+    path = globalObject.path.normalize(path);
+    let dirname= globalObject.path.dirname(path);
+    let fileName= globalObject.path.basename(path);
     Mounts.getHandleFromPath(dirname, (err, handle) => {
         if(err){
             callback(err);
@@ -222,9 +222,9 @@ async function _deleteEntry(dirHandle, entryNameToDelete, callback, recursive=tr
 }
 
 async function unlink(path, callback) {
-    path = window.path.normalize(path);
-    let dirPath= window.path.dirname(path);
-    let baseName= window.path.basename(path);
+    path = globalObject.path.normalize(path);
+    let dirPath= globalObject.path.dirname(path);
+    let baseName= globalObject.path.basename(path);
     Mounts.getHandleFromPath(dirPath, async (err, dirHandle) => {
         if(err){
             callback(err);
@@ -236,9 +236,9 @@ async function unlink(path, callback) {
 
 async function _getDestinationHandleForCopy(dst, srcBaseName, handleKindToCreate) {
     return new Promise(async (resolve, reject) => {
-        dst = window.path.normalize(dst);
-        let dirPath= window.path.dirname(dst);
-        let dstBaseName= window.path.basename(dst);
+        dst = globalObject.path.normalize(dst);
+        let dirPath= globalObject.path.dirname(dst);
+        let dstBaseName= globalObject.path.basename(dst);
         let dstHandle = await Mounts.getHandleFromPathIfPresent(dst);
         let dstParentHandle = await Mounts.getHandleFromPathIfPresent(dirPath);
         if (dstHandle && dstHandle.kind === Constants.KIND_FILE) {
@@ -322,8 +322,8 @@ async function _copyFolderWithHandle(srcFolderHandle, dst, srcFileName, callback
 }
 
 async function copy(src, dst, callback, recursive = true) {
-    let srcFile = window.path.normalize(src);
-    let srcFileName= window.path.basename(srcFile);
+    let srcFile = globalObject.path.normalize(src);
+    let srcFileName= globalObject.path.basename(srcFile);
     Mounts.getHandleFromPath(srcFile, async (err, srcHandle) => {
         if(err){
             callback(err);

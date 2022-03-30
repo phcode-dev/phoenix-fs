@@ -15,7 +15,7 @@
  * with this program. If not, see https://opensource.org/licenses/AGPL-3.0.
  *
  */
-
+/*global globalObject*/
 // jshint ignore: start
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
@@ -45,7 +45,7 @@ function Stats(path, fileNode, devName) {
     this.ctimeMs = fileNode.ctime;
     this.version = fileNode.version;
     this.mode = fileNode.mode;
-    this.name = window.path.basename(path);
+    this.name = globalObject.path.basename(path);
 }
 
 Stats.prototype.isFile = function() {

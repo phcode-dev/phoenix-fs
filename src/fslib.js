@@ -17,7 +17,7 @@
  */
 
 // jshint ignore: start
-/*global process*/
+/*global process, globalObject*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
@@ -247,12 +247,13 @@ const fileSystemLib = {
 };
 
 fileSystemLib.copyFile = fileSystemLib.copy;
+fileSystemLib.name = 'phoenixFS';
 
 function initFsLib(FilerLib) {
     filerLib = FilerLib;
     filerShell = new filerLib.fs.Shell();
-    window.path = FilerLib.path;
-    window.fs = fileSystemLib;
+    globalObject.path = FilerLib.path;
+    globalObject.fs = fileSystemLib;
 
     _ensure_mount_directory();
 }

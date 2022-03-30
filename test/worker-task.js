@@ -1,4 +1,4 @@
-/* global Filer*/
+/* global Filer, fs*/
 importScripts('../../dist/virtualfs.js');
 
 function fsCheck() {
@@ -7,10 +7,17 @@ function fsCheck() {
     }
 }
 
+function phoenixFsCheck() {
+    if(fs && fs.name === 'phoenixFS'){
+        postMessage('phoenixFsCheck.ok');
+    }
+}
+
 self.addEventListener('message', (event) => {
     console.log('Worker:', event);
     let command = event.data;
     switch (command) {
     case 'fsCheck': fsCheck(); break;
+    case 'phoenixFsCheck': phoenixFsCheck(); break;
     }
 }, false);
