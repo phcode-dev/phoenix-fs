@@ -18,9 +18,6 @@ jobs:
       - name: building package
         run: |
           npm run build
-      - name: Tests with coverage
-        run: |
-          npm run cover
       - name: Publishing package to npm repository
         run: |
           npm publish --access public
