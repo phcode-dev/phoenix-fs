@@ -31,8 +31,8 @@
     "url": "https://github.com/phcode-dev/phoenix-fs"
   },
   "files": [
-    "dist/fslib.js",
-    "dist/fslib.js.map"
+    "dist/virtualfs.js",
+    "dist/virtualfs.js.map"
   ],
   "devDependencies": {
     "browser-mime": "1.0.1",
