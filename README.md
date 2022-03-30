@@ -3,6 +3,19 @@
 node like `fs` API for the browser that uses indexedDB/ fs access browser APIs for persistence.
 
 ## Installation
+The library can be either installed using npm or using the CDN link (See usage in browser below ).
+
+### Getting the code locally
+Install the library can be downloaded locally with the following command:
+
+```bash
+npm install @phcode/fs
+```
+
+Once installed, the `virtualfs.js` lib will be present in the following location
+```bash
+<project_root>/node_modules/@phcode/fs/dist/virtualfs.js
+```
 ### Usage in browser
 Put the below script tag in your html file. A Global `fs` object
 will be created with the necessary fs APIs. 
@@ -10,7 +23,14 @@ will be created with the necessary fs APIs.
 See filer docs for API docs: https://filer.js.org/
 
 ```js
-<script src="path/to/dist/virtualfs.js"/>
+// using CDN link in your html file
+<script src="https://unpkg.com/@phcode/fs@latest/dist/virtualfs.js"/>
+
+// OR to get a particular version, change latest to the version you need:
+<script src="https://unpkg.com/@phcode/fs@1.0.4/dist/virtualfs.js"/>
+
+// OR if you did npm install
+<script src="<project_root>/node_modules/@phcode/fs/dist/virtualfs.js"/>
 ```
 
 ### Usage in web-worker in browser
@@ -21,7 +41,10 @@ started supporting the API yet.
 2. Use fs.mountNativeFolder to mount a local directory.
 3. After mounting, access the files using the mountPath returned
 ```js
-importScripts('path/to/dist/virtualfs.js');
+importScripts('<project_root>/node_modules/@phcode/fs/dist/virtualfs.js');
+// OR from CDN directly as
+importScripts('https://unpkg.com/@phcode/fs@latest/dist/virtualfs.js');
+
 fs.mountNativeFolder((err, mountPathArray)=>{
     console.log(err, mountPathArray);
 });
