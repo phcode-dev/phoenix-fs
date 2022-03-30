@@ -1,7 +1,7 @@
 /* global expect */
 
 describe('web worker tests', function () {
-    let worker = new Worker('worker-task.js');
+    let worker = new Worker('worker-task.js?debug=true');
     console.log(worker);
     let messageFromWorker = null;
     worker.onmessage= function (event) {

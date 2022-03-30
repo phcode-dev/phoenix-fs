@@ -1,4 +1,4 @@
-/* global expect */
+/* global expect , Filer*/
 
 describe('Browser main tests', function () {
     it('Should load Filer in browser', function () {

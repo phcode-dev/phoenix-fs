@@ -6,5 +6,5 @@ node_modules
 .parcel-cache
 
 dist/*
-!dist/fslib.js
-!dist/fslib.js.map
+!dist/virtualfs.js
+!dist/virtualfs.js.map

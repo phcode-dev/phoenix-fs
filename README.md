@@ -12,12 +12,12 @@ npm run build
 ```
 
 To Test:
-While developing, use test or testDist script to open browser tests.
-* test runs tests against the src folder and
-* testDist runs tests against the release build
+While developing, use test script to open browser tests.
+* Test runs tests against the release build.
+* You should `npm run build` if any changes were made to the src folder
 ```bash
+npm run build
 npm run test 
-npm run testDist 
 ```
 
 
@@ -26,5 +26,5 @@ NOTE: you can also use `npm run dev` to also start a web server for development.
 
 
 ```js
-<script src=""/>
+<script src="path/to/dist/virtualfs.js"/>
 ```
