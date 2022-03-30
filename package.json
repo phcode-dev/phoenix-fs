@@ -1,7 +1,7 @@
 {
   "name": "phoenix-fs",
   "description": "Phoenix virtual file system over filer/ browser fs access APIs",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "keywords": [
     "phoenix",
     "browser",
