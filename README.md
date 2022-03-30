@@ -72,3 +72,10 @@ npm run test
 The js library will be built in `dist/nohost-sw.js`. 
 NOTE: you can also use `npm run dev` to also start a web server for development.
 
+### Publishing to npm
+
+Inorder to publish the package to npm, do the following
+
+1. run `npm run relese` and push changes to main branch.
+2. raise a pull request from `main` branch to `npm` branch. Once the pull request is merged
+and the code pushed to npm branch, GitHub actions will automatically publish the library to npm.
