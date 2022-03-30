@@ -2,7 +2,7 @@
 importScripts('../../dist/virtualfs.js');
 
 function fsCheck() {
-    if(Filer && Filer.fs){
+    if(Filer && Filer.fs && Filer.Shell){
         postMessage('fsCheck.ok');
     }
 }
