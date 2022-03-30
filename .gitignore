@@ -8,4 +8,4 @@ node_modules
 dist/*
 !dist/virtualfs.js
 !dist/virtualfs.js.map
-phoenix-fs-*.tgz
+phcode-fs-*.tgz
