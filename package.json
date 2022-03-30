@@ -24,7 +24,7 @@
     "serve": "http-server . -p 8080 -c-1",
     "bumpPatchVersion": "npm --no-git-tag-version version patch",
     "bumpPatchVersionWithGitTag": "npm version patch",
-    "release": "npm run bumpPatchVersionWithGitTag"
+    "release": "npm run build && npm run bumpPatchVersionWithGitTag"
   },
   "repository": {
     "type": "git",
