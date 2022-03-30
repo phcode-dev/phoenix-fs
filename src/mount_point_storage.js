@@ -17,7 +17,6 @@
  */
 
 // jshint ignore: start
-/*global idb*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
@@ -25,6 +24,7 @@
  * Persists serialised mounted native file system handles to indexed db to usage across tabs and sessions.
 **/
 const {Constants} = require('./constants');
+const {idb} = require('./thirdparty/idb-min');
 
 const PHOENIX_MOUNTS_DB_NAME = 'PHOENIX_MOUNTS';
 const STORE_NAME = 'FS_ACCESS';
