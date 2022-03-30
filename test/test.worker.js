@@ -71,4 +71,11 @@ describe('web worker tests', function () {
         let status = await waitForWorkerMessage('readMountCheck.ok', 1000);
         expect(status).to.be.true;
     });
+
+    it('Should phoenix native delete in worker', async function () {
+        messageFromWorker = null;
+        worker.postMessage('deleteMountCheck');
+        let status = await waitForWorkerMessage('deleteMountCheck.ok', 1000);
+        expect(status).to.be.true;
+    });
 });

@@ -38,6 +38,17 @@ function checkReadInMountPath() {
     });
 }
 
+function checkDeleteInMountPath() {
+    console.log('worker: checkDeleteInMountPath');
+    fs.unlink(`${mountTestPath}/workerWrite.txt`,  (err)=>{
+        if(!err){
+            postMessage('deleteMountCheck.ok');
+            return;
+        }
+        console.log('file read:', err);
+    });
+}
+
 self.addEventListener('message', (event) => {
     console.log('Worker received: ', event);
     let command = event.data;
@@ -46,6 +57,7 @@ self.addEventListener('message', (event) => {
     case 'phoenixFsCheck': phoenixFsCheck(); break;
     case 'writeMountCheck': checkWriteInMountPath(); break;
     case 'readMountCheck': checkReadInMountPath(); break;
+    case 'deleteMountCheck': checkDeleteInMountPath(); break;
     default: console.error('unknown worker command: ', command);
     }
 }, false);

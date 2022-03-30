@@ -32,13 +32,36 @@ describe('Browser main tests', function () {
         expect(fs.name).to.equal('phoenixFS');
     });
 
-    it('Should phoenix native read write in browser', async function () {
+    it('Should phoenix native write in browser', async function () {
         let writeSuccess = false;
         fs.writeFile(`${window.mountTestPath}/browserWrite.txt`, 'hello World', 'utf8', (err)=>{
             if(!err){
                 writeSuccess = true;
             }
         });
-        await waitForTrue(()=>{return writeSuccess;},1);
+        await waitForTrue(()=>{return writeSuccess;},1000);
+        expect(writeSuccess).to.be.true;
+    });
+
+    it('Should phoenix native read in browser', async function () {
+        let readSuccess = false;
+        fs.readFile(`${window.mountTestPath}/browserWrite.txt`, 'utf8', (err)=>{
+            if(!err){
+                readSuccess = true;
+            }
+        });
+        await waitForTrue(()=>{return readSuccess;},1000);
+        expect(readSuccess).to.be.true;
+    });
+
+    it('Should phoenix native delete in browser', async function () {
+        let delSuccess = false;
+        fs.unlink(`${window.mountTestPath}/browserWrite.txt`, (err)=>{
+            if(!err){
+                delSuccess = true;
+            }
+        });
+        await waitForTrue(()=>{return delSuccess;},1000);
+        expect(delSuccess).to.be.true;
     });
 });
