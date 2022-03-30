@@ -16,22 +16,36 @@ function phoenixFsCheck() {
     }
 }
 
-function checkReadWriteInMountPath() {
-    fs.writeFile(`${mountTestPath}/a.txt`, 'hello World', 'utf8', (err)=>{
+function checkWriteInMountPath() {
+    console.log('worker: checkWriteInMountPath');
+    fs.writeFile(`${mountTestPath}/workerWrite.txt`, 'hello World', 'utf8', (err)=>{
         if(!err){
-            postMessage('RWMountCheck.ok');
+            postMessage('writeMountCheck.ok');
             return;
         }
         console.log(err);
     });
 }
 
+function checkReadInMountPath() {
+    console.log('worker: checkReadInMountPath');
+    fs.readFile(`${mountTestPath}/workerWrite.txt`,  (err, content)=>{
+        if(!err && content === 'hello World'){
+            postMessage('readMountCheck.ok');
+            return;
+        }
+        console.log('file read:', err, content);
+    });
+}
+
 self.addEventListener('message', (event) => {
-    console.log('Worker:', event);
+    console.log('Worker received: ', event);
     let command = event.data;
     switch (command) {
     case 'fsCheck': fsCheck(); break;
     case 'phoenixFsCheck': phoenixFsCheck(); break;
-    case 'RWMountCheck': checkReadWriteInMountPath(); break;
+    case 'writeMountCheck': checkWriteInMountPath(); break;
+    case 'readMountCheck': checkReadInMountPath(); break;
+    default: console.error('unknown worker command: ', command);
     }
 }, false);

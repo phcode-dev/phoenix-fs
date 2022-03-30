@@ -58,10 +58,17 @@ describe('web worker tests', function () {
         expect(status).to.be.true;
     });
 
-    it('Should phoenix native read write in worker', async function () {
+    it('Should phoenix native write in worker', async function () {
         messageFromWorker = null;
-        worker.postMessage('RWMountCheck');
-        let status = await waitForWorkerMessage('RWMountCheck.ok', 1000);
+        worker.postMessage('writeMountCheck');
+        let status = await waitForWorkerMessage('writeMountCheck.ok', 1000);
+        expect(status).to.be.true;
+    });
+
+    it('Should phoenix native read in worker', async function () {
+        messageFromWorker = null;
+        worker.postMessage('readMountCheck');
+        let status = await waitForWorkerMessage('readMountCheck.ok', 1000);
         expect(status).to.be.true;
     });
 });

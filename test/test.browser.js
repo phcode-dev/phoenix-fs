@@ -39,6 +39,6 @@ describe('Browser main tests', function () {
                 writeSuccess = true;
             }
         });
-        waitForTrue(()=>{return writeSuccess;},1);
+        await waitForTrue(()=>{return writeSuccess;},1);
     });
 });
