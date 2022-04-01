@@ -201,34 +201,57 @@ function mountNativeFolder(optionalDirHandle, callback) {
         });
 }
 
+async function _verifyDirNodeCanBeRead(handle) {
+    try {
+        if(handle.kind === Constants.KIND_DIRECTORY){
+            let entries = handle.entries();
+            await entries.next();
+        }
+        return null;
+    } catch (e) {
+        if(e.code === e.NOT_FOUND_ERR){
+            return new Errors.ENOENT(`Dir does not exist ${handle.name}`, e);
+        } else {
+            return new Errors.EIO(`Phoenix fs could not read directory ${handle.name}`, e);
+        }
+    }
+}
+
 async function _findLeafNode(currentNode, pathArray, currentIndex, callback) {
+    let error = await _verifyDirNodeCanBeRead(currentNode);
+    if(error){
+        callback(error);
+        return;
+    }
+
     let pathLength = pathArray.length;
     if(currentIndex === pathLength) {
         callback(null, currentNode);
-    } else {
-        let childName = pathArray[currentIndex];
-        let childDirHandle = null;
-        let childFileHandle = null;
-        try {
-            childDirHandle = await currentNode.getDirectoryHandle(childName);
-        } catch (e) {
-            // do nothing
-        }
-        try {
-            childFileHandle = await currentNode.getFileHandle(childName);
-        } catch (e) {
-            // do nothing
-        }
+        return;
+    }
 
-        if(childFileHandle && currentIndex === pathLength - 1) {
-            // the last node is a file
-            callback(null, childFileHandle);
-        } else if(childDirHandle) {
-            _findLeafNode(childDirHandle, pathArray, currentIndex + 1, callback);
-        } else {
-            let path= pathArray.join('/');
-            callback(new Errors.ENOENT('File/Dir does not exist: ', path));
-        }
+    let childName = pathArray[currentIndex];
+    let childDirHandle = null;
+    let childFileHandle = null;
+    try {
+        childDirHandle = await currentNode.getDirectoryHandle(childName);
+    } catch (e) {
+        // do nothing
+    }
+    try {
+        childFileHandle = await currentNode.getFileHandle(childName);
+    } catch (e) {
+        // do nothing
+    }
+
+    if(childFileHandle && currentIndex === pathLength - 1) {
+        // the last node is a file
+        callback(null, childFileHandle);
+    } else if(childDirHandle) {
+        _findLeafNode(childDirHandle, pathArray, currentIndex + 1, callback);
+    } else {
+        let path= pathArray.join('/');
+        callback(new Errors.ENOENT('File/Dir does not exist: ', path));
     }
 }
 
