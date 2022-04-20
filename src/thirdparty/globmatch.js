@@ -157,12 +157,6 @@ function Minimatch (pattern, options) {
   if (!options) options = {}
   pattern = pattern.trim()
 
-  // windows: need to use /, not \
-  // On other platforms, \ is a valid (albeit bad) filename char.
-  if (platform === "win32") {
-    pattern = pattern.split("\\").join("/")
-  }
-
   // lru storage.
   // these things aren't particularly big, but walking down the string
   // and turning it into a regexp can get pretty costly.
@@ -843,12 +837,6 @@ function match (f, partial) {
   if (f === "/" && partial) return true
 
   var options = this.options
-
-  // windows: need to use /, not \
-  // On other platforms, \ is a valid (albeit bad) filename char.
-  if (platform === "win32") {
-    f = f.split("\\").join("/")
-  }
 
   // treat the test path as a set of pathparts.
   f = f.split(slashSplit)
