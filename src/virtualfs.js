@@ -36,11 +36,6 @@ globalObject.virtualfs = {
 };
 
 console.log(`virtual fs started in debugMode:${virtualfs.debugMode} on environment: ${virtualfs.env}`);
-if(!virtualfs.debugMode){
-    console.log = function () {
-        // dont log anything
-    };
-}
 
 const {initFsLib} = require('./fslib');
 initFsLib(Filer);

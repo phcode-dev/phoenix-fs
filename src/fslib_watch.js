@@ -17,7 +17,7 @@
  */
 
 // jshint ignore: start
-/*global BroadcastChannel, globalObject*/
+/*global BroadcastChannel, globalObject, virtualfs*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
@@ -80,7 +80,9 @@ function _processFsWatchEvent(event, broadcast=true) {
 function _listenToExternalFsWatchEvents() {
     _setupBroadcastChannel();
     _channel.onmessage = async function(event) {
-        console.log('External fs watch event: ', event.data);
+        if(virtualfs.debugMode){
+            console.log('External fs watch event: ', event.data);
+        }
         _processFsWatchEvent(event.data, false);
     };
 }
