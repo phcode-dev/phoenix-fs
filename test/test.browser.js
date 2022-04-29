@@ -54,6 +54,32 @@ describe('Browser main tests', function () {
         expect(readSuccess).to.be.true;
     });
 
+    it('Should phoenix native read dir', async function () {
+        let readSuccess = false, contentsRead;
+        fs.readdir(`${window.mountTestPath}`, (err, contents)=>{
+            if(!err){
+                readSuccess = true;
+            }
+            contentsRead = contents;
+        });
+        await waitForTrue(()=>{return readSuccess;},1000);
+        expect(readSuccess).to.be.true;
+        expect(contentsRead.length).to.be.above(1);
+    });
+
+    it('Should phoenix native read dir with withFileTypes', async function () {
+        let readSuccess = false, contentsRead;
+        fs.readdir(`${window.mountTestPath}`, {withFileTypes: true} , (err, contents)=>{
+            if(!err){
+                readSuccess = true;
+            }
+            contentsRead = contents;
+        });
+        await waitForTrue(()=>{return readSuccess;},1000);
+        expect(readSuccess).to.be.true;
+        expect(contentsRead[0].type).to.exist;
+    });
+
     it('Should phoenix native delete in browser', async function () {
         let delSuccess = false;
         fs.unlink(`${window.mountTestPath}/browserWrite.txt`, (err)=>{

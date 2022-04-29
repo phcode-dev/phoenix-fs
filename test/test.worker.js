@@ -72,6 +72,13 @@ describe('web worker tests', function () {
         expect(status).to.be.true;
     });
 
+    it('Should phoenix native read dir withFileTypes in worker', async function () {
+        messageFromWorker = null;
+        worker.postMessage('readDirMountCheck');
+        let status = await waitForWorkerMessage('readDirMountCheck.ok', 1000);
+        expect(status).to.be.true;
+    });
+
     it('Should phoenix native delete in worker', async function () {
         messageFromWorker = null;
         worker.postMessage('deleteMountCheck');

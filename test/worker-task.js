@@ -38,6 +38,17 @@ function checkReadInMountPath() {
     });
 }
 
+function checkReadDirInMountPath() {
+    console.log('worker: checkReadDirInMountPath');
+    fs.readdir(`${mountTestPath}`, {withFileTypes: true} , (err, contents)=>{
+        if(!err && contents[0].type){
+            postMessage('readDirMountCheck.ok');
+            return;
+        }
+        console.log('file read:', err, contents);
+    });
+}
+
 function checkDeleteInMountPath() {
     console.log('worker: checkDeleteInMountPath');
     fs.unlink(`${mountTestPath}/workerWrite.txt`,  (err)=>{
@@ -58,6 +69,7 @@ self.addEventListener('message', (event) => {
     case 'writeMountCheck': checkWriteInMountPath(); break;
     case 'readMountCheck': checkReadInMountPath(); break;
     case 'deleteMountCheck': checkDeleteInMountPath(); break;
+    case 'readDirMountCheck': checkReadDirInMountPath(); break;
     default: console.error('unknown worker command: ', command);
     }
 }, false);

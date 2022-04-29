@@ -27,11 +27,15 @@ const {Constants} = require('./constants');
 const {Utils} =require('./utils');
 
 
-async function _listDir(handle, callback) {
+async function _listDir(path, handle, options, callback) {
     let dirEntryNames = [];
     try {
-        for await (const [key] of handle.entries()) {
-            dirEntryNames.push(key);
+        for await (const [key, value] of handle.entries()) {
+            let entry = key;
+            if(options['withFileTypes']){
+                entry = await Utils.createStatObject(globalObject.path.join(path, key), value);
+            }
+            dirEntryNames.push(entry);
         }
         if(callback){
             callback(null, dirEntryNames);
@@ -85,10 +89,10 @@ function mkdir(path, mode, callback) {
 
 function readdir(path, options, callback) {
     path = globalObject.path.normalize(path);
-    if (typeof options !== 'function') {
-        throw new Errors.ENOSYS('Filer readdir options are not yet supported');
+    if (typeof options === 'function') {
+        callback = options;
+        options = {};
     }
-    callback = options;
 
     if(path === Constants.MOUNT_POINT_ROOT ) {
         let mountedFolders = Object.keys(Mounts.getMountPoints());
@@ -100,7 +104,7 @@ function readdir(path, options, callback) {
             } else if (handle.kind === Constants.KIND_FILE) {
                 callback(new Errors.ENOTDIR('Path is not a directory.'));
             }else {
-                _listDir(handle, callback);
+                _listDir(path, handle, options, callback);
             }
         });
     }
