@@ -26,9 +26,9 @@
         function mountNative() {
             fs.mountNativeFolder((err, mountTestPath)=>{
                 if(!mountTestPath[0]) return;
-                window.mountTestPath = mountTestPath[0];
                 localStorage.setItem('mountTestPath', mountTestPath[0]);
                 document.getElementById('openFolderButton').style = "display:none";
+                window.mountTestPath = `${mountTestPath[0]}/test`;
                 mocha.run();
             });
         }
@@ -38,18 +38,19 @@
             mountNative();
             return;
         }
+        window.virtualTestPath = '/test';
         fs.readdir(mountTestPath, (err, contents)=>{
             console.log("Checking if any mounted paths exists: ",err, contents);
             if(err){
                 mountNative();
                 return;
             }
-            window.mountTestPath = mountTestPath;
+            window.mountTestPath = `${mountTestPath}/test`;
             document.getElementById('openFolderButton').style = "display:none";
             mocha.run();
         });
     }
 </script>
-<button id="openFolderButton" onclick="openFolderAndRunTests()">Open any blank folder to start tests</button>
+<button id="openFolderButton" onclick="openFolderAndRunTests()">Open any blank folder to start tests. Warning - folder contents will be deleted!!!!</button>
 </body>
 </html>

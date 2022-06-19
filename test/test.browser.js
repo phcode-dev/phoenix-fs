@@ -27,9 +27,35 @@ describe('Browser main tests', function () {
         expect(Filer.fs.name).to.equal('local');
     });
 
-    it('Should load Phoenix fs in browser', function () {
+    it('Should load Phoenix fs in browser',async function () {
         expect(fs).to.exist;
         expect(fs.name).to.equal('phoenixFS');
+        // setup test folders
+        console.log('cleaning: ', window.virtualTestPath);
+        let cleanSuccess = false;
+        fs.unlink(window.virtualTestPath, ()=>{
+            cleanSuccess = true;
+        });
+        await waitForTrue(()=>{return cleanSuccess;},10000);
+        console.log('cleaning: ', window.mountTestPath);
+        cleanSuccess = false;
+        fs.unlink(window.mountTestPath, ()=>{
+            cleanSuccess = true;
+        });
+        await waitForTrue(()=>{return cleanSuccess;},10000);
+
+        console.log('mkdir: ', window.virtualTestPath);
+        cleanSuccess = false;
+        fs.mkdirs(window.virtualTestPath, 777 ,true, ()=>{
+            cleanSuccess = true;
+        });
+        await waitForTrue(()=>{return cleanSuccess;},10000);
+        console.log('mkdir: ', window.mountTestPath);
+        cleanSuccess = false;
+        fs.mkdirs(window.mountTestPath,  777 ,true,()=>{
+            cleanSuccess = true;
+        });
+        await waitForTrue(()=>{return cleanSuccess;},10000);
     });
 
     it('Should phoenix native write in browser', async function () {
@@ -39,7 +65,7 @@ describe('Browser main tests', function () {
                 writeSuccess = true;
             }
         });
-        await waitForTrue(()=>{return writeSuccess;},1000);
+        await waitForTrue(()=>{return writeSuccess;},10000);
         expect(writeSuccess).to.be.true;
     });
 
@@ -64,7 +90,7 @@ describe('Browser main tests', function () {
         });
         await waitForTrue(()=>{return readSuccess;},1000);
         expect(readSuccess).to.be.true;
-        expect(contentsRead.length).to.be.above(1);
+        expect(contentsRead.length).to.equal(1);
     });
 
     it('Should phoenix native read dir with withFileTypes', async function () {
@@ -89,5 +115,73 @@ describe('Browser main tests', function () {
         });
         await waitForTrue(()=>{return delSuccess;},1000);
         expect(delSuccess).to.be.true;
+    });
+
+    it('Should phoenix mkdir(path,cb) in browser if it doesnt exist', async function () {
+        // mount fs
+        let createSuccess = false;
+        fs.mkdir(`${window.mountTestPath}/testDir`, (err)=>{
+            if(!err){
+                createSuccess = true;
+            }
+        });
+        await waitForTrue(()=>{return createSuccess;},1000);
+        expect(createSuccess).to.be.true;
+        // virtual fs
+        createSuccess = false;
+        fs.mkdir(`${window.virtualTestPath}/testDir`, (err)=>{
+            if(!err){
+                createSuccess = true;
+            }
+        });
+        await waitForTrue(()=>{return createSuccess;},1000);
+        expect(createSuccess).to.be.true;
+    });
+
+    it('Should phoenix mount:mkdir(path,mode, cb) in browser if it doesnt exist', async function () {
+        // mount fs
+        let createSuccess = false;
+        fs.mkdir(`${window.mountTestPath}/testDir1`, 777, (err)=>{
+            if(!err){
+                createSuccess = true;
+            }
+        });
+        await waitForTrue(()=>{return createSuccess;},1000);
+        expect(createSuccess).to.be.true;
+    });
+    it('Should phoenix virtual:mkdir(path,mode, cb) in browser if it doesnt exist', async function () {
+        // virtual fs
+        let createSuccess = false;
+        fs.mkdir(`${window.virtualTestPath}/testDir1`, 777, (err)=>{
+            if(!err){
+                createSuccess = true;
+            }
+        });
+        await waitForTrue(()=>{return createSuccess;},1000);
+        expect(createSuccess).to.be.true;
+    });
+
+    it('Should phoenix fail mount:mkdir(path,mode, cb) if already exists', async function () {
+        // mount fs
+        let failed = false;
+        fs.mkdir(`${window.mountTestPath}/testDir1`, 777, (err)=>{
+            if(err){
+                failed = true;
+            }
+        });
+        await waitForTrue(()=>{return failed;},1000);
+        expect(failed).to.be.true;
+    });
+
+    it('Should phoenix fail virtual:mkdir(path,mode, cb) if already exists', async function () {
+        // virtual fs
+        let failed = false;
+        fs.mkdir(`${window.virtualTestPath}/testDir1`, 777, (err)=>{
+            if(err){
+                failed = true;
+            }
+        });
+        await waitForTrue(()=>{return failed;},1000);
+        expect(failed).to.be.true;
     });
 });

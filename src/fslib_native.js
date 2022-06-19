@@ -50,10 +50,24 @@ async function _listDir(path, handle, options, callback) {
     }
 }
 
-
-async function _mkdir(paretDirHandle, dirName, callback) {
+// never throws
+async function _subDirectoryExists(parentDirHandle, dirName) {
     try {
-        let childDirHandle = await paretDirHandle.getDirectoryHandle(dirName, { create: true });
+        await parentDirHandle.getDirectoryHandle(dirName);
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+async function _mkdir(parentDirHandle, dirName, callback) {
+    try {
+        let alreadyExists = await _subDirectoryExists(parentDirHandle, dirName);
+        if(alreadyExists){
+            callback(new Errors.EEXIST(`Folder ${dirName} already exists`));
+            return ;
+        }
+        let childDirHandle = await parentDirHandle.getDirectoryHandle(dirName, { create: true });
         if(callback){
             callback(null);
         }
@@ -68,7 +82,7 @@ async function _mkdir(paretDirHandle, dirName, callback) {
 
 
 function mkdir(path, mode, callback) {
-    if (arguments.length < 4) {
+    if (arguments.length < 3) {
         callback = mode;
     }
 
