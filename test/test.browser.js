@@ -266,6 +266,7 @@ describe('Browser main tests', function () {
         expect(errored).to.be.true;
     });
 
+    // folder copy tests
     it('Should phoenix copy folder from mount to filer path', async function () {
         await _createTestFolderInBasePath(window.mountTestPath, 'testDir2');
         let srcPath = `${window.mountTestPath}/testDir2`;
@@ -328,6 +329,87 @@ describe('Browser main tests', function () {
         let expectedPath = `${window.mountTestPath}/testDir9.5/testDir9`;
         await _createFolder(dstPath);
         await _verifyCopyFolder(srcPath, dstPath, expectedPath);
+    });
+
+    // file copy tests
+    async function _verifyCopyFile(srcPath, dstPath, expectedPath) {
+        let success = false;
+        fs.copy(srcPath, dstPath, (err)=>{
+            if(!err){
+                success = true;
+            }
+        });
+        await waitForTrue(()=>{return success;},1000);
+        expect(success).to.be.true;
+        expectedPath = expectedPath || dstPath;
+        expect(await _shouldExist(expectedPath)).to.be.true;
+    }
+    it('Should phoenix copy file from mount to filer path', async function () {
+        let dir = 'testDir10';
+        await _createTestFolderInBasePath(window.mountTestPath, dir);
+        let srcPath = `${window.mountTestPath}/${dir}/a.txt`;
+        let dstFolder = `${window.virtualTestPath}/${dir}`;
+        await _createFolder(dstFolder);
+        let dstPath = `${dstFolder}/temp.txt`;
+        await _verifyCopyFile(srcPath, dstPath);
+    });
+
+    it('Should phoenix copy file from filer to mount path', async function () {
+        let dir = 'testDir10.5';
+        await _createTestFolderInBasePath(window.virtualTestPath, dir);
+        let srcPath = `${window.virtualTestPath}/${dir}/a.txt`;
+        let dstFolder = `${window.mountTestPath}/${dir}`;
+        await _createFolder(dstFolder);
+        let dstPath = `${dstFolder}/temp.txt`;
+        await _verifyCopyFile(srcPath, dstPath);
+    });
+
+    it('Should phoenix copy file within same mount path', async function () {
+        let dir = 'testDir11';
+        await _createTestFolderInBasePath(window.mountTestPath, dir);
+        let srcPath = `${window.mountTestPath}/${dir}/a.txt`;
+        let dstPath = `${window.mountTestPath}/${dir}/lols.txt`;
+        await _verifyCopyFile(srcPath, dstPath);
+    });
+
+    it('Should phoenix copy file within same virtual fs path', async function () {
+        let dir = 'testDir12';
+        await _createTestFolderInBasePath(window.virtualTestPath, dir);
+        let srcPath = `${window.virtualTestPath}/${dir}/a.txt`;
+        let dstPath = `${window.virtualTestPath}/${dir}/lols.txt`;
+        await _verifyCopyFile(srcPath, dstPath);
+    });
+
+    it('Should phoenix fail copy file if dest mount file exist', async function () {
+        let dir = 'testDir13';
+        await _createTestFolderInBasePath(window.mountTestPath, dir);
+        let srcPath = `${window.mountTestPath}/${dir}/a.txt`;
+        let dstFile = `${window.mountTestPath}/${dir}/jj.txt`;
+        await _createFile(dstFile);
+        let fail = false;
+        fs.copy(srcPath, dstFile, (err)=>{
+            if(err){
+                fail = true;
+            }
+        });
+        await waitForTrue(()=>{return fail;},1000);
+        expect(fail).to.be.true;
+    });
+
+    it('Should phoenix fail copy file if dest virtual fs file exist', async function () {
+        let dir = 'testDir13';
+        await _createTestFolderInBasePath(window.virtualTestPath, dir);
+        let srcPath = `${window.virtualTestPath}/${dir}/a.txt`;
+        let dstFile = `${window.virtualTestPath}/${dir}/jj.txt`;
+        await _createFile(dstFile);
+        let fail = false;
+        fs.copy(srcPath, dstFile, (err)=>{
+            if(err){
+                fail = true;
+            }
+        });
+        await waitForTrue(()=>{return fail;},1000);
+        expect(fail).to.be.true;
     });
 
 });
