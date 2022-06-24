@@ -185,6 +185,17 @@ describe('Browser main tests', function () {
         expect(failed).to.be.true;
     });
 
+    it('Should phoenix rename fail if dst is a subpath of src', async function () {
+        let errored = false;
+        fs.rename('/a', '/a/b', (err)=>{
+            if(err){
+                errored = true;
+            }
+        });
+        await waitForTrue(()=>{return errored;},1000);
+        expect(errored).to.be.true;
+    });
+
     function _createFolder(path) {
         return new Promise((resolve, reject)=>{
             fs.mkdir(path, 777, (err)=>{
