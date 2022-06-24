@@ -18,7 +18,7 @@
     "test": "open-cli http://127.0.0.1:8080/test/index.html",
     "build-sw": "parcel build src/virtualfs.js --detailed-report",
     "build-nonopt": "parcel build src/virtualfs.js --detailed-report --no-optimize",
-    "build": "npm run eslint && npm run build-sw",
+    "build": "npm run eslint && npm run build-sw && echo '\\e[34m!!!please run build:dev if you are trying to debug!!!\\033[0m'",
     "build:dev": "npm run eslint && npm run build-nonopt",
     "predev": "npm run build",
     "serve": "http-server . -p 8080 -c-1",
