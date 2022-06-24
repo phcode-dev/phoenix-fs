@@ -103,7 +103,7 @@ function _triggerEvent(path, eventType) {
     path = pathLib.normalize(path);
     let event = {
         event: eventType,
-        parentDirPath: `${pathLib.dirname(path)}/`,
+        parentDirPath: pathLib.normalize(`${pathLib.dirname(path)}/`),
         entryName: pathLib.basename(path),
         path: path
     };

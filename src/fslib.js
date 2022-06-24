@@ -26,7 +26,7 @@ const {NativeFS} = require('./fslib_native');
 const {Constants} = require('./constants');
 const {Mounts} = require('./fslib_mounts');
 const {FsWatch} = require('./fslib_watch');
-const {filerCopy} = require('./filerlib_copy.js');
+const {globalCopy} = require('./filerlib_copy.js');
 
 let filerLib = null;
 let filerShell = null;
@@ -76,6 +76,11 @@ function _getFirstFunctionIndex(argsArray) {
         }
     }
     return -1;
+}
+
+function _isSubPathOf(dir, subDir) {
+    const relative = filerLib.path.relative(dir, subDir);
+    return relative && !relative.startsWith('..') && !filerLib.path.isAbsolute(relative);
 }
 
 const fileSystemLib = {
@@ -178,7 +183,8 @@ const fileSystemLib = {
         }
 
         if(Mounts.isMountPath(path)) {
-            throw new Errors.EPERM('Mount root directory cannot be deleted.');
+            callbackInterceptor(new Errors.EPERM('Mount root directory cannot be deleted.'));
+            return ;
         } else if(Mounts.isMountSubPath(path)) {
             return NativeFS.unlink(path, callbackInterceptor);
         }
@@ -198,13 +204,17 @@ const fileSystemLib = {
                 cb(...args);
             }
         }
-
+        if (_isSubPathOf(src, dst)){
+            callbackInterceptor(new Errors.EINVAL(`Error copying: ${dst} cannot be a subpath of ${src}`));
+            return ;
+        }
+        // we have two implementation here even though the globalCopy fn is capable of copying anywhere. Native has its
+        // own impl to prevent large number of file node io in fs access impl.
         if(Mounts.isMountSubPath(src) && Mounts.isMountSubPath(dst)) {
             return NativeFS.copy(src, dst, callbackInterceptor);
-        } else if(!Mounts.isMountSubPath(src) && !Mounts.isMountSubPath(dst)) {
-            return filerCopy(src, dst, callbackInterceptor);
+        } else {
+            return globalCopy(src, dst, callbackInterceptor);
         }
-        throw new Errors.ENOSYS('Phoenix fs copy across filer and native not yet supported');
     },
     showSaveDialog: function () {
         throw new Errors.ENOSYS('Phoenix fs showSaveDialog function not yet supported.');

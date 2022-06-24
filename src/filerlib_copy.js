@@ -39,7 +39,7 @@ async function _stat(path) {
     });
 }
 
-async function _mrdirIfNotPresent(path) {
+async function _mkdirIfNotPresent(path) {
     return new Promise(async (resolve, reject) => {
         fs.mkdir(path, async (err) => {
             err && err.code !== ERROR_CODES.EEXIST?
@@ -112,7 +112,7 @@ async function _copyTree(src, dst) {
         if(srcStat.isFile()){
             await _copyFileContents(entryPath, dstPath);
         } else { //dir
-            await _mrdirIfNotPresent(dstPath);
+            await _mkdirIfNotPresent(dstPath);
             await _copyTree(entryPath, dstPath);
         }
     }
@@ -123,9 +123,16 @@ async function _copyFolder(srcFolder, dst) {
     if(dstStat && dstStat.isFile()){
         throw new Errors.EEXIST(`Destination file already exists: ${dst}`);
     } else if(dstStat && dstStat.isDirectory()){
-        await _copyTree(srcFolder, dst);
+        let destSubFolderPath= `${dst}/${globalObject.path.basename(srcFolder)}`;
+        dstStat = await _stat(destSubFolderPath);
+        if(dstStat){
+            throw new Errors.EEXIST(`Destination folder already exists: ${destSubFolderPath}`);
+        }
+        await _mkdirIfNotPresent(destSubFolderPath);
+        await _copyTree(srcFolder, destSubFolderPath);
     } else {
-        throw new Errors.ENONET(`Destination folder does not exist: ${dst}`);
+        await _mkdirIfNotPresent(dst);
+        await _copyTree(srcFolder, dst);
     }
 }
 
@@ -148,10 +155,10 @@ async function copy(src, dst, callback) {
     }
 }
 
-function filerCopy(src, dst, cb) {
+function globalCopy(src, dst, cb) {
     copy(globalObject.path.normalize(src), globalObject.path.normalize(dst), cb);
 }
 
 module.exports ={
-    filerCopy
+    globalCopy
 };
