@@ -242,10 +242,12 @@ describe('Browser main tests', function () {
 
     async function _verifyCopyFolder(srcPath, dstPath, expectedPath) {
         let success = false;
-        fs.copy(srcPath, dstPath, (err)=>{
+        let actualCopiedPath = null;
+        fs.copy(srcPath, dstPath, (err, path)=>{
             if(!err){
                 success = true;
             }
+            actualCopiedPath = path;
         });
         await waitForTrue(()=>{return success;},1000);
         expect(success).to.be.true;
@@ -253,6 +255,7 @@ describe('Browser main tests', function () {
         expect(await _shouldExist(`${expectedPath}/a.txt`)).to.be.true;
         expect(await _shouldExist(`${expectedPath}/y`)).to.be.true;
         expect(await _shouldExist(`${expectedPath}/y/c.txt`)).to.be.true;
+        expect(actualCopiedPath).to.equal(expectedPath);
     }
 
     it('Should phoenix copy fail if dst is a subpath of src', async function () {
@@ -334,15 +337,18 @@ describe('Browser main tests', function () {
     // file copy tests
     async function _verifyCopyFile(srcPath, dstPath, expectedPath) {
         let success = false;
-        fs.copy(srcPath, dstPath, (err)=>{
+        let actualCopiedPath = null;
+        fs.copy(srcPath, dstPath, (err, path)=>{
             if(!err){
                 success = true;
             }
+            actualCopiedPath = path;
         });
         await waitForTrue(()=>{return success;},1000);
         expect(success).to.be.true;
         expectedPath = expectedPath || dstPath;
         expect(await _shouldExist(expectedPath)).to.be.true;
+        expect(actualCopiedPath).to.equal(expectedPath);
     }
     it('Should phoenix copy file from mount to filer path', async function () {
         let dir = 'testDir10';

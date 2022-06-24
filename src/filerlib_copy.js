@@ -86,7 +86,7 @@ async function _copyFile(srcFile, dst) {
         if(dstStat && dstStat.isDirectory()){
             let dstFilePath =`${parentDir}/${dstFileName}`;
             await _copyFileContents(srcFile, dstFilePath);
-            return;
+            return dstFilePath;
         } else {
             throw new Errors.EIO(`_copyFile Cannot create destination file: ${dst}`);
         }
@@ -96,6 +96,7 @@ async function _copyFile(srcFile, dst) {
     if(dstStat && dstStat.isDirectory()){
         let dstFilePath =`${dst}/${srcFileName}`;
         await _copyFileContents(srcFile, dstFilePath);
+        return dstFilePath;
     } else if(dstStat && dstStat.isFile()){
         throw new Errors.EEXIST(`_copyFile Destination file already exists: ${dst}`);
     } else {
@@ -130,9 +131,11 @@ async function _copyFolder(srcFolder, dst) {
         }
         await _mkdirIfNotPresent(destSubFolderPath);
         await _copyTree(srcFolder, destSubFolderPath);
+        return destSubFolderPath;
     } else {
         await _mkdirIfNotPresent(dst);
         await _copyTree(srcFolder, dst);
+        return dst;
     }
 }
 
@@ -144,11 +147,11 @@ async function copy(src, dst, callback) {
             return;
         }
         if (srcStat.isFile()) {
-            await _copyFile(src, dst);
-            callback(null);
+            let copiedPath = await _copyFile(src, dst);
+            callback(null, copiedPath);
         } else if (srcStat.isDirectory()) {
-            await _copyFolder(src, dst);
-            callback(null);
+            let copiedPath = await _copyFolder(src, dst);
+            callback(null, copiedPath);
         }
     } catch (e) {
         callback(new Errors.EIO(`${e}: Cannot copy src: ${src} to ${dst}`));

@@ -272,7 +272,8 @@ async function _getDestinationHandleForCopy(dst, srcBaseName, handleKindToCreate
         } else if (dstHandle && dstHandle.kind === Constants.KIND_DIRECTORY
             && handleKindToCreate === Constants.KIND_FILE) {
             const fileHandle = await dstHandle.getFileHandle(srcBaseName, {create: true});
-            resolve(fileHandle);
+            const dstPath = `${dst}/${srcBaseName}`;
+            resolve({handle: fileHandle, path:dstPath});
         } else if (dstHandle && dstHandle.kind === Constants.KIND_DIRECTORY
             && handleKindToCreate === Constants.KIND_DIRECTORY) {
             let dstChildHandle = await Mounts.getHandleFromPathIfPresent(`${dst}/${srcBaseName}`);
@@ -281,15 +282,18 @@ async function _getDestinationHandleForCopy(dst, srcBaseName, handleKindToCreate
                 return;
             }
             const directoryHandle = await dstHandle.getDirectoryHandle(srcBaseName, {create: true});
-            resolve(directoryHandle);
+            const dstPath = `${dst}/${srcBaseName}`;
+            resolve({handle: directoryHandle, path: dstPath});
         } else if (!dstHandle && dstParentHandle && dstParentHandle.kind === Constants.KIND_DIRECTORY
             && handleKindToCreate === Constants.KIND_FILE) {
             const fileHandle = await dstParentHandle.getFileHandle(dstBaseName, {create: true});
-            resolve(fileHandle);
+            const dstPath = `${dirPath}/${dstBaseName}`;
+            resolve({handle: fileHandle, path: dstPath});
         } else if (!dstHandle && dstParentHandle && dstParentHandle.kind === Constants.KIND_DIRECTORY
             && handleKindToCreate === Constants.KIND_DIRECTORY) {
             const fileHandle = await dstParentHandle.getDirectoryHandle(dstBaseName, {create: true});
-            resolve(fileHandle);
+            const dstPath = `${dirPath}/${dstBaseName}`;
+            resolve({handle: fileHandle, path: dstPath});
         } else {
             reject(new Errors.ENOENT(`Copy destination doesnt exist: ${dst}`));
         }
@@ -314,9 +318,9 @@ async function _copyFileFromHandles(srcFileHandle, dstHandle, optionalName) {
 
 async function _copyFileWithHandle(srcFileHandle, dst, srcFileName, callback) {
     try {
-        let dstHandle = await _getDestinationHandleForCopy(dst, srcFileName, Constants.KIND_FILE);
-        await _copyFileFromHandles(srcFileHandle, dstHandle);
-        callback(null);
+        let {handle, path} = await _getDestinationHandleForCopy(dst, srcFileName, Constants.KIND_FILE);
+        await _copyFileFromHandles(srcFileHandle, handle);
+        callback(null, path);
     } catch (e) {
         callback(e);
     }
@@ -339,9 +343,9 @@ async function _treeCopy(srcFolderHandle, dstFolderHandle, recursive) {
 
 async function _copyFolderWithHandle(srcFolderHandle, dst, srcFileName, callback, recursive) {
     try {
-        let dstFolderHandle = await _getDestinationHandleForCopy(dst, srcFileName, Constants.KIND_DIRECTORY);
-        await _treeCopy(srcFolderHandle, dstFolderHandle, recursive);
-        callback(null);
+        let {handle, path} = await _getDestinationHandleForCopy(dst, srcFileName, Constants.KIND_DIRECTORY);
+        await _treeCopy(srcFolderHandle, handle, recursive);
+        callback(null, path);
     } catch (e) {
         callback(e);
     }
