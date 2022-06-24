@@ -1,7 +1,7 @@
 {
   "name": "@phcode/fs",
   "description": "Phoenix virtual file system over filer/ browser fs access APIs",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "keywords": [
     "phoenix",
     "browser",
