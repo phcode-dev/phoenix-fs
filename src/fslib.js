@@ -163,7 +163,10 @@ const fileSystemLib = {
                 cb(...args);
             }
         }
-
+        if (_isSubPathOf(oldPath, newPath)){
+            callbackInterceptor(new Errors.EINVAL(`Error renaming: ${newPath} cannot be a subpath of ${oldPath}`));
+            return ;
+        }
         if(Mounts.isMountPath(oldPath) || Mounts.isMountPath(newPath)) {
             throw new Errors.EPERM('Mount root directory cannot be deleted.');
         } else if(Mounts.isMountSubPath(oldPath) && Mounts.isMountSubPath(newPath)) {
