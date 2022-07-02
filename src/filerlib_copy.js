@@ -25,8 +25,8 @@
 const {ERR_CODES, Errors} = require('./errno');
 const ERROR_CODES = ERR_CODES.ERROR_CODES;
 
-async function _stat(path) {
-    return new Promise(async (resolve, reject) => {
+function _stat(path) {
+    return new Promise((resolve, reject) => {
         fs.stat(path, async (err, stat) => {
             if(err && err.code === ERROR_CODES.ENOENT){
                 resolve(null);
@@ -39,8 +39,8 @@ async function _stat(path) {
     });
 }
 
-async function _mkdirIfNotPresent(path) {
-    return new Promise(async (resolve, reject) => {
+function _mkdirIfNotPresent(path) {
+    return new Promise((resolve, reject) => {
         fs.mkdir(path, async (err) => {
             err && err.code !== ERROR_CODES.EEXIST?
                 reject(err):
@@ -49,9 +49,9 @@ async function _mkdirIfNotPresent(path) {
     });
 }
 
-async function _readDir(path) {
-    return new Promise(async (resolve, reject) => {
-        fs.readdir(path, async (err, listing) => {
+function _readDir(path) {
+    return new Promise((resolve, reject) => {
+        fs.readdir(path, (err, listing) => {
             if(err) {
                 reject(err);
             } else {
@@ -61,9 +61,9 @@ async function _readDir(path) {
     });
 }
 
-async function _copyFileContents(src, dst) {
-    return new Promise(async (resolve, reject) => {
-        fs.readFile(src, async (err, data) => {
+function _copyFileContents(src, dst) {
+    return new Promise((resolve, reject) => {
+        fs.readFile(src, (err, data) => {
             if(err) {
                 reject(err);
             } else {

@@ -17,7 +17,7 @@
  */
 
 // jshint ignore: start
-/*global TextDecoder, buffer, globalObject*/
+/*global buffer, globalObject*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
@@ -261,41 +261,46 @@ async function unlink(path, callback) {
 }
 
 async function _getDestinationHandleForCopy(dst, srcBaseName, handleKindToCreate) {
-    return new Promise(async (resolve, reject) => {
-        dst = globalObject.path.normalize(dst);
-        let dirPath= globalObject.path.dirname(dst);
-        let dstBaseName= globalObject.path.basename(dst);
-        let dstHandle = await Mounts.getHandleFromPathIfPresent(dst);
-        let dstParentHandle = await Mounts.getHandleFromPathIfPresent(dirPath);
-        if (dstHandle && dstHandle.kind === Constants.KIND_FILE) {
-            reject(new Errors.EEXIST(`Destination file already exists: ${dst}`));
-        } else if (dstHandle && dstHandle.kind === Constants.KIND_DIRECTORY
-            && handleKindToCreate === Constants.KIND_FILE) {
-            const fileHandle = await dstHandle.getFileHandle(srcBaseName, {create: true});
-            const dstPath = `${dst}/${srcBaseName}`;
-            resolve({handle: fileHandle, path:dstPath});
-        } else if (dstHandle && dstHandle.kind === Constants.KIND_DIRECTORY
-            && handleKindToCreate === Constants.KIND_DIRECTORY) {
-            let dstChildHandle = await Mounts.getHandleFromPathIfPresent(`${dst}/${srcBaseName}`);
-            if(dstChildHandle){
-                reject(new Errors.EEXIST(`Copy destination already exists: ${dst}/${srcBaseName}`));
-                return;
+    return new Promise(async (resolve, reject) => { // eslint-disable-line
+        // eslint async executors are needed here. we explicitly catch so it's fine.
+        try{
+            dst = globalObject.path.normalize(dst);
+            let dirPath= globalObject.path.dirname(dst);
+            let dstBaseName= globalObject.path.basename(dst);
+            let dstHandle = await Mounts.getHandleFromPathIfPresent(dst);
+            let dstParentHandle = await Mounts.getHandleFromPathIfPresent(dirPath);
+            if (dstHandle && dstHandle.kind === Constants.KIND_FILE) {
+                reject(new Errors.EEXIST(`Destination file already exists: ${dst}`));
+            } else if (dstHandle && dstHandle.kind === Constants.KIND_DIRECTORY
+                && handleKindToCreate === Constants.KIND_FILE) {
+                const fileHandle = await dstHandle.getFileHandle(srcBaseName, {create: true});
+                const dstPath = `${dst}/${srcBaseName}`;
+                resolve({handle: fileHandle, path:dstPath});
+            } else if (dstHandle && dstHandle.kind === Constants.KIND_DIRECTORY
+                && handleKindToCreate === Constants.KIND_DIRECTORY) {
+                let dstChildHandle = await Mounts.getHandleFromPathIfPresent(`${dst}/${srcBaseName}`);
+                if(dstChildHandle){
+                    reject(new Errors.EEXIST(`Copy destination already exists: ${dst}/${srcBaseName}`));
+                    return;
+                }
+                const directoryHandle = await dstHandle.getDirectoryHandle(srcBaseName, {create: true});
+                const dstPath = `${dst}/${srcBaseName}`;
+                resolve({handle: directoryHandle, path: dstPath});
+            } else if (!dstHandle && dstParentHandle && dstParentHandle.kind === Constants.KIND_DIRECTORY
+                && handleKindToCreate === Constants.KIND_FILE) {
+                const fileHandle = await dstParentHandle.getFileHandle(dstBaseName, {create: true});
+                const dstPath = `${dirPath}/${dstBaseName}`;
+                resolve({handle: fileHandle, path: dstPath});
+            } else if (!dstHandle && dstParentHandle && dstParentHandle.kind === Constants.KIND_DIRECTORY
+                && handleKindToCreate === Constants.KIND_DIRECTORY) {
+                const fileHandle = await dstParentHandle.getDirectoryHandle(dstBaseName, {create: true});
+                const dstPath = `${dirPath}/${dstBaseName}`;
+                resolve({handle: fileHandle, path: dstPath});
+            } else {
+                reject(new Errors.ENOENT(`Copy destination doesnt exist: ${dst}`));
             }
-            const directoryHandle = await dstHandle.getDirectoryHandle(srcBaseName, {create: true});
-            const dstPath = `${dst}/${srcBaseName}`;
-            resolve({handle: directoryHandle, path: dstPath});
-        } else if (!dstHandle && dstParentHandle && dstParentHandle.kind === Constants.KIND_DIRECTORY
-            && handleKindToCreate === Constants.KIND_FILE) {
-            const fileHandle = await dstParentHandle.getFileHandle(dstBaseName, {create: true});
-            const dstPath = `${dirPath}/${dstBaseName}`;
-            resolve({handle: fileHandle, path: dstPath});
-        } else if (!dstHandle && dstParentHandle && dstParentHandle.kind === Constants.KIND_DIRECTORY
-            && handleKindToCreate === Constants.KIND_DIRECTORY) {
-            const fileHandle = await dstParentHandle.getDirectoryHandle(dstBaseName, {create: true});
-            const dstPath = `${dirPath}/${dstBaseName}`;
-            resolve({handle: fileHandle, path: dstPath});
-        } else {
-            reject(new Errors.ENOENT(`Copy destination doesnt exist: ${dst}`));
+        } catch (e) {
+            reject(e);
         }
     });
 }
