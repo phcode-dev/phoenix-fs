@@ -201,14 +201,24 @@ function mountNativeFolder(optionalDirHandle, callback) {
         });
 }
 
-async function _verifyDirNodeCanBeRead(handle) {
+async function _verifyOrRequestPermission(handle) {
+    const options = {
+        mode: 'read'
+    };
+
+    // Check if permission was already granted. If so, return true.
     try {
-        if(handle.kind === Constants.KIND_DIRECTORY){
-            let entries = handle.entries();
-            await entries.next();
+        let status = await handle.queryPermission(options);
+        if (status === 'granted') {
+            return null;
         }
-        return null;
-    } catch (e) {
+        status = await handle.requestPermission(options);
+        if (status === 'granted') {
+            return null;
+        } else {
+            return new Errors.EACCES(`Dir permissions not granted ${handle.name}`);
+        }
+    } catch(e){
         if(e.code === e.NOT_FOUND_ERR){
             return new Errors.ENOENT(`Dir does not exist ${handle.name}`, e);
         } else {
@@ -218,12 +228,6 @@ async function _verifyDirNodeCanBeRead(handle) {
 }
 
 async function _findLeafNode(currentNode, pathArray, currentIndex, callback) {
-    let error = await _verifyDirNodeCanBeRead(currentNode);
-    if(error){
-        callback(error);
-        return;
-    }
-
     let pathLength = pathArray.length;
     if(currentIndex === pathLength) {
         callback(null, currentNode);
@@ -255,30 +259,7 @@ async function _findLeafNode(currentNode, pathArray, currentIndex, callback) {
     }
 }
 
-async function _verifyOrRequestPermission(fileHandle, callback) {
-    const options = {
-        mode: 'read'
-    };
-
-    // Check if permission was already granted. If so, return true.
-    try {
-        let status = await fileHandle.queryPermission(options);
-        if (status === 'granted') {
-            callback(true);
-            return;
-        }
-        status = await fileHandle.requestPermission(options);
-        if (status === 'granted') {
-            callback(true);
-        } else {
-            callback(false);
-        }
-    } catch(e){
-        callback(false);
-    }
-}
-
-function getHandleFromPath(normalisedPath, callback) {
+async function getHandleFromPath(normalisedPath, callback) {
     const pathNodes = normalisedPath.split('/');
     const currentMounts = MountPointsStore.getMountPoints();
     if(pathNodes.length < 3 || pathNodes[0] !== '' || pathNodes[1] !== 'mnt'){
@@ -289,13 +270,12 @@ function getHandleFromPath(normalisedPath, callback) {
         callback(new Errors.ENOENT('Path does not exist: ', normalisedPath));
         return;
     }
-    _verifyOrRequestPermission(mountPoint, (permitted)=>{
-        if(permitted){
-            _findLeafNode(mountPoint, pathNodes, 3, callback);
-        } else {
-            callback(new Errors.EACCES('permission denied on path: ' + normalisedPath));
-        }
-    });
+    let error = await _verifyOrRequestPermission(mountPoint);
+    if(error){
+        callback(error);
+        return;
+    }
+    _findLeafNode(mountPoint, pathNodes, 3, callback);
 }
 
 async function getHandleFromPathIfPresent(normalisedPath) {
