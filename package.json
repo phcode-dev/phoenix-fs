@@ -36,7 +36,7 @@
   ],
   "devDependencies": {
     "browser-mime": "1.0.1",
-    "eslint": "5.16.0",
+    "eslint": "8.19.0",
     "filer": "1.4.1",
     "http-server": "14.1.0",
     "idb": "^7.0.1",
