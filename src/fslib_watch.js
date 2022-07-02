@@ -17,7 +17,7 @@
  */
 
 // jshint ignore: start
-/*global BroadcastChannel, globalObject, virtualfs*/
+/*global globalObject, virtualfs*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 

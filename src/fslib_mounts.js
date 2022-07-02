@@ -17,7 +17,7 @@
  */
 
 // jshint ignore: start
-/*global BroadcastChannel, globalObject*/
+/*global globalObject*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
@@ -162,18 +162,23 @@ function _getNewMountName(handleToMount) {
  * @private
  */
 function _mountHandle(handleToMount) {
-    return new Promise(async (resolve, reject) => {
-        let path = await _getPathIfAlreadyMounted(handleToMount);
-        if(path){
-            resolve(path);
-        } else {
-            let mountName = _getNewMountName(handleToMount);
-            if(!mountName) {
-                reject('Mount name not fount');
+    return new Promise(async (resolve, reject) => { // eslint-disable-line
+        // eslint async executors are needed here. we explicitly catch so it's fine.
+        try{
+            let path = await _getPathIfAlreadyMounted(handleToMount);
+            if(path){
+                resolve(path);
             } else {
-                await MountPointsStore.addMountPoint(mountName, handleToMount);
-                resolve(`${Constants.MOUNT_POINT_ROOT}/${mountName}`);
+                let mountName = _getNewMountName(handleToMount);
+                if(!mountName) {
+                    reject('Mount name not fount');
+                } else {
+                    await MountPointsStore.addMountPoint(mountName, handleToMount);
+                    resolve(`${Constants.MOUNT_POINT_ROOT}/${mountName}`);
+                }
             }
+        } catch (e) {
+            reject(e);
         }
     });
 }

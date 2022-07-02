@@ -17,7 +17,7 @@
  */
 
 // jshint ignore: start
-/*global process, globalObject*/
+/*global globalObject*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
