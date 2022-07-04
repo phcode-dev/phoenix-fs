@@ -31,7 +31,7 @@ globalObject.Filer = Filer;
 globalObject.buffer = buffer;
 globalObject.virtualfs = {
     urlParams : urlParams,
-    debugMode : urlParams.get('debug'),
+    debugMode : globalObject.debugMode || urlParams.get('debug') === 'true',
     env: env
 };
 

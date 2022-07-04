@@ -22,15 +22,22 @@ will be created with the necessary fs APIs.
 * The fs apis have compatibility with nodejs like fs APIs.
 See filer docs for API docs: https://filer.js.org/
 
-```js
-// using CDN link in your html file
+```html
+<!--// using CDN link in your html file-->
 <script src="https://unpkg.com/@phcode/fs@latest/dist/virtualfs.js"/>
 
-// OR to get a particular version, change latest to the version you need:
+<!--// OR to get a particular version, change latest to the version you need:-->
 <script src="https://unpkg.com/@phcode/fs@1.0.4/dist/virtualfs.js"/>
 
-// OR if you did npm install
+<!--// OR if you did npm install-->
 <script src="<project_root>/node_modules/@phcode/fs/dist/virtualfs.js"/>
+
+<!--If you want to enable debug mode add this before the import script line-->
+<script type="text/javascript">
+    window.debugMode = true; // if you want to enable debug mode
+    // alternatively set your URL query string parameter, https://yoursite?debugMode=true
+</script>
+
 ```
 
 ### Usage in web-worker in browser
