@@ -63,21 +63,31 @@ To build it:
 
 ```bash
 npm install
-npm run build
+npm run build:dev
 ```
 
-To Test:
+## Tests in Browser
 While developing, use test script to open browser tests.
-* Test runs tests against the release build.
+* Test runs tests against the built artifacts in dist folder.
 * You should `npm run build` if any changes were made to the src folder
 ```bash
-npm run build
-npm run test 
+npm run build:dev
+npm run test-browser
 ```
 
+NOTE: you can also use `npm run serve` to also start a web server for development.
 
-The js library will be built in `dist/nohost-sw.js`. 
-NOTE: you can also use `npm run dev` to also start a web server for development.
+## Tests in tauri
+Again, Test runs tests against the built artifacts in dist folder.
+To develop tests in tauri, run the following commands: 
+```bash
+npm run build:dev
+npm run test-tauri
+```
+
+When you run `npm run test-tauri`, the tauri app will get built and will listen for changes in
+`test` folder. Continue writing tests and tauri will reload the tests in the app.
+You should `npm run build` if any changes were made to the `src` folder as we dont listen to changes in the `src folder`.
 
 ### Publishing to npm
 
