@@ -1,0 +1,75 @@
+{
+    "$schema": "../node_modules/@tauri-apps/cli/schema.json",
+    "build": {
+        "beforeBuildCommand": "",
+        "beforeDevCommand": "",
+        "devPath": "../test/",
+        "distDir": "../test/",
+        "withGlobalTauri": true
+    },
+    "package": {
+        "productName": "Phoenix File system",
+        "version": "2.0.0"
+    },
+    "tauri": {
+        "allowlist": {
+            "all": true,
+            "fs": {
+                "all": true,
+                "scope": [
+                    "**"
+                ]
+            }
+        },
+        "bundle": {
+            "active": true,
+            "category": "DeveloperTool",
+            "copyright": "Copyright (c) 2022 - present Core.ai",
+            "icon": [
+                "icons/32x32.png",
+                "icons/128x128.png",
+                "icons/128x128@2x.png",
+                "icons/icon.icns",
+                "icons/icon.ico"
+            ],
+            "identifier": "fs.phcode",
+            "longDescription": "Phoenix virtual file system over filer/ browser fs access/ tauri / phoenix web socket APIs.",
+            "appimage": {
+            },
+            "macOS": {
+                "entitlements": null,
+                "exceptionDomain": "localhost",
+                "frameworks": [],
+                "providerShortName": null,
+                "signingIdentity": null
+            },
+            "shortDescription": "Phoenix virtual file system over filer/ browser fs access/ tauri / phoenix web socket APIs.",
+            "targets": [
+                "appimage",
+                "nsis",
+                "app",
+                "dmg",
+                "updater"
+            ],
+            "windows": {
+                "digestAlgorithm": "sha256",
+                "timestampUrl": "http://timestamp.comodoca.com"
+            }
+        },
+        "security": {
+            "csp": null
+        },
+        "windows": [
+            {
+                "fullscreen": false,
+                "height": 768,
+                "minHeight": 600,
+                "resizable": true,
+                "title": "Phoenix File System",
+                "width": 1024,
+                "minWidth": 800,
+                "acceptFirstMouse": true
+            }
+        ]
+    }
+}

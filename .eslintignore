@@ -2,3 +2,5 @@
 src/thirdparty/**
 src/**/*-min.js
 src/**/*.min.js
+test/virtualfs.js
+test/virtualfs.js.map

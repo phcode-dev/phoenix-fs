@@ -1,0 +1,25 @@
+[package]
+name = "phoenix-fs"
+version = "2.0.0"
+description = "Phoenix virtual file system over filer/ browser fs access/ tauri / phoenix web socket APIs."
+authors = ["arun@core.ai"]
+license = "GNU AGPL 3.0"
+repository = "https://github.com/phcode-dev/phoenix-fs"
+edition = "2021"
+rust-version = "1.70"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[build-dependencies]
+tauri-build = { version = "1.4.0", features = [] }
+
+[dependencies]
+tauri = { version = "1.4.1", features = [ "api-all", "devtools"] }
+
+[features]
+# by default Tauri runs in production mode
+# when `tauri dev` runs it is executed with `cargo run --no-default-features` if `devPath` is an URL
+default = ["custom-protocol"]
+# this feature is used used for production builds where `devPath` points to the filesystem
+# DO NOT remove this
+custom-protocol = ["tauri/custom-protocol"]

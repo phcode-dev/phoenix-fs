@@ -12,13 +12,15 @@
   "homepage": "https://github.com/phcode-dev/phoenix-fs",
   "license": "GNU-AGPL3.0",
   "scripts": {
+    "tauri": "tauri",
     "eslint": "eslint src test",
     "eslint:fix": "eslint src test --fix",
     "test": "open-cli http://127.0.0.1:8080/test/index.html",
+    "_copy-test-dist": "node src-build/copy-dist-to-test.js",
     "_build-optimized": "parcel build src/virtualfs.js --detailed-report",
     "_build-nonopt": "parcel build src/virtualfs.js --detailed-report --no-optimize",
-    "build": "npm run eslint && npm run _build-optimized && echo '\\\\\\\\e[34m!!!please run build:dev if you are trying to debug!!!\\\\\\\\033[0m'",
-    "build:dev": "npm run eslint && npm run _build-nonopt",
+    "build": "npm run eslint && npm run _build-optimized && echo '\\\\\\\\e[34m!!!please run build:dev if you are trying to debug!!!\\\\\\\\033[0m' && npm run _copy-test-dist",
+    "build:dev": "npm run eslint && npm run _build-nonopt && npm run _copy-test-dist",
     "serve": "http-server . -p 8080 -c-1",
     "bumpPatchVersion": "npm --no-git-tag-version version patch",
     "bumpPatchVersionWithGitTag": "npm version patch",
@@ -33,6 +35,7 @@
     "dist/virtualfs.js.map"
   ],
   "devDependencies": {
+    "@tauri-apps/cli": "1.4.0",
     "browser-mime": "1.0.1",
     "eslint": "8.19.0",
     "filer": "1.4.1",

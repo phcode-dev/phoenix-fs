@@ -5,7 +5,10 @@ node_modules
 .idea
 .parcel-cache
 
+src-tauri/target
 dist/*
 !dist/virtualfs.js
 !dist/virtualfs.js.map
+test/virtualfs.js
+test/virtualfs.js.map
 phcode-fs-*.tgz

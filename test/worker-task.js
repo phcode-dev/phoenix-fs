@@ -1,5 +1,5 @@
 /* global Filer, fs*/
-importScripts('../../dist/virtualfs.js');
+importScripts('virtualfs.js');
 const urlParams = new URLSearchParams(location.search);
 const mountTestPath = urlParams.get('mountTestPath');
 console.log('mountTestPath: ', mountTestPath);
