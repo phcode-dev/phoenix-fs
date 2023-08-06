@@ -5,52 +5,51 @@
     <title>Mocha Tests distribution</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <link rel="stylesheet" href="https://unpkg.com/mocha/mocha.css"/>
-</head>
-<body>
-<div id="mocha"></div>
+    <script src="https://unpkg.com/chai/chai.js"></script>
+    <script src="https://unpkg.com/mocha/mocha.js"></script>
 
-<script src="https://unpkg.com/chai/chai.js"></script>
-<script src="https://unpkg.com/mocha/mocha.js"></script>
+    <script class="mocha-init">
+        mocha.setup('bdd');
+        mocha.checkLeaks();
+    </script>
 
-<script class="mocha-init">
-    mocha.setup('bdd');
-    mocha.checkLeaks();
-</script>
+    <script src="virtualfs.js"></script>
+    <script src="testInit.js"></script>
+    <script src="test.browser.js"></script>
+    <script src="test.worker.js"></script>
+    <script class="mocha-exec">
+        function openFolderAndRunTests() {
+            function mountNative() {
+                fs.mountNativeFolder((err, mountTestPath)=>{
+                    if(!mountTestPath[0]) return;
+                    localStorage.setItem('mountTestPath', mountTestPath[0]);
+                    document.getElementById('openFolderButton').style = "display:none";
+                    window.mountTestPath = `${mountTestPath[0]}/test`;
+                    mocha.run();
+                });
+            }
 
-<script src="virtualfs.js"></script>
-<script src="testInit.js"></script>
-<script src="test.browser.js"></script>
-<script src="test.worker.js"></script>
-<script class="mocha-exec">
-    function openFolderAndRunTests() {
-        function mountNative() {
-            fs.mountNativeFolder((err, mountTestPath)=>{
-                if(!mountTestPath[0]) return;
-                localStorage.setItem('mountTestPath', mountTestPath[0]);
-                document.getElementById('openFolderButton').style = "display:none";
-                window.mountTestPath = `${mountTestPath[0]}/test`;
-                mocha.run();
-            });
-        }
-
-        let mountTestPath = localStorage.getItem('mountTestPath');
-        if(!mountTestPath) {
-            mountNative();
-            return;
-        }
-        window.virtualTestPath = '/test';
-        fs.readdir(mountTestPath, (err, contents)=>{
-            console.log("Checking if any mounted paths exists: ",err, contents);
-            if(err){
+            let mountTestPath = localStorage.getItem('mountTestPath');
+            if(!mountTestPath) {
                 mountNative();
                 return;
             }
-            window.mountTestPath = `${mountTestPath}/test`;
-            document.getElementById('openFolderButton').style = "display:none";
-            mocha.run();
-        });
-    }
-</script>
+            window.virtualTestPath = '/test';
+            fs.readdir(mountTestPath, (err, contents)=>{
+                console.log("Checking if any mounted paths exists: ",err, contents);
+                if(err){
+                    mountNative();
+                    return;
+                }
+                window.mountTestPath = `${mountTestPath}/test`;
+                document.getElementById('openFolderButton').style = "display:none";
+                mocha.run();
+            });
+        }
+    </script>
+</head>
+<body>
+<div id="mocha"></div>
 <button id="openFolderButton" onclick="openFolderAndRunTests()">Open any blank folder to start tests. Warning - folder contents will be deleted!!!!</button>
 </body>
 </html>
