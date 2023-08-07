@@ -16,9 +16,9 @@ function phoenixFsCheck() {
     }
 }
 
-function checkWriteInPath() {
+function checkWriteInPath(path) {
     console.log('worker: checkWriteInPath');
-    fs.writeFile(`${TestPath}/workerWrite.txt`, 'hello World', 'utf8', (err)=>{
+    fs.writeFile(path, 'hello World', 'utf8', (err)=>{
         if(!err){
             postMessage('writeCheck.ok');
             return;
@@ -27,9 +27,9 @@ function checkWriteInPath() {
     });
 }
 
-function checkReadInPath() {
+function checkReadInPath(path) {
     console.log('worker: checkReadInPath');
-    fs.readFile(`${TestPath}/workerWrite.txt`,  (err, content)=>{
+    fs.readFile(path,  (err, content)=>{
         if(!err && content === 'hello World'){
             postMessage('readCheck.ok');
             return;
@@ -38,9 +38,9 @@ function checkReadInPath() {
     });
 }
 
-function checkReadDirInPath() {
+function checkReadDirInPath(path) {
     console.log('worker: checkReadDirInPath');
-    fs.readdir(`${TestPath}`, {withFileTypes: true} , (err, contents)=>{
+    fs.readdir(path, {withFileTypes: true} , (err, contents)=>{
         if(!err && contents[0].type){
             postMessage('readDirCheck.ok');
             return;
@@ -49,9 +49,9 @@ function checkReadDirInPath() {
     });
 }
 
-function checkDeleteInPath() {
+function checkDeleteInPath(path) {
     console.log('worker: checkDeleteInPath');
-    fs.unlink(`${TestPath}/workerWrite.txt`,  (err)=>{
+    fs.unlink(path,  (err)=>{
         if(!err){
             postMessage('deleteCheck.ok');
             return;
@@ -62,14 +62,15 @@ function checkDeleteInPath() {
 
 self.addEventListener('message', (event) => {
     console.log('Worker received: ', event);
-    let command = event.data.command;
+    const command = event.data.command;
+    const path = event.data.path;
     switch (command) {
     case 'fsCheck': fsCheck(); break;
     case 'phoenixFsCheck': phoenixFsCheck(); break;
-    case 'writeCheck': checkWriteInPath(); break;
-    case 'readCheck': checkReadInPath(); break;
-    case 'deleteCheck': checkDeleteInPath(); break;
-    case 'readDirCheck': checkReadDirInPath(); break;
+    case 'writeCheck': checkWriteInPath(path); break;
+    case 'readCheck': checkReadInPath(path); break;
+    case 'deleteCheck': checkDeleteInPath(path); break;
+    case 'readDirCheck': checkReadDirInPath(path); break;
     default: console.error('unknown worker command: ', command);
     }
 }, false);

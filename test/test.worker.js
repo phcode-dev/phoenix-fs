@@ -81,28 +81,28 @@ describe('web worker tests', function () {
 
     it('Should phoenix native write in worker', async function () {
         messageFromWorker = null;
-        worker.postMessage({command: 'writeCheck'});
+        worker.postMessage({command: 'writeCheck', path: `${window.mountTestPath}/workerWrite.txt`});
         let status = await waitForWorkerMessage('writeCheck.ok', 1000);
         expect(status).to.be.true;
     });
 
     it('Should phoenix native read in worker', async function () {
         messageFromWorker = null;
-        worker.postMessage({command: 'readCheck'});
+        worker.postMessage({command: 'readCheck', path: `${window.mountTestPath}/workerWrite.txt`});
         let status = await waitForWorkerMessage('readCheck.ok', 1000);
         expect(status).to.be.true;
     });
 
     it('Should phoenix native read dir withFileTypes in worker', async function () {
         messageFromWorker = null;
-        worker.postMessage({command: 'readDirCheck'});
+        worker.postMessage({command: 'readDirCheck', path: `${window.mountTestPath}`});
         let status = await waitForWorkerMessage('readDirCheck.ok', 1000);
         expect(status).to.be.true;
     });
 
     it('Should phoenix native delete in worker', async function () {
         messageFromWorker = null;
-        worker.postMessage({command: 'deleteCheck'});
+        worker.postMessage({command: 'deleteCheck', path: `${window.mountTestPath}/workerWrite.txt`});
         let status = await waitForWorkerMessage('deleteCheck.ok', 1000);
         expect(status).to.be.true;
     });
