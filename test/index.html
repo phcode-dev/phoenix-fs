@@ -16,6 +16,7 @@
     <script src="virtualfs.js"></script>
     <script src="testInit.js"></script>
     <script src="test.browser.js"></script>
+    <script src="test-fs-access.browser.js"></script>
     <script src="test.worker.js"></script>
     <script class="mocha-exec">
         function openFolderAndRunTests() {
@@ -46,9 +47,18 @@
                 mocha.run();
             });
         }
+        function runTauriTests() {
+            if(window.__TAURI__){
+                window.tauriTests = true;
+                console.log("Tauri env detected. running tauri specific tests.");
+                document.getElementById('openFolderButton').style = "display:none";
+                window.virtualTestPath = '/test';
+                mocha.run();
+            }
+        }
     </script>
 </head>
-<body>
+<body onload="runTauriTests()">
 <div id="mocha"></div>
 <button id="openFolderButton" onclick="openFolderAndRunTests()">Open any blank folder to start tests. Warning - folder contents will be deleted!!!!</button>
 </body>
