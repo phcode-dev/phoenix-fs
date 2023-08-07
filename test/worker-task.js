@@ -1,8 +1,5 @@
 /* global Filer, fs*/
 importScripts('virtualfs.js');
-const urlParams = new URLSearchParams(location.search);
-const TestPath = urlParams.get('TestPath');
-console.log('TestPath: ', TestPath);
 
 function fsCheck() {
     if(Filer && Filer.fs && Filer.Shell){

@@ -23,6 +23,10 @@ describe('web worker tests', function () {
     }
 
     async function _requestWritePerm() {
+        if(window.__TAURI__){
+            // fs access apis not tested in tauri
+            return;
+        }
         return new Promise((resolve, reject)=>{
             fs.writeFile(`${window.mountTestPath}/forTestPermissionOnFolder.txt`, 'hello World', 'utf8', (err)=>{
                 if(err){
@@ -34,16 +38,22 @@ describe('web worker tests', function () {
             });
         });
     }
+
     before(async function () {
         await _clean();
         await _init();
         await _requestWritePerm();
-        worker = new Worker(`worker-task.js?debug=true&TestPath=${window.mountTestPath}`);
+        worker = new Worker(`worker-task.js?debug=true`);
         console.log(worker);
         worker.onmessage= function (event) {
             console.log('From Worker:', event);
             messageFromWorker = event.data;
         };
+    });
+
+    beforeEach(async function () {
+        await _clean();
+        await _init();
     });
 
     async function waitForWorkerMessage(message, timeoutMs) {
@@ -79,14 +89,19 @@ describe('web worker tests', function () {
         expect(status).to.be.true;
     });
 
-    it('Should phoenix native write in worker', async function () {
+    async function _writeFile() {
         messageFromWorker = null;
         worker.postMessage({command: 'writeCheck', path: `${window.mountTestPath}/workerWrite.txt`});
         let status = await waitForWorkerMessage('writeCheck.ok', 1000);
         expect(status).to.be.true;
+    }
+
+    it('Should phoenix native write in worker', async function () {
+        await _writeFile();
     });
 
     it('Should phoenix native read in worker', async function () {
+        await _writeFile();
         messageFromWorker = null;
         worker.postMessage({command: 'readCheck', path: `${window.mountTestPath}/workerWrite.txt`});
         let status = await waitForWorkerMessage('readCheck.ok', 1000);
@@ -94,6 +109,7 @@ describe('web worker tests', function () {
     });
 
     it('Should phoenix native read dir withFileTypes in worker', async function () {
+        await _writeFile();
         messageFromWorker = null;
         worker.postMessage({command: 'readDirCheck', path: `${window.mountTestPath}`});
         let status = await waitForWorkerMessage('readDirCheck.ok', 1000);
