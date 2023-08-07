@@ -38,7 +38,7 @@ describe('web worker tests', function () {
         await _clean();
         await _init();
         await _requestWritePerm();
-        worker = new Worker(`worker-task.js?debug=true&mountTestPath=${window.mountTestPath}`);
+        worker = new Worker(`worker-task.js?debug=true&TestPath=${window.mountTestPath}`);
         console.log(worker);
         worker.onmessage= function (event) {
             console.log('From Worker:', event);
@@ -81,29 +81,29 @@ describe('web worker tests', function () {
 
     it('Should phoenix native write in worker', async function () {
         messageFromWorker = null;
-        worker.postMessage('writeMountCheck');
-        let status = await waitForWorkerMessage('writeMountCheck.ok', 1000);
+        worker.postMessage('writeCheck');
+        let status = await waitForWorkerMessage('writeCheck.ok', 1000);
         expect(status).to.be.true;
     });
 
     it('Should phoenix native read in worker', async function () {
         messageFromWorker = null;
-        worker.postMessage('readMountCheck');
-        let status = await waitForWorkerMessage('readMountCheck.ok', 1000);
+        worker.postMessage('readCheck');
+        let status = await waitForWorkerMessage('readCheck.ok', 1000);
         expect(status).to.be.true;
     });
 
     it('Should phoenix native read dir withFileTypes in worker', async function () {
         messageFromWorker = null;
-        worker.postMessage('readDirMountCheck');
-        let status = await waitForWorkerMessage('readDirMountCheck.ok', 1000);
+        worker.postMessage('readDirCheck');
+        let status = await waitForWorkerMessage('readDirCheck.ok', 1000);
         expect(status).to.be.true;
     });
 
     it('Should phoenix native delete in worker', async function () {
         messageFromWorker = null;
-        worker.postMessage('deleteMountCheck');
-        let status = await waitForWorkerMessage('deleteMountCheck.ok', 1000);
+        worker.postMessage('deleteCheck');
+        let status = await waitForWorkerMessage('deleteCheck.ok', 1000);
         expect(status).to.be.true;
     });
 });

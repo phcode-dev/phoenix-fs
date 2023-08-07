@@ -1,8 +1,8 @@
 /* global Filer, fs*/
 importScripts('virtualfs.js');
 const urlParams = new URLSearchParams(location.search);
-const mountTestPath = urlParams.get('mountTestPath');
-console.log('mountTestPath: ', mountTestPath);
+const TestPath = urlParams.get('TestPath');
+console.log('TestPath: ', TestPath);
 
 function fsCheck() {
     if(Filer && Filer.fs && Filer.Shell){
@@ -16,44 +16,44 @@ function phoenixFsCheck() {
     }
 }
 
-function checkWriteInMountPath() {
-    console.log('worker: checkWriteInMountPath');
-    fs.writeFile(`${mountTestPath}/workerWrite.txt`, 'hello World', 'utf8', (err)=>{
+function checkWriteInPath() {
+    console.log('worker: checkWriteInPath');
+    fs.writeFile(`${TestPath}/workerWrite.txt`, 'hello World', 'utf8', (err)=>{
         if(!err){
-            postMessage('writeMountCheck.ok');
+            postMessage('writeCheck.ok');
             return;
         }
         console.log(err);
     });
 }
 
-function checkReadInMountPath() {
-    console.log('worker: checkReadInMountPath');
-    fs.readFile(`${mountTestPath}/workerWrite.txt`,  (err, content)=>{
+function checkReadInPath() {
+    console.log('worker: checkReadInPath');
+    fs.readFile(`${TestPath}/workerWrite.txt`,  (err, content)=>{
         if(!err && content === 'hello World'){
-            postMessage('readMountCheck.ok');
+            postMessage('readCheck.ok');
             return;
         }
         console.log('file read:', err, content);
     });
 }
 
-function checkReadDirInMountPath() {
-    console.log('worker: checkReadDirInMountPath');
-    fs.readdir(`${mountTestPath}`, {withFileTypes: true} , (err, contents)=>{
+function checkReadDirInPath() {
+    console.log('worker: checkReadDirInPath');
+    fs.readdir(`${TestPath}`, {withFileTypes: true} , (err, contents)=>{
         if(!err && contents[0].type){
-            postMessage('readDirMountCheck.ok');
+            postMessage('readDirCheck.ok');
             return;
         }
         console.log('file read:', err, contents);
     });
 }
 
-function checkDeleteInMountPath() {
-    console.log('worker: checkDeleteInMountPath');
-    fs.unlink(`${mountTestPath}/workerWrite.txt`,  (err)=>{
+function checkDeleteInPath() {
+    console.log('worker: checkDeleteInPath');
+    fs.unlink(`${TestPath}/workerWrite.txt`,  (err)=>{
         if(!err){
-            postMessage('deleteMountCheck.ok');
+            postMessage('deleteCheck.ok');
             return;
         }
         console.log('file read:', err);
@@ -66,10 +66,10 @@ self.addEventListener('message', (event) => {
     switch (command) {
     case 'fsCheck': fsCheck(); break;
     case 'phoenixFsCheck': phoenixFsCheck(); break;
-    case 'writeMountCheck': checkWriteInMountPath(); break;
-    case 'readMountCheck': checkReadInMountPath(); break;
-    case 'deleteMountCheck': checkDeleteInMountPath(); break;
-    case 'readDirMountCheck': checkReadDirInMountPath(); break;
+    case 'writeCheck': checkWriteInPath(); break;
+    case 'readCheck': checkReadInPath(); break;
+    case 'deleteCheck': checkDeleteInPath(); break;
+    case 'readDirCheck': checkReadDirInPath(); break;
     default: console.error('unknown worker command: ', command);
     }
 }, false);
