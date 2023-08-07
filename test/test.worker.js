@@ -1,6 +1,10 @@
 /* global expect,fs */
 
-describe('web worker tests', function () {
+const TEST_TYPE_FS_ACCESS = "fsaccess";
+const TEST_TYPE_FILER = "filer";
+const TEST_TYPE_TAURI = "tauri";
+
+function _setupTests(testType) {
     let testPath;
     let worker;
     let messageFromWorker = null;
@@ -40,8 +44,15 @@ describe('web worker tests', function () {
         });
     }
 
+    function _setupTestPath() {
+        switch (testType) {
+        case TEST_TYPE_FS_ACCESS: testPath = window.mountTestPath;
+        case TEST_TYPE_FILER: testPath = window.virtualTestPath;
+        }
+    }
+
     before(async function () {
-        testPath = window.mountTestPath;
+        _setupTestPath();
         await _clean();
         await _init();
         await _requestWritePerm();
@@ -124,9 +135,18 @@ describe('web worker tests', function () {
     });
 
     it('Should phoenix native delete in worker', async function () {
+        await _writeFile();
         messageFromWorker = null;
         worker.postMessage({command: 'deleteCheck', path: `${testPath}/workerWrite.txt`});
         let status = await waitForWorkerMessage('deleteCheck.ok', 1000);
         expect(status).to.be.true;
     });
+}
+
+describe('web worker fs access tests', function () {
+    _setupTests(TEST_TYPE_FS_ACCESS);
+});
+
+describe('web worker filer tests', function () {
+    _setupTests(TEST_TYPE_FILER);
 });

@@ -26,7 +26,7 @@ function checkWriteInPath(path) {
 
 function checkReadInPath(path) {
     console.log('worker: checkReadInPath');
-    fs.readFile(path,  (err, content)=>{
+    fs.readFile(path, 'utf8', (err, content)=>{
         if(!err && content === 'hello World'){
             postMessage('readCheck.ok');
             return;
