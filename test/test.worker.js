@@ -6,7 +6,7 @@ function _setupTests(testType) {
     let messageFromWorker = null;
 
     async function _clean() {
-        console.log('cleaning: ', testPath);
+        console.log(`cleaning: `, testPath);
         let cleanSuccess = false;
         fs.unlink(testPath, ()=>{
             cleanSuccess = true;
@@ -15,7 +15,7 @@ function _setupTests(testType) {
     }
 
     async function _init() {
-        console.log('mkdir: ', testPath);
+        console.log(`mkdir: `, testPath);
         let cleanSuccess = false;
         fs.mkdirs(testPath, 777 ,true, ()=>{
             cleanSuccess = true;
@@ -29,7 +29,7 @@ function _setupTests(testType) {
             return;
         }
         return new Promise((resolve, reject)=>{
-            fs.writeFile(`${testPath}/forTestPermissionOnFolder.txt`, 'hello World', 'utf8', (err)=>{
+            fs.writeFile(`${testPath}/forTestPermissionOnFolder.txt`, `hello World`, `utf8`, (err)=>{
                 if(err){
                     console.log(err);
                     reject(err);
@@ -56,7 +56,7 @@ function _setupTests(testType) {
         worker = new Worker(`worker-task.js?debug=true`);
         console.log(worker);
         worker.onmessage= function (event) {
-            console.log('From Worker:', event);
+            console.log(`From Worker:`, event);
             messageFromWorker = event.data;
         };
     });
@@ -90,63 +90,63 @@ function _setupTests(testType) {
         });
     }
 
-    it('Should load Filer in worker', async function () {
+    it(`Should load Filer in worker`, async function () {
         messageFromWorker = null;
-        worker.postMessage({command: 'fsCheck'});
-        let status = await waitForWorkerMessage('fsCheck.ok', 1000);
+        worker.postMessage({command: `fsCheck`});
+        let status = await waitForWorkerMessage(`fsCheck.ok`, 1000);
         expect(status).to.be.true;
     });
 
-    it('Should load phoenix fs in worker', async function () {
+    it(`Should load phoenix fs in worker`, async function () {
         messageFromWorker = null;
-        worker.postMessage({command: 'phoenixFsCheck'});
-        let status = await waitForWorkerMessage('phoenixFsCheck.ok', 1000);
+        worker.postMessage({command: `phoenixFsCheck`});
+        let status = await waitForWorkerMessage(`phoenixFsCheck.ok`, 1000);
         expect(status).to.be.true;
     });
 
     async function _writeFile() {
         messageFromWorker = null;
-        worker.postMessage({command: 'writeCheck', path: `${testPath}/workerWrite.txt`});
-        let status = await waitForWorkerMessage('writeCheck.ok', 1000);
+        worker.postMessage({command: `writeCheck`, path: `${testPath}/workerWrite.txt`});
+        let status = await waitForWorkerMessage(`writeCheck.ok`, 1000);
         expect(status).to.be.true;
     }
 
-    it('Should phoenix native write in worker', async function () {
+    it(`Should phoenix ${testType} write in worker`, async function () {
         await _writeFile();
     });
 
-    it('Should phoenix native read in worker', async function () {
+    it(`Should phoenix ${testType} read in worker`, async function () {
         await _writeFile();
         messageFromWorker = null;
-        worker.postMessage({command: 'readCheck', path: `${testPath}/workerWrite.txt`});
-        let status = await waitForWorkerMessage('readCheck.ok', 1000);
+        worker.postMessage({command: `readCheck`, path: `${testPath}/workerWrite.txt`});
+        let status = await waitForWorkerMessage(`readCheck.ok`, 1000);
         expect(status).to.be.true;
     });
 
-    it('Should phoenix native read dir withFileTypes in worker', async function () {
+    it(`Should phoenix ${testType} read dir withFileTypes in worker`, async function () {
         await _writeFile();
         messageFromWorker = null;
-        worker.postMessage({command: 'readDirCheck', path: `${testPath}`});
-        let status = await waitForWorkerMessage('readDirCheck.ok', 1000);
+        worker.postMessage({command: `readDirCheck`, path: `${testPath}`});
+        let status = await waitForWorkerMessage(`readDirCheck.ok`, 1000);
         expect(status).to.be.true;
     });
 
-    it('Should phoenix native delete in worker', async function () {
+    it(`Should phoenix ${testType} delete in worker`, async function () {
         await _writeFile();
         messageFromWorker = null;
-        worker.postMessage({command: 'deleteCheck', path: `${testPath}/workerWrite.txt`});
-        let status = await waitForWorkerMessage('deleteCheck.ok', 1000);
+        worker.postMessage({command: `deleteCheck`, path: `${testPath}/workerWrite.txt`});
+        let status = await waitForWorkerMessage(`deleteCheck.ok`, 1000);
         expect(status).to.be.true;
     });
 }
 
-describe('web worker filer tests', function () {
+describe(`web worker filer tests`, function () {
     _setupTests(TEST_TYPE_FILER);
 });
 
-describe('web worker fs access tests', function () {
+describe(`web worker fs access tests`, function () {
     if(window.__TAURI__){
-        it('fs access tests are disabled in tauri', function () {});
+        it(`fs access tests are disabled in tauri`, function () {});
         return;
     } else {
         _setupTests(TEST_TYPE_FS_ACCESS);
