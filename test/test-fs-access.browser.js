@@ -1,29 +1,10 @@
-/* global expect , Filer, fs*/
+/* global expect , Filer, fs, waitForTrue*/
 
 describe('Browser vfs fs access mount points tests', function () {
 
     if(window.__TAURI__){
         it('fs access tests are disabled in tauri', function () {});
         return;
-    }
-
-    async function waitForTrue(checkFn, timeoutMs) {
-        let startTime = Date.now();
-        return new Promise((resolve)=>{
-            let interVal;
-            function checkMessage() {
-                if(checkFn() === true){
-                    resolve(true);
-                    clearInterval(interVal);
-                }
-                let elapsedTime = Date.now() - startTime;
-                if(elapsedTime > timeoutMs){
-                    resolve(false);
-                    clearInterval(interVal);
-                }
-            }
-            interVal = setInterval(checkMessage, 10);
-        });
     }
 
     async function _clean() {

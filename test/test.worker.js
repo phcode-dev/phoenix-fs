@@ -4,25 +4,6 @@ describe('web worker tests', function () {
     let worker;
     let messageFromWorker = null;
 
-    async function waitForTrue(checkFn, timeoutMs) {
-        let startTime = Date.now();
-        return new Promise((resolve)=>{
-            let interVal;
-            function checkMessage() {
-                if(checkFn() === true){
-                    resolve(true);
-                    clearInterval(interVal);
-                }
-                let elapsedTime = Date.now() - startTime;
-                if(elapsedTime > timeoutMs){
-                    resolve(false);
-                    clearInterval(interVal);
-                }
-            }
-            interVal = setInterval(checkMessage, 10);
-        });
-    }
-
     async function _clean() {
         console.log('cleaning: ', window.mountTestPath);
         let cleanSuccess = false;
