@@ -1,6 +1,12 @@
 /* global expect , Filer, fs*/
 
-describe('Browser copy tests between filer, fs access, tauri and tauri-ws', function () {
+describe('Browser copy tests between filer and fs access', function () {
+
+    if(window.__TAURI__){
+        it('fs access tests are disabled in tauri', function () {});
+        return;
+    }
+
     async function waitForTrue(checkFn, timeoutMs) {
         let startTime = Date.now();
         return new Promise((resolve)=>{
@@ -27,17 +33,31 @@ describe('Browser copy tests between filer, fs access, tauri and tauri-ws', func
             cleanSuccess = true;
         });
         await waitForTrue(()=>{return cleanSuccess;},10000);
+
+        console.log('cleaning: ', window.mountTestPath);
+        cleanSuccess = false;
+        fs.unlink(window.mountTestPath, ()=>{
+            cleanSuccess = true;
+        });
+        await waitForTrue(()=>{return cleanSuccess;},10000);
     }
 
     beforeEach(async function () {
         // setup test folders
         await _clean();
         console.log('mkdir: ', window.virtualTestPath);
-        let cleanSuccess = false;
+        let makeSuccess = false;
         fs.mkdirs(window.virtualTestPath, 777 ,true, ()=>{
-            cleanSuccess = true;
+            makeSuccess = true;
         });
-        await waitForTrue(()=>{return cleanSuccess;},10000);
+        await waitForTrue(()=>{return makeSuccess;},10000);
+
+        console.log('mkdir: ', window.mountTestPath);
+        makeSuccess = false;
+        fs.mkdirs(window.mountTestPath, 777 ,true, ()=>{
+            makeSuccess = true;
+        });
+        await waitForTrue(()=>{return makeSuccess;},10000);
     });
 
     afterEach(async function () {
@@ -91,13 +111,16 @@ describe('Browser copy tests between filer, fs access, tauri and tauri-ws', func
         });
     }
 
+    const TEST_FOLDERS = ["y", "z"];
+    const TEST_FILES = ["a.txt", "b.txt", "y/c.txt"];
     async function _createTestFolderInBasePath(path, folderName) {
         await _createFolder(`${path}/${folderName}`);
-        await _createFile(`${path}/${folderName}/a.txt`);
-        await _createFile(`${path}/${folderName}/b.txt`);
-        await _createFolder(`${path}/${folderName}/y`);
-        await _createFolder(`${path}/${folderName}/z`);
-        await _createFile(`${path}/${folderName}/y/c.txt`);
+        for(let folder of TEST_FOLDERS){
+            await _createFolder(`${path}/${folderName}/${folder}`);
+        }
+        for(let file of TEST_FILES){
+            await _createFile(`${path}/${folderName}/${file}`);
+        }
     }
 
     async function _verifyCopyFolder(srcPath, dstPath, expectedPath) {
@@ -112,9 +135,12 @@ describe('Browser copy tests between filer, fs access, tauri and tauri-ws', func
         await waitForTrue(()=>{return success;},1000);
         expect(success).to.be.true;
         expectedPath = expectedPath || dstPath;
-        expect(await _shouldExist(`${expectedPath}/a.txt`)).to.be.true;
-        expect(await _shouldExist(`${expectedPath}/y`)).to.be.true;
-        expect(await _shouldExist(`${expectedPath}/y/c.txt`)).to.be.true;
+        for(let folder of TEST_FOLDERS){
+            expect(await _shouldExist(`${expectedPath}/${folder}`)).to.be.true;
+        }
+        for(let file of TEST_FILES){
+            expect(await _shouldExist(`${expectedPath}/${file}`)).to.be.true;
+        }
         expect(actualCopiedPath).to.equal(expectedPath);
     }
 
