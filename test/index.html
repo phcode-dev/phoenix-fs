@@ -11,6 +11,9 @@
                 location.reload();
             }
         });
+        const TEST_TYPE_FS_ACCESS = "fs access";
+        const TEST_TYPE_FILER = "filer";
+        const TEST_TYPE_TAURI = "tauri";
     </script>
     <script src="https://unpkg.com/chai/chai.js"></script>
     <script src="https://unpkg.com/mocha/mocha.js"></script>
@@ -22,8 +25,7 @@
 
     <script src="virtualfs.js"></script>
     <script src="testInit.js"></script>
-    <script src="test-filer.browser.js"></script>
-    <script src="test-fs-access.browser.js"></script>
+    <script src="test.browser.js"></script>
     <script src="test-copy-filer-fs-access.browser.js"></script>
     <script src="test.worker.js"></script>
     <script class="mocha-exec">

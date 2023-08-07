@@ -1,9 +1,5 @@
 /* global expect,fs */
 
-const TEST_TYPE_FS_ACCESS = "fsaccess";
-const TEST_TYPE_FILER = "filer";
-const TEST_TYPE_TAURI = "tauri";
-
 function _setupTests(testType) {
     let testPath;
     let worker;
@@ -46,8 +42,9 @@ function _setupTests(testType) {
 
     function _setupTestPath() {
         switch (testType) {
-        case TEST_TYPE_FS_ACCESS: testPath = window.mountTestPath;
-        case TEST_TYPE_FILER: testPath = window.virtualTestPath;
+        case TEST_TYPE_FS_ACCESS: testPath = window.mountTestPath;break;
+        case TEST_TYPE_FILER: testPath = window.virtualTestPath;break;
+        default: throw new Error("unknown file system impl");
         }
     }
 
@@ -143,6 +140,10 @@ function _setupTests(testType) {
     });
 }
 
+describe('web worker filer tests', function () {
+    _setupTests(TEST_TYPE_FILER);
+});
+
 describe('web worker fs access tests', function () {
     if(window.__TAURI__){
         it('fs access tests are disabled in tauri', function () {});
@@ -150,8 +151,4 @@ describe('web worker fs access tests', function () {
     } else {
         _setupTests(TEST_TYPE_FS_ACCESS);
     }
-});
-
-describe('web worker filer tests', function () {
-    _setupTests(TEST_TYPE_FILER);
 });
