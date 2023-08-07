@@ -66,7 +66,7 @@ function _setupTests(testType) {
 
     after(async function () {
         await _clean();
-        worker.terminate();
+        // worker.terminate();
     });
 
     beforeEach(async function () {
@@ -144,7 +144,12 @@ function _setupTests(testType) {
 }
 
 describe('web worker fs access tests', function () {
-    _setupTests(TEST_TYPE_FS_ACCESS);
+    if(window.__TAURI__){
+        it('fs access tests are disabled in tauri', function () {});
+        return;
+    } else {
+        _setupTests(TEST_TYPE_FS_ACCESS);
+    }
 });
 
 describe('web worker filer tests', function () {

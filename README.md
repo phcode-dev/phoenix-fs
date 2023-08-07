@@ -80,14 +80,25 @@ NOTE: you can also use `npm run serve` to also start a web server for developmen
 ## Tests in tauri
 Again, Test runs tests against the built artifacts in dist folder.
 To develop tests in tauri, run the following commands: 
+1. First, build the artifacts in the `dist` folder by running:
+
 ```bash
 npm run build:dev
-npm run test-tauri
 ```
 
-When you run `npm run test-tauri`, the tauri app will get built and will listen for changes in
-`test` folder. Continue writing tests and tauri will reload the tests in the app.
-You should `npm run build` if any changes were made to the `src` folder as we dont listen to changes in the `src folder`.
+2. Next, initiate the tests by executing:
+
+```bash
+npm run test-tauri
+```
+This command will build the Tauri app and run the tests against the built artifacts.
+
+While developing tests, keep the following points in mind:
+- After making changes to the files in the `test` folder, press the `F5` key to reload and apply the changes to the tests.
+- If you modify any files in the `src` folder, generate the `virtualfs.js` dist files by running `npm run build`,
+  and then press `F5` to reload the changes for testing.
+- For debugging purposes, you can open the developer tools by pressing `F12`, `Ctrl-Shift-i`, or `Cmd-Shift-i`,
+  depending on your operating system.
 
 ### Publishing to npm
 

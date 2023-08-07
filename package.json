@@ -24,6 +24,7 @@
     "build": "npm run eslint && npm run _build-optimized && echo '\\\\\\\\e[34m!!!please run build:dev if you are trying to debug!!!\\\\\\\\033[0m' && npm run _copy-test-dist",
     "build:dev": "npm run eslint && npm run _build-nonopt && npm run _copy-test-dist",
     "serve": "http-server . -p 8080 -c-1",
+    "_serve-tauri": "http-server . -p 8081 -c-1",
     "bumpPatchVersion": "npm --no-git-tag-version version patch",
     "bumpPatchVersionWithGitTag": "npm version patch",
     "release": "npm run build && npm run bumpPatchVersionWithGitTag"
