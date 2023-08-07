@@ -3,6 +3,44 @@
 describe('web worker tests', function () {
     let worker;
     let messageFromWorker = null;
+
+    async function waitForTrue(checkFn, timeoutMs) {
+        let startTime = Date.now();
+        return new Promise((resolve)=>{
+            let interVal;
+            function checkMessage() {
+                if(checkFn() === true){
+                    resolve(true);
+                    clearInterval(interVal);
+                }
+                let elapsedTime = Date.now() - startTime;
+                if(elapsedTime > timeoutMs){
+                    resolve(false);
+                    clearInterval(interVal);
+                }
+            }
+            interVal = setInterval(checkMessage, 10);
+        });
+    }
+
+    async function _clean() {
+        console.log('cleaning: ', window.mountTestPath);
+        let cleanSuccess = false;
+        fs.unlink(window.mountTestPath, ()=>{
+            cleanSuccess = true;
+        });
+        await waitForTrue(()=>{return cleanSuccess;},10000);
+    }
+
+    async function _init() {
+        console.log('mkdir: ', window.mountTestPath);
+        let cleanSuccess = false;
+        fs.mkdirs(window.mountTestPath, 777 ,true, ()=>{
+            cleanSuccess = true;
+        });
+        await waitForTrue(()=>{return cleanSuccess;},10000);
+    }
+
     async function _requestWritePerm() {
         return new Promise((resolve, reject)=>{
             fs.writeFile(`${window.mountTestPath}/forTestPermissionOnFolder.txt`, 'hello World', 'utf8', (err)=>{
@@ -16,6 +54,8 @@ describe('web worker tests', function () {
         });
     }
     before(async function () {
+        await _clean();
+        await _init();
         await _requestWritePerm();
         worker = new Worker(`worker-task.js?debug=true&mountTestPath=${window.mountTestPath}`);
         console.log(worker);
