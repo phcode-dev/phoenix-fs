@@ -62,7 +62,7 @@ function checkDeleteInPath() {
 
 self.addEventListener('message', (event) => {
     console.log('Worker received: ', event);
-    let command = event.data;
+    let command = event.data.command;
     switch (command) {
     case 'fsCheck': fsCheck(); break;
     case 'phoenixFsCheck': phoenixFsCheck(); break;
