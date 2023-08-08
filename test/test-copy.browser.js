@@ -9,9 +9,6 @@ function _getPathForTestType(testType) {
 }
 
 function _setupTests(testTypeSrc, testTypeDst) {
-    if(testTypeSrc === testTypeDst){
-        throw new Error("Source and destination file system types cannot be the same.");
-    }
     let srcTestPath, destTestPath;
     async function _clean() {
         console.log(`cleaning: `, srcTestPath);
@@ -30,8 +27,8 @@ function _setupTests(testTypeSrc, testTypeDst) {
     }
 
     before(async function () {
-        srcTestPath = _getPathForTestType(testTypeSrc);
-        destTestPath = _getPathForTestType(testTypeDst);
+        srcTestPath = _getPathForTestType(testTypeSrc) + '/src';
+        destTestPath = _getPathForTestType(testTypeDst)+ '/dest';
     });
 
     beforeEach(async function () {
@@ -148,22 +145,6 @@ function _setupTests(testTypeSrc, testTypeDst) {
     });
 
     // folder copy tests
-    it(`Should phoenix copy folder from ${testTypeDst} to ${testTypeSrc} path`, async function () {
-        await _createTestFolderInBasePath(destTestPath, `testDir2`);
-        let srcPath = `${destTestPath}/testDir2`;
-        let dstPath = `${srcTestPath}/testDir2`;
-        await _verifyCopyFolder(srcPath, dstPath);
-    });
-
-    it(`Should phoenix copy overwrite folder from ${testTypeDst} to ${testTypeSrc} path if already exist`, async function () {
-        await _createTestFolderInBasePath(destTestPath, `testDir3`);
-        let srcPath = `${destTestPath}/testDir3`;
-        let dstPath = `${srcTestPath}/testDir3`;
-        let expectedPath = `${srcTestPath}/testDir3/testDir3`;
-        await _createFolder(dstPath);
-        await _verifyCopyFolder(srcPath, dstPath, expectedPath);
-    });
-
     it(`Should phoenix copy folder from ${testTypeSrc} to ${testTypeDst} path`, async function () {
         await _createTestFolderInBasePath(srcTestPath, `testDir4`);
         let srcPath = `${srcTestPath}/testDir4`;
@@ -176,38 +157,6 @@ function _setupTests(testTypeSrc, testTypeDst) {
         let srcPath = `${srcTestPath}/testDir5`;
         let dstPath = `${destTestPath}/testDir5`;
         let expectedPath = `${destTestPath}/testDir5/testDir5`;
-        await _createFolder(dstPath);
-        await _verifyCopyFolder(srcPath, dstPath, expectedPath);
-    });
-
-    it(`Should phoenix copy folder from ${testTypeSrc} to ${testTypeSrc} path`, async function () {
-        await _createTestFolderInBasePath(srcTestPath, `testDir6`);
-        let srcPath = `${srcTestPath}/testDir6`;
-        let dstPath = `${srcTestPath}/testDir6.5`;
-        await _verifyCopyFolder(srcPath, dstPath);
-    });
-
-    it(`Should phoenix copy overwrite folder from ${testTypeSrc} to ${testTypeSrc} path if already exist`, async function () {
-        await _createTestFolderInBasePath(srcTestPath, `testDir7`);
-        let srcPath = `${srcTestPath}/testDir7`;
-        let dstPath = `${srcTestPath}/testDir7.5`;
-        let expectedPath = `${srcTestPath}/testDir7.5/testDir7`;
-        await _createFolder(dstPath);
-        await _verifyCopyFolder(srcPath, dstPath, expectedPath);
-    });
-
-    it(`Should phoenix copy folder from ${testTypeDst} to ${testTypeDst} path`, async function () {
-        await _createTestFolderInBasePath(destTestPath, `testDir8`);
-        let srcPath = `${destTestPath}/testDir8`;
-        let dstPath = `${destTestPath}/testDir8.5`;
-        await _verifyCopyFolder(srcPath, dstPath);
-    });
-
-    it(`Should phoenix copy as sub-folder from ${testTypeDst} to ${testTypeDst} if dest path already exist`, async function () {
-        await _createTestFolderInBasePath(destTestPath, `testDir9`);
-        let srcPath = `${destTestPath}/testDir9`;
-        let dstPath = `${destTestPath}/testDir9.5`;
-        let expectedPath = `${destTestPath}/testDir9.5/testDir9`;
         await _createFolder(dstPath);
         await _verifyCopyFolder(srcPath, dstPath, expectedPath);
     });
@@ -228,15 +177,6 @@ function _setupTests(testTypeSrc, testTypeDst) {
         expect(await _shouldExist(expectedPath)).to.be.true;
         expect(actualCopiedPath).to.equal(expectedPath);
     }
-    it(`Should phoenix copy file from ${testTypeDst} to ${testTypeSrc} path`, async function () {
-        let dir = `testDir10`;
-        await _createTestFolderInBasePath(destTestPath, dir);
-        let srcPath = `${destTestPath}/${dir}/a.txt`;
-        let dstFolder = `${srcTestPath}/${dir}`;
-        await _createFolder(dstFolder);
-        let dstPath = `${dstFolder}/temp.txt`;
-        await _verifyCopyFile(srcPath, dstPath);
-    });
 
     it(`Should phoenix copy file from ${testTypeSrc} to ${testTypeDst} path`, async function () {
         let dir = `testDir10.5`;
@@ -248,14 +188,6 @@ function _setupTests(testTypeSrc, testTypeDst) {
         await _verifyCopyFile(srcPath, dstPath);
     });
 
-    it(`Should phoenix copy file within same ${testTypeDst} path`, async function () {
-        let dir = `testDir11`;
-        await _createTestFolderInBasePath(destTestPath, dir);
-        let srcPath = `${destTestPath}/${dir}/a.txt`;
-        let dstPath = `${destTestPath}/${dir}/lols.txt`;
-        await _verifyCopyFile(srcPath, dstPath);
-    });
-
     it(`Should phoenix copy file within same ${testTypeSrc} fs path`, async function () {
         let dir = `testDir12`;
         await _createTestFolderInBasePath(srcTestPath, dir);
@@ -264,23 +196,7 @@ function _setupTests(testTypeSrc, testTypeDst) {
         await _verifyCopyFile(srcPath, dstPath);
     });
 
-    it(`Should phoenix fail copy file if dest ${testTypeDst} file exist`, async function () {
-        let dir = `testDir13`;
-        await _createTestFolderInBasePath(destTestPath, dir);
-        let srcPath = `${destTestPath}/${dir}/a.txt`;
-        let dstFile = `${destTestPath}/${dir}/jj.txt`;
-        await _createFile(dstFile);
-        let fail = false;
-        fs.copy(srcPath, dstFile, (err)=>{
-            if(err){
-                fail = true;
-            }
-        });
-        await waitForTrue(()=>{return fail;},1000);
-        expect(fail).to.be.true;
-    });
-
-    it(`Should phoenix fail copy file if dest ${testTypeSrc} fs file exist`, async function () {
+    it(`Should phoenix fail copy file within same ${testTypeSrc} if dest file exist`, async function () {
         let dir = `testDir13`;
         await _createTestFolderInBasePath(srcTestPath, dir);
         let srcPath = `${srcTestPath}/${dir}/a.txt`;
@@ -297,10 +213,32 @@ function _setupTests(testTypeSrc, testTypeDst) {
     });
 }
 
-describe(`Browser copy tests between filer and fs access`, function () {
+// between filer and fs access start
+describe(`Browser copy tests from "filer" to "filer"`, function () {
+    _setupTests(TEST_TYPE_FILER, TEST_TYPE_FILER);
+});
+
+describe(`Browser copy tests from "filer" to "fs access"`, function () {
     if(window.__TAURI__){
         it(`fs access tests are disabled in tauri`, function () {});
         return;
     }
     _setupTests(TEST_TYPE_FILER, TEST_TYPE_FS_ACCESS);
 });
+
+describe(`Browser copy tests from "fs access" to "filer"`, function () {
+    if(window.__TAURI__){
+        it(`fs access tests are disabled in tauri`, function () {});
+        return;
+    }
+    _setupTests(TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER);
+});
+
+describe(`Browser copy tests from "fs access" to "fs access"`, function () {
+    if(window.__TAURI__){
+        it(`fs access tests are disabled in tauri`, function () {});
+        return;
+    }
+    _setupTests(TEST_TYPE_FS_ACCESS, TEST_TYPE_FS_ACCESS);
+});
+// between filer and fs access end
