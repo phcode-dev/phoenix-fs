@@ -37,27 +37,27 @@ let filerShell = null;
  * Asynchronous operation. No arguments other than a possible exception
  * are given to the completion callback.
  */
-function mkdir_p (fsLib, path, mode, callback, position) {
+function _mkdir_p (fsLib, path, mode, callback, _position) {
     const osSep = '/';
     const parts = filerLib.path.normalize(path).split(osSep);
 
     mode = mode || process.umask();
-    position = position || 0;
+    _position = _position || 0;
 
-    if (position >= parts.length) {
+    if (_position >= parts.length) {
         return callback(null);
     }
 
-    var directory = parts.slice(0, position + 1).join(osSep) || osSep;
+    var directory = parts.slice(0, _position + 1).join(osSep) || osSep;
     fsLib.stat(directory, function(err) {
         if (err === null) {
-            mkdir_p(fsLib, path, mode, callback, position + 1);
+            _mkdir_p(fsLib, path, mode, callback, _position + 1);
         } else {
             fsLib.mkdir(directory, mode, function (error) {
                 if (error && error.code !== 'EEXIST') {
                     return callback(error);
                 } else {
-                    mkdir_p(fsLib, path, mode, callback, position + 1);
+                    _mkdir_p(fsLib, path, mode, callback, _position + 1);
                 }
             });
         }
@@ -249,7 +249,7 @@ const fileSystemLib = {
         if (!recursive) {
             fileSystemLib.mkdir(path, mode, callback);
         } else {
-            mkdir_p(fileSystemLib, path, mode, callback);
+            _mkdir_p(fileSystemLib, path, mode, callback);
         }
     },
     BYTE_ARRAY_ENCODING: NativeFS.BYTE_ARRAY_ENCODING,

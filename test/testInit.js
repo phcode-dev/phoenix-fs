@@ -21,4 +21,4 @@ window.waitForTrue = async function(checkFn, timeoutMs) {
         }
         interVal = setInterval(checkMessage, 10);
     });
-}
+};

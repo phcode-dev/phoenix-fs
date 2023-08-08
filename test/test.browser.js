@@ -1,4 +1,4 @@
-/* global expect , Filer, fs, waitForTrue*/
+/* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER*/
 
 function _setupTests(testType) {
     let testPath;

@@ -1,10 +1,10 @@
-/* global expect , Filer, fs, waitForTrue*/
+/* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER*/
 
 function _getPathForTestType(testType) {
     switch (testType) {
-        case TEST_TYPE_FS_ACCESS: return window.mountTestPath;
-        case TEST_TYPE_FILER: return window.virtualTestPath;
-        default: throw new Error("unknown file system impl");
+    case TEST_TYPE_FS_ACCESS: return window.mountTestPath;
+    case TEST_TYPE_FILER: return window.virtualTestPath;
+    default: throw new Error("unknown file system impl");
     }
 }
 
