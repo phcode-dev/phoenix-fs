@@ -57,6 +57,25 @@ fs.mountNativeFolder((err, mountPathArray)=>{
 });
 ```
 
+### Usage in Tauri
+
+Make sure to use tauri with [`withglobaltauri`](https://tauri.app/v1/api/config/#buildconfig.withglobaltauri) option set in tauri config.
+Install the required Tauri plugin by adding the following to your Cargo.toml file:
+```toml
+[dependencies]
+tauri-plugin-fs-extra = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+```
+Then in `src-tauri/src/main.rs`, make the following changes depending on your main file.
+
+```rust
+fn main() {
+    tauri::Builder::default()
+        .plugin(tauri_plugin_fs_extra::init())
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
+}
+```
+
 ## Development
 
 To build it:

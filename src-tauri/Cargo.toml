@@ -15,6 +15,7 @@ tauri-build = { version = "1.4.0", features = [] }
 
 [dependencies]
 tauri = { version = "1.4.1", features = [ "api-all", "devtools"] }
+tauri-plugin-fs-extra = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 
 [features]
 # by default Tauri runs in production mode

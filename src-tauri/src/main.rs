@@ -30,6 +30,7 @@ fn process_window_event(event: &GlobalWindowEvent) {
 
 fn main() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs_extra::init())
         .on_window_event(|event| process_window_event(&event))
         .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
