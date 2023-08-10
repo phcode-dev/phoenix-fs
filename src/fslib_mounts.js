@@ -183,6 +183,33 @@ function _mountHandle(handleToMount) {
     });
 }
 
+/**
+ * Mounts a native folder, using a provided directory handle or prompting the user with a directory picker if no handle is provided.
+ *
+ * @param {Object|null} [optionalDirHandle] - An optional directory handle to use for mounting. If not provided, the function will prompt the user to select a directory.
+ * @param {Function} callback - A callback function that will be called once the mounting process completes or fails. The callback will be passed two parameters: an error (or null if no error) and an array containing the mounted path (or null if mounting failed).
+ *
+ * @example
+ * // Using the directory picker
+ * mountNativeFolder(function(error, [mountPath]) {
+ *     if (error) {
+ *         console.error("Error mounting directory:", error);
+ *     } else {
+ *         console.log("Directory mounted at:", mountPath);
+ *     }
+ * });
+ *
+ * @example
+ * // Using a provided directory handle
+ * const dirHandle = { /* ... directory handle ... * / };
+ * mountNativeFolder(dirHandle, function(error, [mountPath]) {
+ *     if (error) {
+ *         console.error("Error mounting directory:", error);
+ *     } else {
+ *         console.log("Directory mounted at:", mountPath);
+ *     }
+ * });
+ */
 function mountNativeFolder(optionalDirHandle, callback) {
     if(!callback) {
         callback = optionalDirHandle;

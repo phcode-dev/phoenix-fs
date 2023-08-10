@@ -1,6 +1,28 @@
 # Phoenix fs
-
 node like `fs` API for the browser that uses indexedDB/ fs access browser APIs for persistence.
+
+<!-- TOC -->
+* [Phoenix fs](#phoenix-fs)
+  * [Installation](#installation)
+    * [Getting the code locally](#getting-the-code-locally)
+    * [Usage in browser](#usage-in-browser)
+    * [Usage in web-worker in browser](#usage-in-web-worker-in-browser)
+    * [Usage in Tauri](#usage-in-tauri)
+  * [Development](#development)
+  * [Tests in Browser](#tests-in-browser)
+  * [Tests in tauri](#tests-in-tauri)
+    * [Publishing to npm](#publishing-to-npm)
+* [API Docs](#api-docs)
+  * [`fs.mountNativeFolder` Function](#fsmountnativefolder-function)
+    * [Parameters:](#parameters)
+    * [Example Usage:](#example-usage)
+      * [1. Using the Directory Picker:](#1-using-the-directory-picker)
+      * [2. Using a Provided Directory Handle:](#2-using-a-provided-directory-handle)
+  * [`fs.openTauriFilePickerAsync` Function](#fsopentaurifilepickerasync-function)
+    * [Parameters:](#parameters-1)
+    * [Returns:](#returns)
+    * [Example Usage:](#example-usage-1)
+<!-- TOC -->
 
 ## Installation
 The library can be either installed using npm or using the CDN link (See usage in browser below ).
@@ -128,6 +150,42 @@ Inorder to publish the package to npm, do the following
 and the code pushed to npm branch, GitHub actions will automatically publish the library to npm.
 
 # API Docs
+
+## `fs.mountNativeFolder` Function
+
+Mounts an fs access folder to the `/mnt` dir, prompting the user with a directory picker.
+
+### Parameters:
+- **optionalDirHandle** (Object or null, optional):
+    - An optional directory handle to use for mounting. If not provided, the function will prompt the user to select a directory.
+
+- **callback** (Function):
+    - A callback function that will be called once the mounting process completes or fails. The callback will be passed two parameters: an error (or null if no error) and an array containing the mounted path (or null if mounting failed).
+
+### Example Usage:
+
+#### 1. Using the Directory Picker:
+```javascript
+mountNativeFolder(function(error, [mountPath]) {
+    if (error) {
+        console.error("Error mounting directory:", error);
+    } else {
+        console.log("Directory mounted at:", mountPath);
+    }
+});
+```
+
+#### 2. Using a Provided Directory Handle:
+```javascript
+const dirHandle = /* ... fs access directory handle https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle ... */;
+mountNativeFolder(dirHandle, function(error, [mountPath]) {
+    if (error) {
+        console.error("Error mounting directory:", error);
+    } else {
+        console.log("Directory mounted at:", mountPath);
+    }
+});
+```
 
 ## `fs.openTauriFilePickerAsync` Function
 
