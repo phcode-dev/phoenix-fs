@@ -240,3 +240,39 @@ Opens the Tauri file picker asynchronously with given options. If options aren't
      console.log(directory);
    });
    ```
+
+## `fs.openTauriFileSaveDialogueAsync` Function
+
+Opens the Tauri file save dialogue asynchronously using the provided options. If the `defaultPath` option isn't provided, it defaults to the user's document directory.
+
+### Parameters:
+
+- **options** (Object, optional): Configuration options for the Tauri file save dialogue.
+  - **defaultPath** (string, optional): Initial directory or file path. If it's a directory path, the dialog interface will change to that folder. If it's not an existing directory, the file name will be set to the dialog's file name input and the dialog will be set to the parent folder. If not provided, defaults to the user's document directory.
+  - **title** (string, optional): The title of the dialog window.
+  - **filters** (Array<{name: string, extensions: string[]}>, optional): Extension filters for the file dialog. For example:
+    ```javascript
+    filters: [{
+      name: 'Image',
+      extensions: ['png', 'jpeg']
+    }]
+    ```
+
+### Returns:
+
+A promise that resolves to the selected file path if a location was chosen, or `null` if the dialogue was cancelled.
+
+### Example Usage:
+
+```javascript
+fs.openTauriFileSaveDialogueAsync({
+    defaultPath: '/path/to/example.txt',
+    filters: [{ name: 'Text Files', extensions: ['txt'] }]
+}).then(savePath => {
+    if (savePath) {
+        console.log("File will be saved at:", savePath);
+    } else {
+        console.log("Save dialogue was cancelled");
+    }
+});
+```
