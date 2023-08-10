@@ -48,8 +48,45 @@ async function openTauriFilePickerAsync(options) {
     return __TAURI__.dialog.open(options);
 }
 
+/**
+ * Opens the Tauri file save dialogue asynchronously using the provided options.
+ * If `defaultPath` option isn't provided, it defaults to the user's document directory.
+ *
+ * @async
+ * @param {Object} [options] - Configuration options for the Tauri file save dialogue.
+ * @param {string} [options.defaultPath] - Initial directory or file path. If it's a directory path, the dialog interface will change to that folder. If it's not an existing directory, the file name will be set to the dialog's file name input and the dialog will be set to the parent folder. If not provided, defaults to the user's document directory.
+ * @param {string} [options.title] - The title of the dialog window.
+ * @param {Array<{name: string, extensions: string[]}>} [options.filters] - Extension filters for the file dialog.
+ *   filters: [{
+ *     name: 'Image',
+ *     extensions: ['png', 'jpeg']
+ *   }]
+ *
+ * @returns {Promise<string|null>} A promise that resolves to the selected file path if a location was chosen, or null if the dialogue was cancelled.
+ *
+ * @example
+ * openTauriFileSaveDialogueAsync({
+ *     defaultPath: '/path/to/example.txt',
+ *     filters: [{ name: 'Text Files', extensions: ['txt'] }]
+ * }).then(savePath => {
+ *     if (savePath) {
+ *         console.log("File will be saved at:", savePath);
+ *     } else {
+ *         console.log("Save dialogue was cancelled");
+ *     }
+ * });
+ */
+async function openTauriFileSaveDialogueAsync(options) {
+    options = options || {};
+    if(!options.defaultPath){
+        options.defaultPath = await __TAURI__.path.documentDir();
+    }
+    return __TAURI__.dialog.save(options);
+}
+
 const TauriFS = {
-    openTauriFilePickerAsync
+    openTauriFilePickerAsync,
+    openTauriFileSaveDialogueAsync
 };
 
 module.exports ={

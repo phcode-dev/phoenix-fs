@@ -88,8 +88,11 @@ const fileSystemLib = {
     mountNativeFolder: async function (...args) {
         return NativeFS.mountNativeFolder(...args);
     },
-    openTauriFilePickerAsync: function (initialPath, callback) {
-        return TauriFS.openTauriFilePickerAsync(initialPath, callback);
+    openTauriFilePickerAsync: function (options) {
+        return TauriFS.openTauriFilePickerAsync(options);
+    },
+    openTauriFileSaveDialogueAsync: function (options) {
+        return TauriFS.openTauriFileSaveDialogueAsync(options);
     },
     readdir: function (...args) { // (path, options, callback)
         let path = args[0];
