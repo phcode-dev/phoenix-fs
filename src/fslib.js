@@ -23,6 +23,7 @@
 
 const {ERR_CODES, Errors} = require('./errno');
 const {NativeFS} = require('./fslib_native');
+const {TauriFS} = require('./fslib_tauri');
 const {Constants} = require('./constants');
 const {Mounts} = require('./fslib_mounts');
 const {FsWatch} = require('./fslib_watch');
@@ -86,6 +87,9 @@ function _isSubPathOf(dir, subDir) {
 const fileSystemLib = {
     mountNativeFolder: async function (...args) {
         return NativeFS.mountNativeFolder(...args);
+    },
+    openTauriFilePickerAsync: function (initialPath, callback) {
+        return TauriFS.openTauriFilePickerAsync(initialPath, callback);
     },
     readdir: function (...args) { // (path, options, callback)
         let path = args[0];

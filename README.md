@@ -126,3 +126,59 @@ Inorder to publish the package to npm, do the following
 1. run `npm run relese` and push changes to main branch.
 2. raise a pull request from `main` branch to `npm` branch. Once the pull request is merged
 and the code pushed to npm branch, GitHub actions will automatically publish the library to npm.
+
+# API Docs
+
+## `fs.openTauriFilePickerAsync` Function
+
+Opens the Tauri file picker asynchronously with given options. If options aren't provided, defaults to picking a single file. If the `defaultPath` option isn't provided, it will default to the user's document directory.
+
+### Parameters:
+- **options** (Object, optional): Configuration options for the Tauri file picker.
+  - **directory** (boolean, default: `false`): Whether it is a directory or file to be picked.
+  - **multiple** (boolean, default: `false`): Whether to allow picking multiple files.
+  - **defaultPath** (string, optional): Default directory to open in the file picker. Defaults to the document directory if not provided.
+  - **title** (string, optional): The title of the dialogue window.
+  - **filters** (Array, optional): Extension filters for the file dialog. Example filter:
+    ```javascript
+    [{
+      name: 'Image',
+      extensions: ['png', 'jpeg']
+    }]
+    ```
+
+### Returns:
+- A promise that resolves to:
+  - `null` if the user dismissed the dialogue.
+  - a `string` representing the selected filepath.
+  - an `Array` of strings for multiple selected filepaths.
+
+### Example Usage:
+1. **Default File Picker**:
+   ```javascript
+   fs.openTauriFilePickerAsync().then(result => {
+     console.log(result);
+   });
+   ```
+
+2. **Select Multiple Image Files**:
+   ```javascript
+   fs.openTauriFilePickerAsync({
+     multiple: true,
+     filters: [{
+       name: 'Images',
+       extensions: ['png', 'jpeg', 'jpg']
+     }]
+   }).then(files => {
+     console.log(files);
+   });
+   ```
+
+3. **Select Directory**:
+   ```javascript
+   fs.openTauriFilePickerAsync({
+     directory: true
+   }).then(directory => {
+     console.log(directory);
+   });
+   ```
