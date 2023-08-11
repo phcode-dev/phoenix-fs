@@ -32,8 +32,8 @@
     <script class="mocha-exec">
         window.virtualTestPath = '/test-phoenix-fs';
 
-        function observerRunStatus(runner) {
-            if(!__TAURI__){
+        function observeRunStatus(runner) {
+            if(!window.__TAURI__){
                 return;
             }
             console.log("setting up tauri test reporters to log to system console.")
@@ -86,7 +86,7 @@
                     localStorage.setItem('mountTestPath', mountTestPath[0]);
                     document.getElementById('openFolderButton').style = "display:none";
                     window.mountTestPath = `${mountTestPath[0]}/test`;
-                    observerRunStatus(mocha.run());
+                    observeRunStatus(mocha.run());
                 });
             }
 
@@ -103,7 +103,7 @@
                 }
                 window.mountTestPath = `${mountTestPath}/test-phoenix-fs`;
                 document.getElementById('openFolderButton').style = "display:none";
-                observerRunStatus(mocha.run());
+                observeRunStatus(mocha.run());
             });
         }
         function runTauriTests() {
@@ -111,7 +111,7 @@
                 window.tauriTests = true;
                 console.log("Tauri env detected. running tauri specific tests.");
                 document.getElementById('openFolderButton').style = "display:none";
-                observerRunStatus(mocha.run());
+                observeRunStatus(mocha.run());
             }
         }
     </script>
