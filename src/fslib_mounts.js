@@ -39,7 +39,7 @@ function isMountSubPath(path) {
     if (typeof path !== 'string') {
         return false;
     }
-    let mntSubPathStart = '/mnt/';
+    let mntSubPathStart = Constants.MOUNT_POINT_ROOT+ '/';
     if (path) {
         path = globalObject.path.normalize(path);
         if (path.startsWith(mntSubPathStart) && path.length > mntSubPathStart.length) {
