@@ -25,10 +25,10 @@ jobs:
       - name: install frontend dependencies
         run: |
           npm install
-          npm run build
+          echo "npm run build not executed as we will be running tests against the checked in release artifacts only!"
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Run tauri integration tests
         if: matrix.platform == 'ubuntu-20.04'
-        run: ./src-tauri/target/release/phoenix-file-system -q
+        run: xvfb-run ./src-tauri/target/release/phoenix-file-system -q
