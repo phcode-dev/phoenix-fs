@@ -27,6 +27,7 @@ jobs:
         run: |
           npm install
           echo "npm run build not executed as we will be running tests against the checked in release artifacts only!"
+          npm run _copy-test-dist
           npm run tauri build
       - name: Run tauri integration tests
         if: matrix.platform == 'ubuntu-20.04'
