@@ -31,6 +31,39 @@
     <script src="test-getPlatformPath-api.browser.js"></script>
     <script class="mocha-exec">
         window.virtualTestPath = '/test-phoenix-fs';
+
+        function observerRunStatus(runner) {
+            if(!__TAURI__){
+                return;
+            }
+            console.log("setting up tauri test reporters to log to system console.")
+            function consoleLogToShell(message) {
+                __TAURI__.invoke("console_log", {message});
+            }
+            runner.on('end', function() {
+                const stats = runner.stats;
+                if (stats.failures > 0) {
+                    consoleLogToShell(`\u2716 ${stats.failures} tests failed of ${stats.tests} tests in ${stats.suites} suites!. Time: ${stats.duration} ms`);
+                } else {
+                    consoleLogToShell(`\u2714 All(${stats.tests}) tests passed in in ${stats.suites} suites! Time: ${stats.duration} ms`);
+                }
+            });
+            runner.on('suite', (suite) => {
+                consoleLogToShell(`\nSuite started: ${suite.title}\n`);
+            });
+
+            runner.on('pass', function(test) {
+                consoleLogToShell(`\u2714 '${test.title}' passed!`);
+            });
+
+            runner.on('fail', function(test, err) {
+                consoleLogToShell(`\u2716 Test '${test.title}' failed! \nReason: ${err.message} \n${err.stack}`);
+            });
+
+            runner.on('pending', function(test) {
+                consoleLogToShell(`Test '${test.title}' was skipped.`);
+            });
+        }
         function openFolderAndRunTests() {
             function mountNative() {
                 fs.mountNativeFolder((err, mountTestPath)=>{
@@ -38,7 +71,7 @@
                     localStorage.setItem('mountTestPath', mountTestPath[0]);
                     document.getElementById('openFolderButton').style = "display:none";
                     window.mountTestPath = `${mountTestPath[0]}/test`;
-                    mocha.run();
+                    observerRunStatus(mocha.run());
                 });
             }
 
@@ -55,7 +88,7 @@
                 }
                 window.mountTestPath = `${mountTestPath}/test-phoenix-fs`;
                 document.getElementById('openFolderButton').style = "display:none";
-                mocha.run();
+                observerRunStatus(mocha.run());
             });
         }
         function runTauriTests() {
@@ -63,7 +96,7 @@
                 window.tauriTests = true;
                 console.log("Tauri env detected. running tauri specific tests.");
                 document.getElementById('openFolderButton').style = "display:none";
-                mocha.run();
+                observerRunStatus(mocha.run());
             }
         }
     </script>
