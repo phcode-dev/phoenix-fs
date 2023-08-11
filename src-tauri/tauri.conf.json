@@ -21,6 +21,16 @@
                 ]
             }
         },
+        "cli": {
+            "description": "phoenix-fs test runner cli",
+            "longDescription": "phoenix-fs test runner cli",
+            "beforeHelp": "",
+            "afterHelp": "",
+            "args": [{
+                "name": "quit-when-done",
+                "short": "q"
+            }]
+        },
         "bundle": {
             "active": true,
             "category": "DeveloperTool",
