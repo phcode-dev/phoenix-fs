@@ -29,6 +29,26 @@ jobs:
           echo "npm run build not executed as we will be running tests against the checked in release artifacts only!"
           npm run _copy-test-dist
           npm run tauri build
-      - name: Run tauri integration tests
+      - name: Run tauri integration tests in ubuntu
         if: matrix.platform == 'ubuntu-20.04'
         run: xvfb-run ./src-tauri/target/release/phoenix-file-system -q
+
+      - name: Run tauri integration tests in windows
+        # GUI apps in windows doesn't log on console. so we capture the output to a text file and print it, then fail on error.
+        if: matrix.platform == 'windows-latest'
+        run: |
+          "src-tauri\target\release\Phoenix File system.exe" -q > output.txt 2>&1
+        shell: cmd
+        continue-on-error: true
+
+      - name: Print windows integration test output to console
+        if: matrix.platform == 'windows-latest'
+        run: |
+          type output.txt
+        shell: cmd
+
+      - name: Run tauri integration tests in windows and fail on error
+        if: matrix.platform == 'windows-latest'
+        run: |
+          "src-tauri\target\release\Phoenix File system.exe" -q > output.txt 2>&1
+        shell: cmd
