@@ -22,13 +22,12 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.0-dev libappindicator3-dev librsvg2-dev patchelf
+          sudo apt-get install xvfb
       - name: install frontend dependencies
         run: |
           npm install
           echo "npm run build not executed as we will be running tests against the checked in release artifacts only!"
-      - uses: tauri-apps/tauri-action@v0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          npm run tauri build
       - name: Run tauri integration tests
         if: matrix.platform == 'ubuntu-20.04'
         run: xvfb-run ./src-tauri/target/release/phoenix-file-system -q
