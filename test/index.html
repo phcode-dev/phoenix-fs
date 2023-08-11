@@ -38,14 +38,25 @@
             }
             console.log("setting up tauri test reporters to log to system console.")
             function consoleLogToShell(message) {
-                __TAURI__.invoke("console_log", {message});
+                return __TAURI__.invoke("console_log", {message});
             }
+
+            function quitIfNeeded() {
+                __TAURI__.cli.getMatches().then(matches=>{
+                    if(matches?.args["quit-when-done"]?.occurrences) {
+                        __TAURI__.process.exit(0)
+                    }
+                });
+            }
+
             runner.on('end', function() {
                 const stats = runner.stats;
                 if (stats.failures > 0) {
-                    consoleLogToShell(`\u2716 ${stats.failures} tests failed of ${stats.tests} tests in ${stats.suites} suites!. Time: ${stats.duration} ms`);
+                    consoleLogToShell(`\u2716 ${stats.failures} tests failed of ${stats.tests} tests in ${stats.suites} suites!. Time: ${stats.duration} ms`)
+                        .finally(quitIfNeeded);
                 } else {
-                    consoleLogToShell(`\u2714 All(${stats.tests}) tests passed in in ${stats.suites} suites! Time: ${stats.duration} ms`);
+                    consoleLogToShell(`\u2714 All(${stats.tests}) tests passed in in ${stats.suites} suites! Time: ${stats.duration} ms`)
+                        .finally(quitIfNeeded);
                 }
             });
             runner.on('suite', (suite) => {
