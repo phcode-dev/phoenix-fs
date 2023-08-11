@@ -94,8 +94,17 @@ const fileSystemLib = {
     openTauriFileSaveDialogueAsync: function (options) {
         return TauriFS.openTauriFileSaveDialogueAsync(options);
     },
+    getPlatformPath: function (virtualPath) { // (path, options, callback)
+        if(TauriFS.isTauriPath(virtualPath) || TauriFS.isTauriSubPath(virtualPath)) {
+            return TauriFS.getPlatformPath(virtualPath);
+        }
+        return null;
+    },
     readdir: function (...args) { // (path, options, callback)
         let path = args[0];
+        if(TauriFS.isTauriPath(path) || TauriFS.isTauriSubPath(path)) {
+            return TauriFS.readdir(...args);
+        }
         if(Mounts.isMountPath(path) || Mounts.isMountSubPath(path)) {
             return NativeFS.readdir(...args);
         }
@@ -263,7 +272,9 @@ const fileSystemLib = {
     ERR_NOT_FOUND: ERR_CODES.ERROR_CODES.ENOENT,
     ERR_EISDIR: ERR_CODES.ERROR_CODES.EISDIR,
     ERR_EINVAL: ERR_CODES.ERROR_CODES.EINVAL,
-    ERR_FILE_EXISTS: ERR_CODES.ERROR_CODES.EEXIST
+    ERR_FILE_EXISTS: ERR_CODES.ERROR_CODES.EEXIST,
+    MOUNT_POINT_ROOT: Constants.MOUNT_POINT_ROOT,
+    TAURI_ROOT: Constants.TAURI_ROOT
 };
 
 fileSystemLib.copyFile = fileSystemLib.copy;

@@ -17,9 +17,86 @@
  */
 
 // jshint ignore: start
-/*global __TAURI__*/
+/*global __TAURI__, globalObject*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
+
+const {Constants} = require('./constants');
+const {Mounts} = require("./fslib_mounts");
+const {Errors} = require("./errno");
+
+const TAURI_PATH_PREFIX = Constants.TAURI_ROOT+ '/';
+const IS_WINDOWS = navigator.userAgent.includes('Windows');
+
+/**
+ * Convert Phoenix virtual file system path to platform-specific paths.
+ * For Windows, `/tauri/c/d/a.txt` will correspond to `c:\d\a.txt`.
+ * For *nix systems (Linux/Mac/Unix), `/tauri/x/y/a.txt` will correspond to `/x/y/a.txt`.
+ *
+ * @param {string} phoenixFSPath - The Phoenix virtual file system path to be converted.
+ * @returns {string} The platform-specific path.
+ *
+ * @throws {Error} If the provided path doesn't start with `/tauri/` or cannot resolve to system path.
+ *
+ * @example
+ * // On a Windows system
+ * getPlatformPath('/tauri/c/users/user/a.txt');  // Returns: 'c:\users\user\a.txt'
+ *
+ * // On a *nix system
+ * getPlatformPath('/tauri/home/user/a.txt');  // Returns: '/home/user/a.txt'
+ */
+function getPlatformPath(phoenixFSPath) {
+    if (!phoenixFSPath.startsWith(TAURI_PATH_PREFIX)) {
+        console.error("noop", phoenixFSPath);
+        throw new Error('Invalid Phoenix FS path- tauri path prefix expected: ' + phoenixFSPath);
+    }
+
+    if (IS_WINDOWS) {
+        let parts = phoenixFSPath.split('/').slice(2);
+        if(!parts[0].length){
+            // maps to just ":\", no drive prefix available
+            throw new Error('Invalid Phoenix FS path for windows: ' + phoenixFSPath);
+        }
+        return `${parts[0]}:\\${parts.slice(1).join('\\')}`;
+    } else {
+        return phoenixFSPath.slice(Constants.TAURI_ROOT.length);
+    }
+}
+
+/**
+ * Check if the given path is a subpath of the '/tauri' folder.
+ * @param path
+ */
+function isTauriSubPath(path) {
+    if (typeof path !== 'string') {
+        return false;
+    }
+    if (path) {
+        path = globalObject.path.normalize(path);
+        if (path.startsWith(TAURI_PATH_PREFIX) && path.length > TAURI_PATH_PREFIX.length) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Check if the given path is '/tauri' folder.
+ * @param path
+ */
+function isTauriPath(path) {
+    if (typeof path !== 'string') {
+        return false;
+    }
+    if (path) {
+        path = globalObject.path.normalize(path);
+        if (path === Constants.TAURI_ROOT) {
+            return true;
+        }
+    }
+    return false;
+}
+
 
 /**
  * Opens the Tauri file picker asynchronously with given options. If options aren't provided, defaults to picking a single file.
@@ -84,9 +161,30 @@ async function openTauriFileSaveDialogueAsync(options) {
     return __TAURI__.dialog.save(options);
 }
 
+function readdir(path, options, callback) {
+    path = globalObject.path.normalize(path);
+    if (typeof options === 'function') {
+        callback = options;
+        options = {};
+    }
+
+    Mounts.getHandleFromPath(path, (err, handle) => {
+        if(err){
+            callback(err);
+        } else if (handle.kind === Constants.KIND_FILE) {
+            callback(new Errors.ENOTDIR('Path is not a directory.'));
+        }
+    });
+}
+
+
 const TauriFS = {
+    isTauriPath,
+    isTauriSubPath,
+    getPlatformPath,
     openTauriFilePickerAsync,
-    openTauriFileSaveDialogueAsync
+    openTauriFileSaveDialogueAsync,
+    readdir
 };
 
 module.exports ={
