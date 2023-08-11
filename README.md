@@ -276,3 +276,34 @@ fs.openTauriFileSaveDialogueAsync({
     }
 });
 ```
+
+## `fs.getPlatformPath(phoenixFSPath)` function
+
+Convert Phoenix virtual file system path to platform-specific paths.
+
+- For Windows, `/tauri/c/d/a.txt` will correspond to `c:\d\a.txt`.
+- For *nix systems (Linux/Mac/Unix), `/tauri/x/y/a.txt` will correspond to `/x/y/a.txt`.
+
+### Parameters
+
+- `phoenixFSPath` (`string`): The Phoenix virtual file system path to be converted.
+
+### Returns
+
+- (`string`): The platform-specific path.
+
+### Throws
+
+- `Error`: If the provided path doesn't start with `/tauri/` or cannot resolve to system path.
+
+### Examples
+
+On a Windows system:
+```javascript
+getPlatformPath('/tauri/c/users/user/a.txt');  // Returns: 'c:\users\user\a.txt'
+```
+
+On a *nix system:
+```javascript
+getPlatformPath('/tauri/home/user/a.txt');  // Returns: '/home/user/a.txt'
+```
