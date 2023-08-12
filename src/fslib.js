@@ -235,7 +235,10 @@ const fileSystemLib = {
             return globalCopy(src, dst, callbackInterceptor);
         }
     },
-    showSaveDialog: function () {
+    showSaveDialog: function (options) {
+        if(window.__TAURI__){
+            return fileSystemLib.openTauriFileSaveDialogueAsync(options);
+        }
         throw new Errors.ENOSYS('Phoenix fs showSaveDialog function not yet supported.');
     },
     watch: function (...args) {
