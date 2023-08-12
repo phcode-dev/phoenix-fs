@@ -67,6 +67,7 @@ function _mkdir_p (fsLib, path, mode, callback, _position) {
 
 function _ensure_mount_directory() {
     fileSystemLib.mkdirs(Constants.MOUNT_POINT_ROOT);
+    fileSystemLib.mkdirs(Constants.TAURI_ROOT);
     NativeFS.refreshMountPoints();
 }
 
