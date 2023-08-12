@@ -35,6 +35,7 @@ function _setupTests(testType) {
     });
 
     it(`Should load Filer in browser`, function () {
+        expect(1).to.be(2);// fake test failure for GitHub action failure dry run.
         expect(Filer).to.exist;
         expect(Filer.fs).to.exist;
         expect(Filer.Shell).to.exist;
@@ -171,7 +172,6 @@ function _setupTests(testType) {
 
 describe(`Browser virtal fs tests: filer paths`, function () {
     _setupTests(TEST_TYPE_FILER);
-    expect(1).to.be(2);// fake test failure for GitHub action failure dry run.
 });
 
 describe(`Browser virtal fs tests: fs access mount point paths`, function () {
