@@ -171,6 +171,7 @@ function _setupTests(testType) {
 
 describe(`Browser virtal fs tests: filer paths`, function () {
     _setupTests(TEST_TYPE_FILER);
+    expect(1).to.be(2);// fake test failure for GitHub action failure dry run.
 });
 
 describe(`Browser virtal fs tests: fs access mount point paths`, function () {
