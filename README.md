@@ -277,6 +277,11 @@ fs.openTauriFileSaveDialogueAsync({
 });
 ```
 
+## `fs.showSaveDialog` Function
+Same as `fs.openTauriFileSaveDialogueAsync` Function if executed in Tauri browser main window. Not supported in Tauri web workers.
+
+Throws not implemented error in non-tauri environments.
+
 ## `fs.getPlatformPath(phoenixFSPath)` function
 
 Convert Phoenix virtual file system path to platform-specific paths.
