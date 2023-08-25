@@ -64,6 +64,41 @@ function getTauriPlatformPath(phoenixFSPath) {
 }
 
 /**
+ * Convert platform-specific Tauri paths to Phoenix virtual file system path.
+ * For Windows, `c:\d\a.txt` will correspond to `/tauri/c/d/a.txt`.
+ * For *nix systems (Linux/Mac/Unix), `/x/y/a.txt` will correspond to `/tauri/x/y/a.txt`.
+ *
+ * @param {string} platformPath - The platform-specific path to be converted.
+ * @returns {string} The Phoenix virtual file system path.
+ *
+ * @throws {Error} If the provided path cannot be converted to Phoenix FS path.
+ *
+ * @example
+ * // On a Windows system
+ * getTauriVirtualPath('c:\users\user\a.txt');  // Returns: '/tauri/c/users/user/a.txt'
+ *
+ * // On a *nix system
+ * getTauriVirtualPath('/home/user/a.txt');  // Returns: '/tauri/home/user/a.txt'
+ */
+function getTauriVirtualPath(platformPath) {
+    if (IS_WINDOWS) {
+        // For Windows, we split using both forward and backward slashes because users might use either
+        let parts = platformPath.split(/[\\/]/);
+        if (!parts[0].endsWith(':') || parts[0].length !== 2) {
+            throw new Error('Invalid Windows path format: ' + platformPath);
+        }
+        let driveLetter = parts[0].slice(0, -1);  // Remove the ':' from 'c:'
+        return `/tauri/${driveLetter}/${parts.slice(1).join('/')}`;
+    } else {
+        if (!platformPath.startsWith('/')) {
+            throw new Error('Invalid Unix path format: ' + platformPath);
+        }
+        return Constants.TAURI_ROOT + platformPath;
+    }
+}
+
+
+/**
  * Check if the given path is a subpath of the '/tauri' folder.
  * @param path
  */
@@ -182,6 +217,7 @@ const TauriFS = {
     isTauriPath,
     isTauriSubPath,
     getTauriPlatformPath,
+    getTauriVirtualPath,
     openTauriFilePickerAsync,
     openTauriFileSaveDialogueAsync,
     readdir

@@ -101,6 +101,9 @@ const fileSystemLib = {
         }
         return null;
     },
+    getTauriVirtualPath: function (platformPath) {
+        return TauriFS.getTauriVirtualPath(platformPath);
+    },
     readdir: function (...args) { // (path, options, callback)
         let path = args[0];
         if(TauriFS.isTauriPath(path) || TauriFS.isTauriSubPath(path)) {

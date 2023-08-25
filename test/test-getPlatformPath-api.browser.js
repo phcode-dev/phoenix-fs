@@ -35,3 +35,51 @@ describe(`test getTauriPlatformPath api`, function () {
         });
     }
 });
+
+describe(`test getTauriVirtualPath api`, function () {
+    const IS_WINDOWS = navigator.userAgent.includes('Windows');
+    it(`should fs exist in browser`, function () {
+        expect(fs).to.exist;
+    });
+
+    function expectThrowError(virtualPath, errorMessage) {
+        let ex;
+        try{
+            fs.getTauriVirtualPath(virtualPath);
+        } catch (e) {
+            ex=e;
+        }
+        expect(ex.message).to.eql(errorMessage);
+    }
+
+    if(IS_WINDOWS){
+        it(`should getTauriVirtualPath throw in windows if path doesnt start with drive letter`, function () {
+            expectThrowError("/a/linux/path", "Invalid Windows path format: /a/linux/path");
+            expectThrowError("a/linux/path", "Invalid Windows path format: a/linux/path");
+            expectThrowError("a:linux/path", "Invalid Windows path format: a:linux/path");
+            expectThrowError("ab:/linux/path", "Invalid Windows path format: ab:/linux/path");
+            expectThrowError("a", "Invalid Windows path format: a");
+        });
+
+        it(`should getTauriVirtualPath return correct path in windows`, function () {
+            expect(fs.getTauriVirtualPath("a:\\")).to.eql("/tauri/a/");
+            expect(fs.getTauriVirtualPath("b:\\test win\\d")).to.eql("/tauri/b/test win/d");
+            expect(fs.getTauriVirtualPath("b:\\test win\\d.txt")).to.eql("/tauri/b/test win/d.txt");
+
+            expect(fs.getTauriVirtualPath("a:/")).to.eql("/tauri/a/");
+            expect(fs.getTauriVirtualPath("b:/test win/d")).to.eql("/tauri/b/test win/d");
+            expect(fs.getTauriVirtualPath("b:/test win/d.txt")).to.eql("/tauri/b/test win/d.txt");
+        });
+    } else {
+        it(`should getTauriVirtualPath throw in linux if path doesnt start with a /`, function () {
+            expectThrowError("hehe/no/", "Invalid Unix path format: hehe/no/");
+        });
+
+        it(`should getTauriVirtualPath return correct path in linux`, function () {
+            expect(fs.getTauriVirtualPath("/")).to.eql("/tauri/");
+            expect(fs.getTauriVirtualPath("/x")).to.eql("/tauri/x");
+            expect(fs.getTauriVirtualPath("/x/b/")).to.eql("/tauri/x/b/");
+            expect(fs.getTauriVirtualPath("/x/b/a.txt")).to.eql("/tauri/x/b/a.txt");
+        });
+    }
+});
