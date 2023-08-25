@@ -314,7 +314,7 @@ Convert Phoenix virtual file system path to platform-specific paths.
 
 ### Throws
 
-- `Error`: If the provided path doesn't start with `/tauri/` or cannot resolve to system path.
+- `Errors.EINVAL`: If the provided path doesn't start with `/tauri/` or cannot resolve to system path.
 
 ### Examples
 
@@ -345,7 +345,7 @@ Converts platform-specific Tauri paths to Phoenix virtual file system path.
 
 ### Throws
 
-- If the provided path cannot be converted to a Phoenix FS path.
+- `Errors.EINVAL`: If the provided path cannot be converted to a Phoenix FS path.
 
 ### Example
 

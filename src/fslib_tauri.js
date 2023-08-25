@@ -36,7 +36,7 @@ const IS_WINDOWS = navigator.userAgent.includes('Windows');
  * @param {string} phoenixFSPath - The Phoenix virtual file system path to be converted.
  * @returns {string} The platform-specific path.
  *
- * @throws {Error} If the provided path doesn't start with `/tauri/` or cannot resolve to system path.
+ * @throws {Errors.EINVAL} If the provided path doesn't start with `/tauri/` or cannot resolve to system path.
  *
  * @example
  * // On a Windows system
@@ -48,14 +48,14 @@ const IS_WINDOWS = navigator.userAgent.includes('Windows');
 function getTauriPlatformPath(phoenixFSPath) {
     if (!phoenixFSPath.startsWith(TAURI_PATH_PREFIX)) {
         console.error("noop", phoenixFSPath);
-        throw new Error('Invalid Phoenix FS path- tauri path prefix expected: ' + phoenixFSPath);
+        throw new Errors.EINVAL('Invalid Phoenix FS path- tauri path prefix expected: ' + phoenixFSPath);
     }
 
     if (IS_WINDOWS) {
         let parts = phoenixFSPath.split('/').slice(2);
         if(!parts[0].length){
             // maps to just ":\", no drive prefix available
-            throw new Error('Invalid Phoenix FS path for windows: ' + phoenixFSPath);
+            throw new Errors.EINVAL('Invalid Phoenix FS path for windows: ' + phoenixFSPath);
         }
         return `${parts[0]}:\\${parts.slice(1).join('\\')}`;
     } else {
@@ -71,7 +71,7 @@ function getTauriPlatformPath(phoenixFSPath) {
  * @param {string} platformPath - The platform-specific path to be converted.
  * @returns {string} The Phoenix virtual file system path.
  *
- * @throws {Error} If the provided path cannot be converted to Phoenix FS path.
+ * @throws {Errors.EINVAL} If the provided path cannot be converted to Phoenix FS path.
  *
  * @example
  * // On a Windows system
@@ -85,13 +85,13 @@ function getTauriVirtualPath(platformPath) {
         // For Windows, we split using both forward and backward slashes because users might use either
         let parts = platformPath.split(/[\\/]/);
         if (!parts[0].endsWith(':') || parts[0].length !== 2) {
-            throw new Error('Invalid Windows path format: ' + platformPath);
+            throw new Errors.EINVAL('Invalid Windows path format: ' + platformPath);
         }
         let driveLetter = parts[0].slice(0, -1);  // Remove the ':' from 'c:'
         return `/tauri/${driveLetter}/${parts.slice(1).join('/')}`;
     } else {
         if (!platformPath.startsWith('/')) {
-            throw new Error('Invalid Unix path format: ' + platformPath);
+            throw new Errors.EINVAL('Invalid Unix path format: ' + platformPath);
         }
         return Constants.TAURI_ROOT + platformPath;
     }
