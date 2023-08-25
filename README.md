@@ -1,5 +1,5 @@
 # Phoenix fs
-node like `fs` API for the browser that uses indexedDB/ fs access browser APIs for persistence.
+node like `fs` API for the browser that uses indexedDB/ fs access browser APIs/ tauri fs APIs/ Node fs apis for persistence.
 
 <!-- TOC -->
 * [Phoenix fs](#phoenix-fs)
@@ -22,6 +22,16 @@ node like `fs` API for the browser that uses indexedDB/ fs access browser APIs f
     * [Parameters:](#parameters-1)
     * [Returns:](#returns)
     * [Example Usage:](#example-usage-1)
+  * [`fs.openTauriFileSaveDialogueAsync` Function](#fsopentaurifilesavedialogueasync-function)
+    * [Parameters:](#parameters-2)
+    * [Returns:](#returns-1)
+    * [Example Usage:](#example-usage-2)
+  * [`fs.showSaveDialog` Function](#fsshowsavedialog-function)
+  * [`fs.getTauriPlatformPath(phoenixFSPath)` function](#fsgettauriplatformpathphoenixfspath-function)
+    * [Parameters](#parameters-3)
+    * [Returns](#returns-2)
+    * [Throws](#throws)
+    * [Examples](#examples)
 <!-- TOC -->
 
 ## Installation
@@ -282,7 +292,7 @@ Same as `fs.openTauriFileSaveDialogueAsync` Function if executed in Tauri browse
 
 Throws not implemented error in non-tauri environments.
 
-## `fs.getPlatformPath(phoenixFSPath)` function
+## `fs.getTauriPlatformPath(phoenixFSPath)` function
 
 Convert Phoenix virtual file system path to platform-specific paths.
 
@@ -305,10 +315,10 @@ Convert Phoenix virtual file system path to platform-specific paths.
 
 On a Windows system:
 ```javascript
-getPlatformPath('/tauri/c/users/user/a.txt');  // Returns: 'c:\users\user\a.txt'
+getTauriPlatformPath('/tauri/c/users/user/a.txt');  // Returns: 'c:\users\user\a.txt'
 ```
 
 On a *nix system:
 ```javascript
-getPlatformPath('/tauri/home/user/a.txt');  // Returns: '/home/user/a.txt'
+getTauriPlatformPath('/tauri/home/user/a.txt');  // Returns: '/home/user/a.txt'
 ```
