@@ -40,12 +40,12 @@ const IS_WINDOWS = navigator.userAgent.includes('Windows');
  *
  * @example
  * // On a Windows system
- * getPlatformPath('/tauri/c/users/user/a.txt');  // Returns: 'c:\users\user\a.txt'
+ * getTauriPlatformPath('/tauri/c/users/user/a.txt');  // Returns: 'c:\users\user\a.txt'
  *
  * // On a *nix system
- * getPlatformPath('/tauri/home/user/a.txt');  // Returns: '/home/user/a.txt'
+ * getTauriPlatformPath('/tauri/home/user/a.txt');  // Returns: '/home/user/a.txt'
  */
-function getPlatformPath(phoenixFSPath) {
+function getTauriPlatformPath(phoenixFSPath) {
     if (!phoenixFSPath.startsWith(TAURI_PATH_PREFIX)) {
         console.error("noop", phoenixFSPath);
         throw new Error('Invalid Phoenix FS path- tauri path prefix expected: ' + phoenixFSPath);
@@ -181,7 +181,7 @@ function readdir(path, options, callback) {
 const TauriFS = {
     isTauriPath,
     isTauriSubPath,
-    getPlatformPath,
+    getTauriPlatformPath,
     openTauriFilePickerAsync,
     openTauriFileSaveDialogueAsync,
     readdir

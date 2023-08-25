@@ -95,9 +95,9 @@ const fileSystemLib = {
     openTauriFileSaveDialogueAsync: function (options) {
         return TauriFS.openTauriFileSaveDialogueAsync(options);
     },
-    getPlatformPath: function (virtualPath) {
+    getTauriPlatformPath: function (virtualPath) {
         if(TauriFS.isTauriPath(virtualPath) || TauriFS.isTauriSubPath(virtualPath)) {
-            return TauriFS.getPlatformPath(virtualPath);
+            return TauriFS.getTauriPlatformPath(virtualPath);
         }
         return null;
     },
