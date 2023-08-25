@@ -276,13 +276,13 @@ const fileSystemLib = {
         }
     },
     BYTE_ARRAY_ENCODING: NativeFS.BYTE_ARRAY_ENCODING,
-    ERR_NOT_FOUND: ERR_CODES.ERROR_CODES.ENOENT,
-    ERR_EISDIR: ERR_CODES.ERROR_CODES.EISDIR,
-    ERR_EINVAL: ERR_CODES.ERROR_CODES.EINVAL,
-    ERR_FILE_EXISTS: ERR_CODES.ERROR_CODES.EEXIST,
     MOUNT_POINT_ROOT: Constants.MOUNT_POINT_ROOT,
     TAURI_ROOT: Constants.TAURI_ROOT
 };
+
+for(let errCode of Object.values(ERR_CODES.FS_ERROR_CODES)){
+    fileSystemLib[`ERR_${errCode}`] = errCode;
+}
 
 fileSystemLib.copyFile = fileSystemLib.copy;
 fileSystemLib.name = 'phoenixFS';

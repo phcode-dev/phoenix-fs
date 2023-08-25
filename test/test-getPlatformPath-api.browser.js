@@ -42,7 +42,7 @@ describe(`test getTauriVirtualPath api`, function () {
         expect(fs).to.exist;
     });
 
-    function expectThrowError(virtualPath, errorMessage) {
+    function expectThrowError(virtualPath, errorMessage, expectedErrCode) {
         let ex;
         try{
             fs.getTauriVirtualPath(virtualPath);
@@ -50,6 +50,7 @@ describe(`test getTauriVirtualPath api`, function () {
             ex=e;
         }
         expect(ex.message).to.eql(errorMessage);
+        expect(ex.code).to.eql(expectedErrCode || fs.ERR_EINVAL);
     }
 
     if(IS_WINDOWS){
