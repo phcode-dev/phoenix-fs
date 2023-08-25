@@ -32,6 +32,11 @@ node like `fs` API for the browser that uses indexedDB/ fs access browser APIs/ 
     * [Returns](#returns-2)
     * [Throws](#throws)
     * [Examples](#examples)
+  * [`fs.getTauriVirtualPath` function](#fsgettaurivirtualpath-function)
+    * [Parameters](#parameters-4)
+    * [Returns](#returns-3)
+    * [Throws](#throws-1)
+    * [Example](#example)
 <!-- TOC -->
 
 ## Installation
@@ -176,7 +181,7 @@ Mounts an fs access folder to the `/mnt` dir, prompting the user with a director
 
 #### 1. Using the Directory Picker:
 ```javascript
-mountNativeFolder(function(error, [mountPath]) {
+fs.mountNativeFolder(function(error, [mountPath]) {
     if (error) {
         console.error("Error mounting directory:", error);
     } else {
@@ -188,7 +193,7 @@ mountNativeFolder(function(error, [mountPath]) {
 #### 2. Using a Provided Directory Handle:
 ```javascript
 const dirHandle = /* ... fs access directory handle https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle ... */;
-mountNativeFolder(dirHandle, function(error, [mountPath]) {
+fs.mountNativeFolder(dirHandle, function(error, [mountPath]) {
     if (error) {
         console.error("Error mounting directory:", error);
     } else {
@@ -315,10 +320,43 @@ Convert Phoenix virtual file system path to platform-specific paths.
 
 On a Windows system:
 ```javascript
-getTauriPlatformPath('/tauri/c/users/user/a.txt');  // Returns: 'c:\users\user\a.txt'
+fs.getTauriPlatformPath('/tauri/c/users/user/a.txt');  // Returns: 'c:\users\user\a.txt'
 ```
 
 On a *nix system:
 ```javascript
-getTauriPlatformPath('/tauri/home/user/a.txt');  // Returns: '/home/user/a.txt'
+fs.getTauriPlatformPath('/tauri/home/user/a.txt');  // Returns: '/home/user/a.txt'
+```
+
+## `fs.getTauriVirtualPath` function
+
+Converts platform-specific Tauri paths to Phoenix virtual file system path. 
+
+- For Windows: `c:\d\a.txt` will be translated to `/tauri/c/d/a.txt`.
+- For *nix systems (Linux/Mac/Unix): `/x/y/a.txt` will be translated to `/tauri/x/y/a.txt`.
+
+### Parameters
+
+- **platformPath** (`string`): The platform-specific path that needs to be converted.
+
+### Returns
+
+- `string`: The corresponding Phoenix virtual file system path.
+
+### Throws
+
+- If the provided path cannot be converted to a Phoenix FS path.
+
+### Example
+
+On a Windows system:
+```javascript
+fs.getTauriVirtualPath('c:\\users\\user\\a.txt');  
+// Returns: '/tauri/c/users/user/a.txt'
+```
+
+On a *nix system:
+```javascript
+fs.getTauriVirtualPath('/home/user/a.txt');  
+// Returns: '/tauri/home/user/a.txt'
 ```
