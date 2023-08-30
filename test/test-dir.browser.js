@@ -212,18 +212,30 @@ describe(`Should phoenix be able to read root dir`, async function () {
             expect(contentsRead.length>=1).to.be.true;
         });
 
-        it(`Should read root /tauri dir with file types`, async function () {
-            let readSuccess, contentsRead;
-            fs.readdir(`/tauri`, {withFileTypes: true}, (err, contents)=>{
-                if(!err){
-                    readSuccess = true;
-                }
-                contentsRead = contents;
+        if(window.IS_WINDOWS){
+            it(`Should read root /tauri dir with file types fails as windows drives stats are not reliable`, async function () {
+                // Eg. cd rom drives wasnt returning any stats with tauri fs apis
+                let error;
+                fs.readdir(`/tauri`, {withFileTypes: true}, (err)=>{
+                    error = err;
+                });
+                await waitForTrue(()=>{return !!error;},1000);
+                expect(error.code).to.eql(fs.ERR_EIO);
             });
-            await waitForTrue(()=>{return readSuccess;},1000);
-            expect(readSuccess).to.be.true;
-            expect(contentsRead.length>=1).to.be.true;
-            expect(contentsRead[0].dev.startsWith('tauri_')).to.be.true;
-        });
+        } else {
+            it(`Should read root /tauri dir with file types`, async function () {
+                let readSuccess, contentsRead;
+                fs.readdir(`/tauri`, {withFileTypes: true}, (err, contents)=>{
+                    if(!err){
+                        readSuccess = true;
+                    }
+                    contentsRead = contents;
+                });
+                await waitForTrue(()=>{return readSuccess;},1000);
+                expect(readSuccess).to.be.true;
+                expect(contentsRead.length>=1).to.be.true;
+                expect(contentsRead[0].dev.startsWith('tauri_')).to.be.true;
+            });
+        }
     }
 });
