@@ -2394,6 +2394,7 @@ dependencies = [
  "tauri",
  "tauri-build",
  "tauri-plugin-fs-extra",
+ "winapi",
 ]
 
 [[package]]

@@ -101,19 +101,16 @@ Install the required Tauri plugin by adding the following to your Cargo.toml fil
 ```toml
 [dependencies]
 tauri-plugin-fs-extra = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+winapi = { version = "0.3", features = ["fileapi"] }
 ```
-Then in `src-tauri/src/main.rs`, make the following changes depending on your main file.
-
-```rust
-fn main() {
-    tauri::Builder::default()
-        .plugin(tauri_plugin_fs_extra::init())
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
-}
-```
+Then:  
+1. Copy `src-tauri/src/platform.rs` to the same folder of your tauri main file.
+2. Copy all `#[tauri::command]` from `src-tauri/src/main.rs` to your tauri main file.
+3. Update your `tauri::Builder::default()` section in your tauri `main fn()`
 
 ## Development
+This segment is dedicated to those contributing or modifying the codebase of this repository.
+If you are just using this as a library, please skip this section.
 
 To build it:
 
@@ -192,7 +189,7 @@ fs.mountNativeFolder(function(error, [mountPath]) {
 
 #### 2. Using a Provided Directory Handle:
 ```javascript
-const dirHandle = /* ... fs access directory handle https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle ... */;
+const dirHandle = someHandle;/* ... fs access directory handle https://developer.mozilla.org/en-US/docs/Web/API/FileSystemDirectoryHandle ... */;
 fs.mountNativeFolder(dirHandle, function(error, [mountPath]) {
     if (error) {
         console.error("Error mounting directory:", error);
