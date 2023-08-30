@@ -229,34 +229,58 @@ function mapErrorMessage(tauriErrorMessage, path, userMessage= '') {
     }
 }
 
+function _readDirHelper(entries, path, options, callback) {
+    let children = [];
+    for (const entry of entries) {
+        if(!options.withFileTypes){
+            children.push(entry.name);
+        } else {
+            children.push(Utils.getTauriStat(`${path}/${entry.name}`));
+        }
+    }
+    if(!options.withFileTypes){
+        callback(null, children);
+    } else {
+        Promise.all(children)
+            .then((results) => {
+                callback(null, results);
+            })
+            .catch((err) => {
+                callback(mapErrorMessage(err, path, 'Failed to read directory: '));
+            });
+    }
+}
+
 function readdir(path, options, callback) {
     path = globalObject.path.normalize(path);
     if (typeof options === 'function') {
         callback = options;
         options = {};
     }
+
+    if(IS_WINDOWS && path === Constants.TAURI_ROOT){
+        if(options.withFileTypes) {
+            callback(new Errors.EIO(`Cannot use 'withFileTypes' option with windows drive roots! ` + path , path));
+            return;
+        }
+        window.__TAURI__.invoke('_get_windows_drives')
+            .then(drives=>{
+                let entries = [];
+                for(let drive of drives) {
+                    entries.push({name: drive});
+                }
+                _readDirHelper(entries, path, options, callback);
+            })
+            .catch(err =>{
+                callback(mapErrorMessage(err, path, 'Failed to get drives: '));
+            });
+        return;
+    }
+
     let platformPath = getTauriPlatformPath(path);
     __TAURI__.fs.readDir(platformPath)
         .then((entries)=>{
-            let children = [];
-            for (const entry of entries) {
-                if(!options.withFileTypes){
-                    children.push(entry.name);
-                } else {
-                    children.push(Utils.getTauriStat(`${path}/${entry.name}`));
-                }
-            }
-            if(!options.withFileTypes){
-                callback(null, children);
-            } else {
-                Promise.all(children)
-                    .then((results) => {
-                        callback(null, results);
-                    })
-                    .catch((err) => {
-                        callback(mapErrorMessage(err, path, 'Failed to read directory: '));
-                    });
-            }
+            _readDirHelper(entries, path, options, callback);
         })
         .catch((err)=>{
             callback(mapErrorMessage(err, path, 'Failed to read directory: '));
