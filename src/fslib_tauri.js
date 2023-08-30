@@ -213,18 +213,19 @@ function extractErrorNumber(str) {
 function mapErrorMessage(tauriErrorMessage, path, userMessage= '') {
     let errorNumber = extractErrorNumber(tauriErrorMessage);
     switch (errorNumber) {
-    case '2': return new Errors.ENOENT(userMessage + ` No such File or Directory: ` + path, path);
-    case '17': return new Errors.EEXIST(userMessage + ` File exists: ` + path, path);
-    case '39': return new Errors.ENOTEMPTY(userMessage + ` Directory not empty: ` + path, path);
-    case '20': return new Errors.ENOTDIR(userMessage + ` Not a Directory: ` + path, path);
-    case '13': return new Errors.EACCES(userMessage + ` Permission denied: ` + path, path);
-    case '21': return new Errors.EISDIR(userMessage + ` Is a directory: ` + path, path);
-    case '9': return new Errors.EBADF(userMessage + ` Bad file number: ` + path, path);
-    case '30': return new Errors.EROFS(userMessage + ` Read-only file system: ` + path, path);
-    case '28': return new Errors.ENOSPC(userMessage + ` No space left on device: ` + path, path);
-    case '16': return new Errors.EBUSY(userMessage + ` Device or resource busy: ` + path, path);
-    case '22': return new Errors.EINVAL(userMessage + ` Invalid argument: ` + path, path);
-    default: return new Errors.EIO(userMessage + ` IO error on path: ` + path, path);
+    case '2': return new Errors.ENOENT(userMessage + ` No such File or Directory: ` + path + tauriErrorMessage, path);
+    case '3': return new Errors.ENOENT(userMessage + ` System cannot find the path specified: ` + path + tauriErrorMessage, path);
+    case '17': return new Errors.EEXIST(userMessage + ` File exists: ` + path + tauriErrorMessage, path);
+    case '39': return new Errors.ENOTEMPTY(userMessage + ` Directory not empty: ` + path + tauriErrorMessage, path);
+    case '20': return new Errors.ENOTDIR(userMessage + ` Not a Directory: ` + path + tauriErrorMessage, path);
+    case '13': return new Errors.EACCES(userMessage + ` Permission denied: ` + path + tauriErrorMessage, path);
+    case '21': return new Errors.EISDIR(userMessage + ` Is a directory: ` + path + tauriErrorMessage, path);
+    case '9': return new Errors.EBADF(userMessage + ` Bad file number: ` + path + tauriErrorMessage, path);
+    case '30': return new Errors.EROFS(userMessage + ` Read-only file system: ` + path + tauriErrorMessage, path);
+    case '28': return new Errors.ENOSPC(userMessage + ` No space left on device: ` + path + tauriErrorMessage, path);
+    case '16': return new Errors.EBUSY(userMessage + ` Device or resource busy: ` + path + tauriErrorMessage, path);
+    case '22': return new Errors.EINVAL(userMessage + ` Invalid argument: ` + path + tauriErrorMessage, path);
+    default: return new Errors.EIO(userMessage + ` IO error on path: ` + path + tauriErrorMessage, path);
     }
 }
 

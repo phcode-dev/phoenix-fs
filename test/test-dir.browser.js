@@ -20,7 +20,7 @@ function _setupTests(testType) {
         case TEST_TYPE_FS_ACCESS: testPath = window.mountTestPath;break;
         case TEST_TYPE_FILER: testPath = window.virtualTestPath;break;
         case TEST_TYPE_TAURI:
-            testPath = `${await window.__TAURI__.path.appLocalDataDir()}test-phoenix-fs`;
+            testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}test-phoenix-fs`);
             consoleLogToShell("using tauri test path: "+ testPath);
             break;
         default: throw new Error("unknown file system impl");
@@ -60,13 +60,15 @@ function _setupTests(testType) {
         // virtual fs
         let createSuccess = false;
         let path = `${testPath}/testDir`;
+        let error;
         fs.mkdir(path, (err)=>{
+            error = err;
             if(!err){
                 createSuccess = true;
             }
         });
         await waitForTrue(()=>{return createSuccess;},1000);
-        expect(createSuccess).to.be.true;
+        expect(error).to.be.null;
         return path;
     }
 
