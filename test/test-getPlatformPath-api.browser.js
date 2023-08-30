@@ -86,16 +86,24 @@ describe(`test getTauriVirtualPath api`, function () {
     }
 });
 
-describe(`test _get_windows_drives api`, function () {
-    if(IS_WINDOWS){
-        it(`windows: should _get_windows_drives return all windows drives`, async function () {
-            let drives = await __TAURI__.invoke('_get_windows_drives');
-            expect(drives).to.be.null;
-        });
-    } else {
-        it(`should _get_windows_drives return null in other platforms`, async function () {
-            let drives = await __TAURI__.invoke('_get_windows_drives');
-            expect(drives).to.be.null;
-        });
-    }
-});
+if(window.__TAURI__){
+    describe(`test _get_windows_drives api`, function () {
+        function isLetter(str) {
+            return !!(str.length === 1 && str.match(/[a-z]/i));
+        }
+        if(IS_WINDOWS){
+            it(`windows: should _get_windows_drives return all windows drives`, async function () {
+                let drives = await window.__TAURI__.invoke('_get_windows_drives');
+                expect(drives.length > 1).to.be.true;
+                for(let drive of drives){
+                    expect(isLetter(drive)).to.be.true;
+                }
+            });
+        } else {
+            it(`should _get_windows_drives return null in other platforms`, async function () {
+                let drives = await window.__TAURI__.invoke('_get_windows_drives');
+                expect(drives).to.be.null;
+            });
+        }
+    });
+}

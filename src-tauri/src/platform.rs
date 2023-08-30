@@ -9,21 +9,24 @@ use winapi::um::fileapi::GetLogicalDriveStringsW;
 
 pub fn get_windows_drives() -> Option<Vec<char>> {
     #[cfg(target_os = "windows")] {
-        let mut buffer: [u16; 255] = [0; 255];
+        let mut buffer: [u16; 1024] = [0; 1024];
 
         unsafe {
-            let res = GetLogicalDriveStringsW(255, buffer.as_mut_ptr());
+            let res = GetLogicalDriveStringsW(1024, buffer.as_mut_ptr());
             if res == 0 {
                 return None;
             }
 
-            let drives: Vec<char> = buffer.iter().filter_map(|&u| {
-                if u != 0 {
-                    Some(u as u8 as char)
-                } else {
-                    None
-                }
-            }).collect();
+            let drives: Vec<char> = buffer
+                .chunks(4)  // Each drive letter representation is 4 bytes (letter, colon, slash, null terminator)
+                .filter_map(|chunk| {
+                    if chunk[0] != 0 {
+                        Some(chunk[0] as u8 as char)
+                    } else {
+                        None
+                    }
+                })
+                .collect();
 
             Some(drives)
         }
