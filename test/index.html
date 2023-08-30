@@ -11,7 +11,7 @@
                 location.reload();
             }
         });
-        if(window.showOpenFilePicker){
+        if(window.showOpenFilePicker && !window.__TAURI__){
            window.supportsFsAccessAPIs = true;
         }
         const TEST_TYPE_FS_ACCESS = "fs access";
