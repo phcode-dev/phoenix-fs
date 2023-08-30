@@ -1,6 +1,4 @@
-/* global expect,fs */
-
-const IS_WINDOWS = navigator.userAgent.includes('Windows');
+/* global expect,fs, IS_WINDOWS */
 
 describe(`test getTauriPlatformPath api`, function () {
     it(`should fs exist in browser`, function () {
