@@ -103,6 +103,14 @@ const createStatObject = async function (path, handle) {
     return new Stats(path, fileDetails, Constants.MOUNT_DEVICE_NAME);
 };
 
+const createDummyStatObject = function (path, isDir, deviceName) {
+    let fileDetails = {
+        type: isDir ? Constants.NODE_TYPE_DIRECTORY: Constants.NODE_TYPE_FILE,
+        size: 0
+    };
+    return new Stats(path, fileDetails, deviceName);
+};
+
 const getTauriStat = async function (vfsPath) {
     let stats = await window.__TAURI__.invoke("plugin:fs-extra|metadata", {
         path: globalObject.fs.getTauriPlatformPath(vfsPath)
@@ -129,6 +137,7 @@ const getTauriStat = async function (vfsPath) {
 
 const Utils = {
     createStatObject,
+    createDummyStatObject,
     getTauriStat
 };
 

@@ -229,16 +229,18 @@ function mapErrorMessage(tauriErrorMessage, path, userMessage= '') {
     }
 }
 
-function _readDirHelper(entries, path, options, callback) {
+function _readDirHelper(entries, path, options, callback, useDummyStats) {
     let children = [];
     for (const entry of entries) {
         if(!options.withFileTypes){
             children.push(entry.name);
+        } else if(useDummyStats){
+            children.push(Utils.createDummyStatObject(`${path}/${entry.name}`, true, Constants.TAURI_DEVICE_NAME));
         } else {
             children.push(Utils.getTauriStat(`${path}/${entry.name}`));
         }
     }
-    if(!options.withFileTypes){
+    if(!options.withFileTypes || useDummyStats){
         callback(null, children);
     } else {
         Promise.all(children)
@@ -259,17 +261,13 @@ function readdir(path, options, callback) {
     }
 
     if(IS_WINDOWS && path === Constants.TAURI_ROOT){
-        if(options.withFileTypes) {
-            callback(new Errors.EIO(`Cannot use 'withFileTypes' option with windows drive roots! ` + path , path));
-            return;
-        }
         window.__TAURI__.invoke('_get_windows_drives')
             .then(drives=>{
                 let entries = [];
                 for(let drive of drives) {
                     entries.push({name: drive});
                 }
-                _readDirHelper(entries, path, options, callback);
+                _readDirHelper(entries, path, options, callback, true);
             })
             .catch(err =>{
                 callback(mapErrorMessage(err, path, 'Failed to get drives: '));
