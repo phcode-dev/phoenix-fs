@@ -45,6 +45,7 @@ function Stats(path, fileNode, devName) {
     this.ctimeMs = fileNode.ctime;
     this.version = fileNode.version;
     this.mode = fileNode.mode;
+    this.readonly = fileNode.readonly;
     this.name = globalObject.path.basename(path);
 }
 
@@ -102,8 +103,33 @@ const createStatObject = async function (path, handle) {
     return new Stats(path, fileDetails, Constants.MOUNT_DEVICE_NAME);
 };
 
+const getTauriStat = async function (vfsPath) {
+    let stats = await window.__TAURI__.invoke("plugin:fs-extra|metadata", {
+        path: globalObject.fs.getTauriPlatformPath(vfsPath)
+    });
+    let type = Constants.NODE_TYPE_DIRECTORY;
+    if(stats.isFile){
+        type = Constants.NODE_TYPE_FILE;
+    } else if(stats.isSymlink){
+        type = Constants.NODE_TYPE_SYMBOLIC_LINK;
+    }
+    stats.permissions = stats.permissions || {};
+    let fileDetails = {
+        type: type,
+        size: stats.size,
+        mode: stats.mode || stats.permissions.mode,
+        readonly: stats.permissions.readonly,
+        ctime: stats.createdAtMs,
+        atime: stats.accessedAtMs,
+        mtime: stats.modifiedAtMs,
+        nlinks: stats.nlink
+    };
+    return new Stats(vfsPath, fileDetails, `${Constants.TAURI_DEVICE_NAME}_${stats.dev}`);
+};
+
 const Utils = {
-    createStatObject
+    createStatObject,
+    getTauriStat
 };
 
 module.exports ={

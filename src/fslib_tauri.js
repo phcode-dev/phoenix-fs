@@ -22,8 +22,8 @@
 /*eslint strict: ["error", "global"]*/
 
 const {Constants} = require('./constants');
-const {Mounts} = require("./fslib_mounts");
 const {Errors} = require("./errno");
+const {Utils} = require("./utils");
 
 const TAURI_PATH_PREFIX = Constants.TAURI_ROOT+ '/';
 const IS_WINDOWS = navigator.userAgent.includes('Windows');
@@ -46,6 +46,9 @@ const IS_WINDOWS = navigator.userAgent.includes('Windows');
  * getTauriPlatformPath('/tauri/home/user/a.txt');  // Returns: '/home/user/a.txt'
  */
 function getTauriPlatformPath(phoenixFSPath) {
+    if(phoenixFSPath === Constants.TAURI_ROOT){
+        phoenixFSPath = TAURI_PATH_PREFIX;
+    }
     if (!phoenixFSPath.startsWith(TAURI_PATH_PREFIX)) {
         console.error("noop", phoenixFSPath);
         throw new Errors.EINVAL('Invalid Phoenix FS path- tauri path prefix expected: ' + phoenixFSPath);
@@ -196,20 +199,130 @@ async function openTauriFileSaveDialogueAsync(options) {
     return __TAURI__.dialog.save(options);
 }
 
+function extractErrorNumber(str) {
+    const regex = /\(os error (\d+)\)/;
+    const match = str.match(regex);
+
+    if (match && match[1]) {
+        return match[1];
+    } else {
+        return null;
+    }
+}
+
+function mapErrorMessage(tauriErrorMessage, path, userMessage= '') {
+    let errorNumber = extractErrorNumber(tauriErrorMessage);
+    switch (errorNumber) {
+    case '2': return new Errors.ENOENT(userMessage + ` No such File or Directory: ` + path, path);
+    case '17': return new Errors.EEXIST(userMessage + ` File exists: ` + path, path);
+    case '39': return new Errors.ENOTEMPTY(userMessage + ` Directory not empty: ` + path, path);
+    case '20': return new Errors.ENOTDIR(userMessage + ` Not a Directory: ` + path, path);
+    case '13': return new Errors.EACCES(userMessage + ` Permission denied: ` + path, path);
+    case '21': return new Errors.EISDIR(userMessage + ` Is a directory: ` + path, path);
+    case '9': return new Errors.EBADF(userMessage + ` Bad file number: ` + path, path);
+    case '30': return new Errors.EROFS(userMessage + ` Read-only file system: ` + path, path);
+    case '28': return new Errors.ENOSPC(userMessage + ` No space left on device: ` + path, path);
+    case '16': return new Errors.EBUSY(userMessage + ` Device or resource busy: ` + path, path);
+    case '22': return new Errors.EINVAL(userMessage + ` Invalid argument: ` + path, path);
+    default: return new Errors.EIO(userMessage + ` IO error on path: ` + path, path);
+    }
+}
+
 function readdir(path, options, callback) {
     path = globalObject.path.normalize(path);
     if (typeof options === 'function') {
         callback = options;
         options = {};
     }
+    let platformPath = getTauriPlatformPath(path);
+    __TAURI__.fs.readDir(platformPath)
+        .then((entries)=>{
+            let children = [];
+            for (const entry of entries) {
+                if(!options.withFileTypes){
+                    children.push(entry.name);
+                } else {
+                    children.push(Utils.getTauriStat(`${path}/${entry.name}`));
+                }
+            }
+            if(!options.withFileTypes){
+                callback(null, children);
+            } else {
+                Promise.all(children)
+                    .then((results) => {
+                        callback(null, results);
+                    })
+                    .catch((err) => {
+                        callback(mapErrorMessage(err, path, 'Failed to read directory: '));
+                    });
+            }
+        })
+        .catch((err)=>{
+            callback(mapErrorMessage(err, path, 'Failed to read directory: '));
+        });
+}
 
-    Mounts.getHandleFromPath(path, (err, handle) => {
-        if(err){
-            callback(err);
-        } else if (handle.kind === Constants.KIND_FILE) {
-            callback(new Errors.ENOTDIR('Path is not a directory.'));
-        }
-    });
+function mkdirs(path, mode, recursive, callback) {
+    // Determine if 'mode' is provided
+    if (typeof mode !== 'number') {
+        callback = recursive;
+        recursive = mode;
+        mode = 0o777; // Default mode (or any other default you'd like to set)
+    }
+
+    // Determine if 'recursive' is provided
+    if (typeof recursive !== 'boolean') {
+        callback = recursive;
+        recursive = false;
+    }
+
+    // Determine if 'callback' is provided
+    if (typeof callback !== 'function') {
+        callback = function () {
+            // Do Nothing
+        };
+    }
+
+    let platformPath = getTauriPlatformPath(path);
+    __TAURI__.fs.createDir(platformPath,  {recursive})
+        .then(()=>{
+            callback(null);
+        })
+        .catch((err)=>{
+            callback(mapErrorMessage(err, path, 'Failed to create directory: '));
+        });
+}
+
+function stat(path, callback) {
+    path = globalObject.path.normalize(path);
+    Utils.getTauriStat(path)
+        .then(stat =>{
+            callback(null, stat);
+        })
+        .catch((err)=>{
+            callback(mapErrorMessage(err, path, 'Failed to get stat'));
+        });
+}
+
+function unlink(path, callback) {
+    path = globalObject.path.normalize(path);
+    function errCallback(err) {
+        callback(mapErrorMessage(err, path, 'Failed to unlink'));
+    }
+    Utils.getTauriStat(path)
+        .then(stat =>{
+            let platformPath = getTauriPlatformPath(path);
+            if(stat.isDirectory()){
+                __TAURI__.fs.removeDir(platformPath, {recursive: true})
+                    .then(callback)
+                    .catch(errCallback);
+            } else {
+                __TAURI__.fs.removeFile(platformPath)
+                    .then(callback)
+                    .catch(errCallback);
+            }
+        })
+        .catch(errCallback);
 }
 
 
@@ -220,7 +333,10 @@ const TauriFS = {
     getTauriVirtualPath,
     openTauriFilePickerAsync,
     openTauriFileSaveDialogueAsync,
-    readdir
+    stat,
+    readdir,
+    mkdirs,
+    unlink
 };
 
 module.exports ={

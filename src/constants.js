@@ -23,6 +23,7 @@
 
 const Constants = {
     MOUNT_DEVICE_NAME: 'nativeFsAccess',
+    TAURI_DEVICE_NAME: 'tauri',
     KIND_FILE: 'file',
     KIND_DIRECTORY: 'directory',
     NODE_TYPE_FILE: 'FILE',

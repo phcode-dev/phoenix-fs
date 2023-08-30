@@ -218,27 +218,29 @@ describe(`Browser copy tests from "filer" to "filer"`, function () {
     _setupTests(TEST_TYPE_FILER, TEST_TYPE_FILER);
 });
 
-describe(`Browser copy tests from "filer" to "fs access"`, function () {
-    if(window.__TAURI__){
-        it(`fs access tests are disabled in tauri`, function () {});
-        return;
-    }
-    _setupTests(TEST_TYPE_FILER, TEST_TYPE_FS_ACCESS);
-});
+if(window.supportsFsAccessAPIs){
+    describe(`Browser copy tests from "filer" to "fs access"`, function () {
+        if(window.__TAURI__){
+            it(`fs access tests are disabled in tauri`, function () {});
+            return;
+        }
+        _setupTests(TEST_TYPE_FILER, TEST_TYPE_FS_ACCESS);
+    });
 
-describe(`Browser copy tests from "fs access" to "filer"`, function () {
-    if(window.__TAURI__){
-        it(`fs access tests are disabled in tauri`, function () {});
-        return;
-    }
-    _setupTests(TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER);
-});
+    describe(`Browser copy tests from "fs access" to "filer"`, function () {
+        if(window.__TAURI__){
+            it(`fs access tests are disabled in tauri`, function () {});
+            return;
+        }
+        _setupTests(TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER);
+    });
 
-describe(`Browser copy tests from "fs access" to "fs access"`, function () {
-    if(window.__TAURI__){
-        it(`fs access tests are disabled in tauri`, function () {});
-        return;
-    }
-    _setupTests(TEST_TYPE_FS_ACCESS, TEST_TYPE_FS_ACCESS);
-});
+    describe(`Browser copy tests from "fs access" to "fs access"`, function () {
+        if(window.__TAURI__){
+            it(`fs access tests are disabled in tauri`, function () {});
+            return;
+        }
+        _setupTests(TEST_TYPE_FS_ACCESS, TEST_TYPE_FS_ACCESS);
+    });
+}
 // between filer and fs access end

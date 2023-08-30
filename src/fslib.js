@@ -116,6 +116,9 @@ const fileSystemLib = {
     },
     stat: function (...args) { // (path, callback)
         let path = args[0];
+        if(TauriFS.isTauriSubPath(path)) {
+            return TauriFS.stat(...args);
+        }
         if(Mounts.isMountSubPath(path)) {
             return NativeFS.stat(...args);
         }
@@ -167,6 +170,9 @@ const fileSystemLib = {
             args[callbackIndex] = callbackInterceptor;
         }
 
+        if(TauriFS.isTauriSubPath(path)) {
+            return TauriFS.mkdirs(...args);
+        }
         if(Mounts.isMountSubPath(path)) {
             return NativeFS.mkdir(...args);
         }
@@ -188,7 +194,7 @@ const fileSystemLib = {
             return ;
         }
         if(Mounts.isMountPath(oldPath) || Mounts.isMountPath(newPath)) {
-            throw new Errors.EPERM('Mount root directory cannot be deleted.');
+            throw new Errors.EPERM('Mount root directory cannot be renamed.');
         } else if(Mounts.isMountSubPath(oldPath) && Mounts.isMountSubPath(newPath)) {
             return NativeFS.rename(oldPath, newPath, callbackInterceptor);
         }
@@ -205,9 +211,11 @@ const fileSystemLib = {
             }
         }
 
-        if(Mounts.isMountPath(path)) {
+        if(Mounts.isMountPath(path) || TauriFS.isTauriPath(path)) {
             callbackInterceptor(new Errors.EPERM('Mount root directory cannot be deleted.'));
             return ;
+        } else if(TauriFS.isTauriSubPath(path)) {
+            return TauriFS.unlink(path, callbackInterceptor);
         } else if(Mounts.isMountSubPath(path)) {
             return NativeFS.unlink(path, callbackInterceptor);
         }
@@ -258,11 +266,20 @@ const fileSystemLib = {
         throw new Errors.ENOSYS('Phoenix fs moveToTrash function not yet supported.');
     },
     mkdirs: function (path, mode, recursive, callback) {
+        // Determine if 'mode' is provided
+        if (typeof mode !== 'number') {
+            callback = recursive;
+            recursive = mode;
+            mode = 0o777; // Default mode (or any other default you'd like to set)
+        }
+
+        // Determine if 'recursive' is provided
         if (typeof recursive !== 'boolean') {
             callback = recursive;
             recursive = false;
         }
 
+        // Determine if 'callback' is provided
         if (typeof callback !== 'function') {
             callback = function () {
                 // Do Nothing
@@ -271,6 +288,8 @@ const fileSystemLib = {
 
         if (!recursive) {
             fileSystemLib.mkdir(path, mode, callback);
+        } else if(TauriFS.isTauriSubPath(path)) {
+            return TauriFS.mkdirs(path, mode, true, callback);
         } else {
             _mkdir_p(fileSystemLib, path, mode, callback);
         }

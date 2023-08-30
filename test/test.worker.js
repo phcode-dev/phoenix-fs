@@ -144,11 +144,13 @@ describe(`web worker filer tests`, function () {
     _setupTests(TEST_TYPE_FILER);
 });
 
-describe(`web worker fs access tests`, function () {
-    if(window.__TAURI__){
-        it(`fs access tests are disabled in tauri`, function () {});
-        return;
-    } else {
-        _setupTests(TEST_TYPE_FS_ACCESS);
-    }
-});
+if(window.supportsFsAccessAPIs) {
+    describe(`web worker fs access tests`, function () {
+        if(window.__TAURI__){
+            it(`fs access tests are disabled in tauri`, function () {});
+            return;
+        } else {
+            _setupTests(TEST_TYPE_FS_ACCESS);
+        }
+    });
+}
