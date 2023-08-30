@@ -109,8 +109,23 @@ function readdir(path, options, callback) {
     }
 
     if(path === Constants.MOUNT_POINT_ROOT ) {
-        let mountedFolders = Object.keys(Mounts.getMountPoints());
-        callback(null, mountedFolders);
+        const mountPoints = Mounts.getMountPoints();
+        let mountPointNames = Object.keys(mountPoints);
+        if(options['withFileTypes']){
+            let stats = [];
+            for(let mountPointName of mountPointNames){
+                stats.push(Utils.createStatObject(globalObject.path.join(path, mountPointName), mountPoints[mountPointName]));
+            }
+            Promise.all(stats)
+                .then((results) => {
+                    callback(null, results);
+                })
+                .catch((err) => {
+                    callback(new Errors.EIO('Failed reading directory: ' + path + err));
+                });
+            return;
+        }
+        callback(null, mountPointNames);
     } else {
         Mounts.getHandleFromPath(path, (err, handle) => {
             if(err){
