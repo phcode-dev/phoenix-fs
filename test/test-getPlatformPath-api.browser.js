@@ -1,7 +1,8 @@
 /* global expect,fs */
 
+const IS_WINDOWS = navigator.userAgent.includes('Windows');
+
 describe(`test getTauriPlatformPath api`, function () {
-    const IS_WINDOWS = navigator.userAgent.includes('Windows');
     it(`should fs exist in browser`, function () {
         expect(fs).to.exist;
     });
@@ -24,7 +25,7 @@ describe(`test getTauriPlatformPath api`, function () {
             } catch (e) {
                 err = e;
             }
-            expect(err.message).to.eql(new Error('Invalid Phoenix FS path for windows: ' + invalidPath));
+            expect(err.message).to.eql('Invalid Phoenix FS path for windows: ' + invalidPath);
             expect(err.code).to.eql(fs.ERR_EINVAL);
         });
     } else {
@@ -38,7 +39,6 @@ describe(`test getTauriPlatformPath api`, function () {
 });
 
 describe(`test getTauriVirtualPath api`, function () {
-    const IS_WINDOWS = navigator.userAgent.includes('Windows');
     it(`should fs exist in browser`, function () {
         expect(fs).to.exist;
     });
@@ -82,6 +82,20 @@ describe(`test getTauriVirtualPath api`, function () {
             expect(fs.getTauriVirtualPath("/x")).to.eql("/tauri/x");
             expect(fs.getTauriVirtualPath("/x/b/")).to.eql("/tauri/x/b/");
             expect(fs.getTauriVirtualPath("/x/b/a.txt")).to.eql("/tauri/x/b/a.txt");
+        });
+    }
+});
+
+describe(`test _get_windows_drives api`, function () {
+    if(IS_WINDOWS){
+        it(`windows: should _get_windows_drives return all windows drives`, async function () {
+            let drives = await __TAURI__.invoke('_get_windows_drives');
+            expect(drives).to.be.null;
+        });
+    } else {
+        it(`should _get_windows_drives return null in other platforms`, async function () {
+            let drives = await __TAURI__.invoke('_get_windows_drives');
+            expect(drives).to.be.null;
         });
     }
 });
