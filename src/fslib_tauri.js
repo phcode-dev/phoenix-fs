@@ -254,6 +254,35 @@ function _readDirHelper(entries, path, options, callback, useDummyStats) {
     }
 }
 
+/**
+ * Reads the contents of a directory. This method will list all the entries of a directory
+ * as an array of strings(filenames , directory names, or symbolic link names).
+ * If the `withFileTypes` option is set to `true`, it will return file stat objects array instead of strings.
+ *
+ * @param {string} path - The path to the directory that needs to be read.
+ * @param {Object} [options] - Options for reading the directory.
+ * @param {boolean} [options.withFileTypes=false] - Set to `true` to return stats of each content file/dir. Defaults to `false`.
+ * @param {function} callback - A callback function to execute once the directory is read.
+ *                              This function gets two arguments: (err, entries).
+ *                              `err` will be set if an error occurred during reading. `entries` is an array of file names or fs stat objects.
+ *
+ * @example
+ * // Using withFileTypes option
+ * fs.readdir("/tauri/some/path", { withFileTypes: true }, function(err, entries) {
+ *   if (err) throw err;
+ *   console.log(entries); // Outputs file stats
+ * });
+ *
+ * @example
+ * // Without specifying withFileTypes option
+ * fs.readdir("/tauri/some/path", function(err, entries) {
+ *   if (err) throw err;
+ *   console.log(entries); // Outputs an array of file/dir names
+ * });
+ *
+ * @returns {void}
+ */
+
 function readdir(path, options, callback) {
     path = globalObject.path.normalize(path);
     if (typeof options === 'function') {
@@ -286,6 +315,29 @@ function readdir(path, options, callback) {
         });
 }
 
+/**
+ * Creates a directory with optional mode and recursion(create all intermediate directories if those don't exist).
+ *
+ * @param {string} path - The path where the directory should be created.
+ * @param {(number|function)} [mode=0o777] - The directory permissions. Defaults to `0o777` if not provided.
+ * @param {(boolean|function)} [recursive=false] - Whether to create directories recursively. Defaults to `false` if not provided.
+ * @param {function} [callback] - Callback to execute once directory creation is done. Called with an error as the first argument on failure, and null on success.
+ *
+ * @example
+ * // Create directory without recursion and with default mode, and a callback.
+ * fs.mkdirs("/tauri/some/path", callback);
+ *
+ * // Create directory with specified mode, without recursion, and a callback.
+ * fs.mkdirs("/tauri/some/path", 0o755, callback);
+ *
+ * // Create directory with specified mode, with recursion, and a callback.
+ * fs.mkdirs("/tauri/some/path", 0o755, true, callback);
+ *
+ * // Create directory without recursion, without mode, and without a callback.
+ * fs.mkdirs("/tauri/some/path");
+ *
+ * @returns {void}
+ */
 function mkdirs(path, mode, recursive, callback) {
     // Determine if 'mode' is provided
     if (typeof mode !== 'number') {

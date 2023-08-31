@@ -1,8 +1,38 @@
-# Phoenix fs
-node like `fs` API for the browser that uses indexedDB/ fs access browser APIs/ tauri fs APIs/ Node fs apis for persistence.
+# Phoenix Browser Virtual File System
+
+The Phoenix Browser Virtual File System (VFS) is a virtualized,
+Linux-inspired file system directly within your browser. This library
+brings  Node.js `fs` APIs to the browser.
+
+Phoenix VFS is designed with platform neutrality in mind.
+This ensures that if you use phoenix vfs as your file system layer, then the code written for browser environments works consistently across popular browsers like Chrome, Edge, Firefox, and Safari, as well as native platforms such as Mac, Windows, and Linux (via Tauri).
+
+The fs lib is available across all browser contexts: the main browser window,
+web workers, shared workers, and service workers.
+
+
+## File System Structure & Organization
+
+Here's a closer look at the Phoenix VFS organization:
+
+- **Root File System (`/`)**: At its core, the root file system is backed by IndexedDB. Additional paths, such as those from Tauri or `fs` access, will be automatically mounted to this root when detected.
+
+- **Fs Access APIs (`/mnt`)**: If your environment supports `fs` access APIs, you'll find them conveniently mounted under the `/mnt` path. use `fs.mountNativeFolder` API to add more platform folders.
+
+- **Tauri APIs Integration**:
+  - When Tauri APIs are active, you gain direct access to your local machine's file system through the `/tauri/` path.
+  - **Windows Example**: `/tauri/c/Program Files/` could represent the C drive's "Program Files" directory.
+  - **Linux/macOS Example**: `/tauri/usr/bin/` might be an accessible directory, akin to native paths you'd expect on these platforms.
+
+By adopting Phoenix VFS, you're not just leveraging a file system; you're integrating a dynamic, adaptable layer that bridges the web and native worlds, making your web applications more powerful and efficient.
+
+---
+
+You can then continue with installation instructions, usage, and other sections relevant to your library in the README.
 
 <!-- TOC -->
-* [Phoenix fs](#phoenix-fs)
+* [Phoenix Browser Virtual File System](#phoenix-browser-virtual-file-system)
+  * [File System Structure & Organization](#file-system-structure--organization)
   * [Installation](#installation)
     * [Getting the code locally](#getting-the-code-locally)
     * [Usage in browser](#usage-in-browser)
@@ -13,6 +43,7 @@ node like `fs` API for the browser that uses indexedDB/ fs access browser APIs/ 
   * [Tests in tauri](#tests-in-tauri)
     * [Publishing to npm](#publishing-to-npm)
 * [API Docs](#api-docs)
+  * [Error Codes](#error-codes)
   * [`fs.mountNativeFolder` Function](#fsmountnativefolder-function)
     * [Parameters:](#parameters)
     * [Example Usage:](#example-usage)
@@ -37,6 +68,11 @@ node like `fs` API for the browser that uses indexedDB/ fs access browser APIs/ 
     * [Returns](#returns-3)
     * [Throws](#throws-1)
     * [Example](#example)
+  * [`fs.mkdir` function](#fsmkdir-function)
+  * [`fs.mkdirs` function](#fsmkdirs-function)
+  * [`fs.readdir` function](#fsreaddir-function)
+    * [Parameters](#parameters-5)
+    * [Examples](#examples-1)
 <!-- TOC -->
 
 ## Installation
@@ -162,6 +198,41 @@ Inorder to publish the package to npm, do the following
 and the code pushed to npm branch, GitHub actions will automatically publish the library to npm.
 
 # API Docs
+
+## Error Codes
+ The `fs` object has all the stantard error codes used by the APIs. Here is a list:
+```json
+[
+    "ERR_ENOENT",
+    "ERR_EOF",
+    "ERR_EACCES",
+    "ERR_EAGAIN",
+    "ERR_EBADF",
+    "ERR_EBUSY",
+    "ERR_EINVAL",
+    "ERR_EMFILE",
+    "ERR_ENFILE",
+    "ERR_ENOBUFS",
+    "ERR_ENOTDIR",
+    "ERR_EISDIR",
+    "ERR_ENOSYS",
+    "ERR_ECHARSET",
+    "ERR_EEXIST",
+    "ERR_ENAMETOOLONG",
+    "ERR_EPERM",
+    "ERR_ELOOP",
+    "ERR_EXDEV",
+    "ERR_ENOTEMPTY",
+    "ERR_ENOSPC",
+    "ERR_EIO",
+    "ERR_EROFS",
+    "ERR_ESPIPE",
+    "ERR_ECANCELED"
+]
+```
+
+You can use for example `fs.ERR_EIO` to compare the error code you got from
+any of the below APIs if there are some errors.
 
 ## `fs.mountNativeFolder` Function
 
@@ -356,4 +427,89 @@ On a *nix system:
 ```javascript
 fs.getTauriVirtualPath('/home/user/a.txt');  
 // Returns: '/tauri/home/user/a.txt'
+```
+
+## `fs.mkdir` function
+
+Creates a directory at given path. Not that the parent dir should exist for this to work. else use `fs.mkdirs`.
+
+- **Parameters:**
+  - `path` _(string)_ - The path where the directory should be created.
+  - `mode` _(number|function)_ (Optional, default: `0o777`) - The directory permissions.
+  - `callback` _(function)_ (Optional) - Callback to execute once directory creation is done. Called with an error as the first argument on failure, and null on success.
+
+- **Examples:**
+  ```javascript
+  // Create directory with default mode, and a callback.
+  fs.mkdir("/tauri/some/path", callback);
+
+  // Create directory with specified mode and a callback.
+  fs.mkdir("/tauri/some/path", 0o755, callback);
+  
+  // Create directory without mode and without a callback.
+  fs.mkdir("/tauri/some/path");
+  ```
+
+- **Returns:**
+  - `void`
+
+
+## `fs.mkdirs` function
+
+Creates a directory with optional mode and recursion (create all intermediate directories if those don't exist).
+
+- **Parameters:**
+  - `path` _(string)_ - The path where the directory should be created.
+  - `mode` _(number|function)_ (Optional, default: `0o777`) - The directory permissions.
+  - `recursive` _(boolean|function)_ (Optional, default: `false`) - Whether to create directories recursively.
+  - `callback` _(function)_ (Optional) - Callback to execute once directory creation is done. Called with an error as the first argument on failure, and null on success.
+
+- **Examples:**
+  ```javascript
+  // Create directory without recursion and with default mode, and a callback.
+  fs.mkdirs("/tauri/some/path", callback);
+
+  // Create directory with specified mode, without recursion, and a callback.
+  fs.mkdirs("/tauri/some/path", 0o755, callback);
+
+  // Create directory with specified mode, with recursion, and a callback.
+  fs.mkdirs("/tauri/some/path", 0o755, true, callback);
+
+  // Create directory without recursion, without mode, and without a callback.
+  fs.mkdirs("/tauri/some/path");
+  ```
+
+- **Returns:**
+  - `void`
+
+## `fs.readdir` function
+
+Reads the contents of a directory. This method will list all the
+entries of a directory as an array of strings (filenames, directory names, or symbolic link names). If the `withFileTypes` option is set to `true`, it will return file stat objects array instead of strings.
+
+### Parameters
+
+- **path** (string): The path to the directory that needs to be read.
+- **options** (Object, optional): Options for reading the directory.
+  - **withFileTypes** (boolean, default: `false`): Set to `true` to return stats of each content file/dir.
+- **callback** (function): A callback function to execute once the directory is read. This function gets two arguments: (err, entries). `err` will be set if an error occurred during reading. `entries` is an array of file names or fs stat objects.
+
+### Examples
+
+Using `withFileTypes` option:
+
+```javascript
+fs.readdir("/tauri/some/path", { withFileTypes: true }, function(err, entries) {
+  if (err) throw err;
+  console.log(entries); // Outputs file stats
+});
+```
+
+Without specifying `withFileTypes` option:
+
+```javascript
+fs.readdir("/tauri/some/path", function(err, entries) {
+  if (err) throw err;
+  console.log(entries); // Outputs an array of file/dir names
+});
 ```
