@@ -50,12 +50,13 @@ function _setupTests(testType) {
     beforeEach(async function () {
         // setup test folders
         await _clean();
-        console.log(`mkdir: `, testPath);
-        let cleanSuccess = false;
+        console.log(`mkdirs: `, testPath);
+        let mkdirResolve;
+        const mkdirPromise = new Promise((resolve) => {mkdirResolve = resolve;});
         fs.mkdirs(testPath, 777 ,true, ()=>{
-            cleanSuccess = true;
+            mkdirResolve();
         });
-        await waitForTrue(()=>{return cleanSuccess;},10000);
+        await mkdirPromise;
     });
 
     afterEach(async function () {
@@ -76,19 +77,23 @@ function _setupTests(testType) {
         expect(fs.TAURI_ROOT).to.equal(`/tauri`);
     }, 10000);
 
-    async function _writeTestDir() {
-        // virtual fs
-        let createSuccess = false;
-        let path = `${testPath}/testDir`;
-        let error;
-        fs.mkdir(path, (err)=>{
-            error = err;
-            if(!err){
-                createSuccess = true;
-            }
+    function _creatDirAndValidate(path) {
+        return new Promise((resolve, reject)=>{
+            fs.mkdir(path, (err)=>{
+                if(err){
+                    reject();
+                } else {
+                    _validate_exists(path)
+                        .then(resolve)
+                        .catch(reject);
+                }
+            });
         });
-        await waitForTrue(()=>{return createSuccess;},1000);
-        expect(error).to.be.null;
+    }
+
+    async function _writeTestDir() {
+        let path = `${testPath}/testDir`;
+        await _creatDirAndValidate(path);
         return path;
     }
 
@@ -230,6 +235,32 @@ function _setupTests(testType) {
         await waitForTrue(()=>{return success;},1000);
         expect(error).to.be.null;
         await _validate_exists(pathToCreate);
+    });
+
+    it(`Should phoenix ${testType} unlink(path, cb) work for empty dirs`, async function () {
+        let dirPathCreated = await _writeTestDir();
+        let success, error;
+        fs.unlink(dirPathCreated, (err)=>{
+            error = err;
+            success = true;
+        });
+        await waitForTrue(()=>{return success;},1000);
+        expect(error).to.be.null;
+        await _validate_not_exists(dirPathCreated);
+    });
+
+    it(`Should phoenix ${testType} unlink(path, cb) work for non-empty dirs`, async function () {
+        let dirPathCreated = await _writeTestDir();
+        await _creatDirAndValidate(`${dirPathCreated}/sub1`);
+        await _creatDirAndValidate(`${dirPathCreated}/sub2`);
+        let success, error;
+        fs.unlink(dirPathCreated, (err)=>{
+            error = err;
+            success = true;
+        });
+        await waitForTrue(()=>{return success;},1000);
+        expect(error).to.be.null;
+        await _validate_not_exists(dirPathCreated);
     });
 
     it(`Should phoenix ${testType} get stat of dir`, async function () {

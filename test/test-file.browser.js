@@ -115,6 +115,8 @@ function _setupTests(testType) {
         expect(readSuccess).to.be.true;
         expect(contentsRead[0].type).to.exist;
     });
+    // todo: file stat integration tests
+    // todo: unlink file integration tests
 }
 
 describe(`File: Browser virtual fs tests: filer paths`, function () {
