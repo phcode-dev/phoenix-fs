@@ -6,6 +6,26 @@ function _setupTests(testType) {
     function consoleLogToShell(message) {
         return window.__TAURI__.invoke("console_log", {message});
     }
+    async function _validate_exists(path) {
+        let done, err;
+        fs.stat(path, (error)=>{
+            err = error;
+            done = true;
+        });
+        await waitForTrue(()=>{return done;},1000);
+        expect(err).to.be.null;
+    }
+
+    async function _validate_not_exists(path) {
+        let done, err;
+        fs.stat(path, (error)=>{
+            err = error;
+            done = true;
+        });
+        await waitForTrue(()=>{return done;},1000);
+        expect(err.code).to.equal(fs.ERR_ENOENT);
+    }
+
     async function _clean() {
         console.log(`cleaning: `, testPath);
         let cleanSuccess = false;
@@ -115,26 +135,101 @@ function _setupTests(testType) {
 
     it(`Should phoenix ${testType} mkdir(path,mode, cb) in browser if it doesnt exist`, async function () {
         let createSuccess = false;
-        fs.mkdir(`${testPath}/testDir1`, 777, (err)=>{
+        const dirPathToCreate = `${testPath}/testDir1`;
+        fs.mkdir(dirPathToCreate, 777, (err)=>{
             if(!err){
                 createSuccess = true;
             }
         });
         await waitForTrue(()=>{return createSuccess;},1000);
         expect(createSuccess).to.be.true;
+        await _validate_exists(dirPathToCreate);
+    });
+
+    it(`Should phoenix ${testType} mkdir(path, cb) in browser if it doesnt exist`, async function () {
+        let createSuccess = false;
+        const dirPathToCreate = `${testPath}/testDir1`;
+        fs.mkdir(dirPathToCreate, (err)=>{
+            if(!err){
+                createSuccess = true;
+            }
+        });
+        await waitForTrue(()=>{return createSuccess;},1000);
+        expect(createSuccess).to.be.true;
+        await _validate_exists(dirPathToCreate);
     });
 
     it(`Should phoenix fail ${testType} mkdir(path,mode, cb) if already exists`, async function () {
-        // virtual fs
         let dirPathCreated = await _writeTestDir();
-        let failed = false;
+        let error;
         fs.mkdir(dirPathCreated, 777, (err)=>{
-            if(err){
-                failed = true;
-            }
+            error = err;
         });
-        await waitForTrue(()=>{return failed;},1000);
-        expect(failed).to.be.true;
+        await waitForTrue(()=>{return !!error;},1000);
+        expect(error.code).to.equal(fs.ERR_EEXIST);
+    });
+
+    it(`Should phoenix ${testType} mkdirs(path,mode, recursive, cb) even if exists`, async function () {
+        let dirPathCreated = await _writeTestDir();
+        let success, error;
+        fs.mkdirs(dirPathCreated, 777, true, (err)=>{
+            error = err;
+            success = true;
+        });
+        await waitForTrue(()=>{return success;},1000);
+        expect(error).to.be.null;
+        await _validate_exists(dirPathCreated);
+    });
+
+    it(`Should phoenix ${testType} mkdirs(path,mode, recursive, cb) if any node in between doesnt exists`, async function () {
+        let dirPathCreated = await _writeTestDir();
+        let pathToCreate = `${dirPathCreated}/path/that/doesnt/exist`;
+        let success, error;
+        fs.mkdirs(pathToCreate, 777, true, (err)=>{
+            error = err;
+            success = true;
+        });
+        await waitForTrue(()=>{return success;},1000);
+        expect(error).to.be.null;
+        await _validate_exists(pathToCreate);
+    });
+
+    it(`Should phoenix ${testType} mkdirs(path, recursive, cb)  work if any node in between doesnt exists`, async function () {
+        let dirPathCreated = await _writeTestDir();
+        let pathToCreate = `${dirPathCreated}/path/that/doesnt/exist`;
+        let success, error;
+        fs.mkdirs(pathToCreate, true, (err)=>{
+            error = err;
+            success = true;
+        });
+        await waitForTrue(()=>{return success;},1000);
+        expect(error).to.be.null;
+        await _validate_exists(pathToCreate);
+    });
+
+    it(`Should phoenix ${testType} mkdirs(path,mode, cb) fail if not recursive and any node in between doesnt exists`, async function () {
+        let dirPathCreated = await _writeTestDir();
+        let pathToCreate = `${dirPathCreated}/path/that/doesnt/exist`;
+        let error;
+        fs.mkdirs(pathToCreate, 777, (err)=>{
+            error = err;
+        });
+        await waitForTrue(()=>{return !!error;},1000);
+        expect(error.code).to.eql(fs.ERR_ENOENT);
+        await _validate_not_exists(pathToCreate);
+    });
+
+    it(`Should phoenix ${testType} mkdirs(path, cb) work if mode not specified`, async function () {
+        let dirPathCreated = await _writeTestDir();
+        let pathToCreate = `${dirPathCreated}/newDir`;
+        let success, error;
+        fs.mkdirs(pathToCreate, (err)=>{
+            error = err;
+            success = true;
+        });
+        await waitForTrue(()=>{return success;},1000);
+        expect(error).to.be.null;
+        await _validate_exists(pathToCreate);
     });
 
     it(`Should phoenix ${testType} rename fail if dst is a subpath of src`, async function () {

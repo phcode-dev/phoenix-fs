@@ -214,8 +214,9 @@ function mapErrorMessage(tauriErrorMessage, path, userMessage= '') {
     let errorNumber = extractErrorNumber(tauriErrorMessage);
     switch (errorNumber) {
     case '2': return new Errors.ENOENT(userMessage + ` No such File or Directory: ` + path + tauriErrorMessage, path);
-    case '3': return new Errors.ENOENT(userMessage + ` System cannot find the path specified: ` + path + tauriErrorMessage, path);
+    case '3': return new Errors.ENOENT(userMessage + ` System cannot find the path specified: ` + path + tauriErrorMessage, path); // windows
     case '17': return new Errors.EEXIST(userMessage + ` File exists: ` + path + tauriErrorMessage, path);
+    case '183': return new Errors.EEXIST(userMessage + ` File exists: ` + path + tauriErrorMessage, path); // windows
     case '39': return new Errors.ENOTEMPTY(userMessage + ` Directory not empty: ` + path + tauriErrorMessage, path);
     case '20': return new Errors.ENOTDIR(userMessage + ` Not a Directory: ` + path + tauriErrorMessage, path);
     case '13': return new Errors.EACCES(userMessage + ` Permission denied: ` + path + tauriErrorMessage, path);
