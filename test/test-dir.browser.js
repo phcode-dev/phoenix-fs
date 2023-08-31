@@ -232,6 +232,44 @@ function _setupTests(testType) {
         await _validate_exists(pathToCreate);
     });
 
+    it(`Should phoenix ${testType} get stat of dir`, async function () {
+        let dirPathCreated = await _writeTestDir();
+        let stats, error;
+        fs.stat(dirPathCreated, (err, stat)=>{
+            stats = stat;
+            error = err;
+        });
+        await waitForTrue(()=>{return !!stats;},1000);
+        expect(error).to.be.null;
+        expect(stats.isDirectory()).to.be.true;
+        expect(stats.name).to.equal(Filer.path.basename(dirPathCreated));
+        switch (testType) {
+        case TEST_TYPE_FS_ACCESS:
+            expect(stats.dev).to.eql("nativeFsAccess");
+            expect(stats.mtime).to.be.null; // fs access pais directory doesnt yet have way to get modified time
+            break;
+        case TEST_TYPE_FILER:
+            expect(stats.dev).to.eql("local");
+            expect(stats.mtime > 0).to.be.true;
+            break;
+        case TEST_TYPE_TAURI:
+            expect(stats.dev.startsWith("tauri")).to.be.true;
+            expect(stats.mtime > 0).to.be.true;
+            break;
+        default: throw new Error("unknown file system impl");
+        }
+    });
+
+    it(`Should phoenix ${testType} throw enoent if dir doesnt exist`, async function () {
+        let dirNotExistsPath = `${await _writeTestDir()}/path/that/dont/exist`;
+        let error;
+        fs.stat(dirNotExistsPath, (err)=>{
+            error = err;
+        });
+        await waitForTrue(()=>{return !!error;},1000);
+        expect(error.code).to.equal(fs.ERR_ENOENT);
+    });
+
     it(`Should phoenix ${testType} rename fail if dst is a subpath of src`, async function () {
         let errored = false;
         fs.rename(`${testPath}/a`, `${testPath}/a/b`, (err)=>{
