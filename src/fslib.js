@@ -126,7 +126,9 @@ const fileSystemLib = {
     },
     readFile: function (...args) { // (path, options, callback)
         let path = args[0];
-        if(Mounts.isMountSubPath(path)) {
+        if(TauriFS.isTauriSubPath(path)) {
+            return TauriFS.readFile(...args);
+        } else if(Mounts.isMountSubPath(path)) {
             return NativeFS.readFile(...args);
         }
         return filerLib.fs.readFile(...args);
@@ -255,6 +257,9 @@ const fileSystemLib = {
         }
         // we have two implementation here even though the globalCopy fn is capable of copying anywhere. Native has its
         // own impl to prevent large number of file node io in fs access impl.
+        // Ideally we should have a tauri copy impl too, but to unblock main thread while copy, we need to
+        // spawn different threads in rust and write tauri handlers which is pretty complex atm. so instead we will
+        // fall back to global copy here and will use node Tauri web socket fs adapter as and when it becomes available.
         if(Mounts.isMountSubPath(src) && Mounts.isMountSubPath(dst)) {
             return NativeFS.copy(src, dst, callbackInterceptor);
         } else {
@@ -308,7 +313,7 @@ const fileSystemLib = {
             _mkdir_p(fileSystemLib, path, mode, callback);
         }
     },
-    BYTE_ARRAY_ENCODING: NativeFS.BYTE_ARRAY_ENCODING,
+    BYTE_ARRAY_ENCODING: Constants.BYTE_ARRAY_ENCODING,
     MOUNT_POINT_ROOT: Constants.MOUNT_POINT_ROOT,
     TAURI_ROOT: Constants.TAURI_ROOT
 };

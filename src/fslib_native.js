@@ -139,24 +139,16 @@ function readdir(path, options, callback) {
     }
 }
 
-function _getDecodedString(buffer, encoding) {
-    try {
-        return new TextDecoder(encoding).decode(buffer);
-    } catch (e) {
-        return null;
-    }
-}
-
 async function _getFileContents(fileHandle, encoding, callback) {
     encoding = encoding || 'utf-8';
     try {
         let file = await fileHandle.getFile();
         let buffer = await file.arrayBuffer();
-        if(encoding === BYTE_ARRAY_ENCODING) {
+        if(encoding === Constants.BYTE_ARRAY_ENCODING) {
             callback(null, buffer, encoding);
             return;
         }
-        let decodedString = _getDecodedString(buffer, encoding);
+        let decodedString = Utils.getDecodedString(buffer, encoding);
         if(decodedString !== null){
             callback(null, decodedString, encoding);
         } else {
@@ -167,22 +159,11 @@ async function _getFileContents(fileHandle, encoding, callback) {
     }
 }
 
-function _validateFileOptions(options, enc, fileMode){
-    if(!options) {
-        options = { encoding: enc, flag: fileMode };
-    } else if(typeof options === 'function') {
-        options = { encoding: enc, flag: fileMode };
-    } else if(typeof options === 'string') {
-        options = { encoding: options, flag: fileMode };
-    }
-    return options;
-}
-
 function readFile(path, options, callback) {
     path = globalObject.path.normalize(path);
 
     callback = arguments[arguments.length - 1];
-    options = _validateFileOptions(options, null, 'r');
+    options = Utils.validateFileOptions(options, null, 'r');
 
     Mounts.getHandleFromPath(path, (err, handle) => {
         if(err){
@@ -226,7 +207,7 @@ async function _writeFileWithName(paretDirHandle, fileName, encoding, data, call
 
 function writeFile (path, data, options, callback) {
     callback = arguments[arguments.length - 1];
-    options = _validateFileOptions(options, 'utf8', 'w');
+    options = Utils.validateFileOptions(options, 'utf8', 'w');
     if(!buffer.Buffer.isBuffer(data)) {
         if(typeof data === 'number') {
             data = '' + data;
@@ -407,8 +388,6 @@ function refreshMountPoints() {
     Mounts.refreshMountPoints();
 }
 
-const BYTE_ARRAY_ENCODING = 'byte-array';
-
 const NativeFS = {
     mountNativeFolder,
     refreshMountPoints,
@@ -419,8 +398,7 @@ const NativeFS = {
     writeFile,
     unlink,
     copy,
-    rename,
-    BYTE_ARRAY_ENCODING
+    rename
 };
 
 module.exports ={

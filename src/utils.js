@@ -135,10 +135,29 @@ const getTauriStat = async function (vfsPath) {
     return new Stats(vfsPath, fileDetails, `${Constants.TAURI_DEVICE_NAME}_${stats.dev}`);
 };
 
+function validateFileOptions(options, enc, fileMode){
+    if(!options || typeof options === 'function') {
+        options = { encoding: enc, flag: fileMode };
+    } else if(typeof options === 'string') {
+        options = { encoding: options, flag: fileMode };
+    }
+    return options;
+}
+
+function getDecodedString(buffer, encoding) {
+    try {
+        return new TextDecoder(encoding).decode(buffer);
+    } catch (e) {
+        return null;
+    }
+}
+
 const Utils = {
     createStatObject,
     createDummyStatObject,
-    getTauriStat
+    getTauriStat,
+    validateFileOptions,
+    getDecodedString
 };
 
 module.exports ={

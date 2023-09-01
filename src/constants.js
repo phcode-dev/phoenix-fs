@@ -30,7 +30,8 @@ const Constants = {
     NODE_TYPE_DIRECTORY: 'DIRECTORY',
     IDB_RW_TYPE: 'readwrite',
     MOUNT_POINT_ROOT: '/mnt',
-    TAURI_ROOT: "/tauri"
+    TAURI_ROOT: "/tauri",
+    BYTE_ARRAY_ENCODING: 'byte-array'
 };
 
 module.exports ={

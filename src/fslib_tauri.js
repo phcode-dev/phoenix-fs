@@ -390,11 +390,11 @@ function unlink(path, callback) {
             let platformPath = getTauriPlatformPath(path);
             if(stat.isDirectory()){
                 __TAURI__.fs.removeDir(platformPath, {recursive: true})
-                    .then(callback)
+                    .then(()=>{callback(null);})
                     .catch(errCallback);
             } else {
                 __TAURI__.fs.removeFile(platformPath)
-                    .then(callback)
+                    .then(()=>{callback(null);})
                     .catch(errCallback);
             }
         })
@@ -414,6 +414,48 @@ function rename(oldPath, newPath, callback) {
         });
 }
 
+/**
+ *
+ * @param contents {Uint8Array}
+ * @param encoding {string}
+ * @param callback {function}
+ * @private
+ */
+function _processContents(contents, encoding, callback) {
+    encoding = encoding || 'utf-8';
+    try {
+        if(encoding === Constants.BYTE_ARRAY_ENCODING) {
+            callback(null, contents.buffer, encoding);
+            return;
+        }
+        let decodedString = Utils.getDecodedString(contents.buffer, encoding);
+        if(decodedString !== null){
+            callback(null, decodedString, encoding);
+        } else {
+            callback(new Errors.EIO(`Encoding ${encoding} no supported`));
+        }
+    } catch (e) {
+        callback(e);
+    }
+}
+
+function readFile(path, options, callback) {
+    path = globalObject.path.normalize(path);
+    const platformPath = getTauriPlatformPath(path);
+
+    callback = arguments[arguments.length - 1];
+    options = Utils.validateFileOptions(options, null, 'r');
+
+    __TAURI__.fs.readBinaryFile(platformPath)
+        .then(contents => {
+            // contents is Uint8Array
+            _processContents(contents, options.encoding, callback);
+        })
+        .catch(err=>{
+            callback(mapErrorMessage(err, path, `Failed to read File at path ${path}`));
+        });
+}
+
 const TauriFS = {
     isTauriPath,
     isTauriSubPath,
@@ -425,7 +467,8 @@ const TauriFS = {
     readdir,
     mkdirs,
     rename,
-    unlink
+    unlink,
+    readFile
 };
 
 module.exports ={
