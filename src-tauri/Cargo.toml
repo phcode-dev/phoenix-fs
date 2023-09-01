@@ -14,9 +14,11 @@ rust-version = "1.70"
 tauri-build = { version = "1.4.0", features = [] }
 
 [dependencies]
-winapi = { version = "0.3", features = ["fileapi"] }
 tauri = { version = "1.4.1", features = [ "cli", "api-all", "devtools"] }
+winapi = { version = "0.3", features = ["fileapi"] }
 tauri-plugin-fs-extra = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+serde = "1.0"
+serde_json = "1.0"
 
 [features]
 # by default Tauri runs in production mode

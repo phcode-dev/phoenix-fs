@@ -117,6 +117,7 @@ function _setupTests(testType) {
     });
     // todo: file stat integration tests
     // todo: unlink file integration tests
+    // todo rename file tests
 }
 
 describe(`File: Browser virtual fs tests: filer paths`, function () {

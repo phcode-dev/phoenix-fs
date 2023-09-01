@@ -136,8 +136,10 @@ Make sure to use tauri with [`withglobaltauri`](https://tauri.app/v1/api/config/
 Install the required Tauri plugin by adding the following to your Cargo.toml file:
 ```toml
 [dependencies]
-tauri-plugin-fs-extra = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 winapi = { version = "0.3", features = ["fileapi"] }
+tauri-plugin-fs-extra = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+serde = "1.0"
+serde_json = "1.0"
 ```
 Then:  
 1. Copy `src-tauri/src/platform.rs` to the same folder of your tauri main file.
@@ -513,3 +515,26 @@ fs.readdir("/tauri/some/path", function(err, entries) {
   console.log(entries); // Outputs an array of file/dir names
 });
 ```
+
+## `fs.rename(oldPath, newPath, callback)` function
+
+Renames (or moves) a file or directory. If the destination already exists, the operation will fail.
+
+**Parameters:**
+
+- `oldPath` (**string**): The current path of the file or directory.
+- `newPath` (**string**): The new path to rename the file or directory to.
+- `callback` (**function**): A callback function to be executed once the rename operation is complete. This function receives a single argument:
+  - `err`: An error which will be set if an error occurred during the rename.
+
+**Example:**
+
+```javascript
+fs.rename("/tauri/some/path", "/tauri/new/path", function(err) {
+  if (err) throw err;
+  console.log('Rename complete');
+});
+```
+
+**Returns:**
+`void`

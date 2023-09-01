@@ -401,6 +401,18 @@ function unlink(path, callback) {
         .catch(errCallback);
 }
 
+function rename(oldPath, newPath, callback) {
+    oldPath = globalObject.path.normalize(oldPath);
+    const oldPlatformPath = getTauriPlatformPath(oldPath);
+    newPath = globalObject.path.normalize(newPath);
+    const newPlatformPath = getTauriPlatformPath(newPath);
+    __TAURI__
+        .invoke('_rename_path', {oldPath: oldPlatformPath, newPath: newPlatformPath})
+        .then(()=>{callback(null);})
+        .catch(err=>{
+            callback(mapErrorMessage(err, oldPath, `Failed to rename ${oldPath} to ${newPath}`));
+        });
+}
 
 const TauriFS = {
     isTauriPath,
@@ -412,6 +424,7 @@ const TauriFS = {
     stat,
     readdir,
     mkdirs,
+    rename,
     unlink
 };
 

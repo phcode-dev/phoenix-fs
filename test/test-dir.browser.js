@@ -301,15 +301,69 @@ function _setupTests(testType) {
         expect(error.code).to.equal(fs.ERR_ENOENT);
     });
 
-    it(`Should phoenix ${testType} rename fail if dst is a subpath of src`, async function () {
-        let errored = false;
-        fs.rename(`${testPath}/a`, `${testPath}/a/b`, (err)=>{
-            if(err){
-                errored = true;
-            }
+    async function _validateRename(oldPath, newPath, errCode) {
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
+        let error;
+        fs.rename(oldPath, newPath, (err)=>{
+            error = err;
+            resolveP();
         });
-        await waitForTrue(()=>{return errored;},1000);
-        expect(errored).to.be.true;
+        await promise;
+        if(!errCode){
+            expect(error).to.be.null;
+        } else {
+            expect(error.code).to.eql(errCode);
+        }
+    }
+
+    it(`Should phoenix ${testType} rename fail if dst or src are sub paths of each other`, async function () {
+        await _validateRename(`${testPath}/a`, `${testPath}/a/b`, fs.ERR_EINVAL);
+        await _validateRename(`${testPath}/a/b`, `${testPath}/a/`, fs.ERR_EINVAL);
+    });
+
+    it(`Should phoenix ${testType} rename fail if src doesnt exist`, async function () {
+        await _validateRename(`${testPath}/a`, `${testPath}/b`, fs.ERR_ENOENT);
+    });
+
+    it(`Should phoenix ${testType} rename fail if dst exists`, async function () {
+        await _creatDirAndValidate(`${testPath}/a`);
+        await _creatDirAndValidate(`${testPath}/b`);
+        await _validateRename(`${testPath}/a`, `${testPath}/b`, fs.ERR_EEXIST);
+    });
+
+    it(`Should phoenix ${testType} rename fail if dst parent doesnt exist`, async function () {
+        await _creatDirAndValidate(`${testPath}/a`);
+        await _validateRename(`${testPath}/a`, `${testPath}/b/c`, fs.ERR_ENOENT);
+    });
+
+    it(`Should phoenix ${testType} rename empty dir`, async function () {
+        let dirCreated = await _writeTestDir();
+        await _creatDirAndValidate(`${dirCreated}/a`);
+        await _validateRename(`${dirCreated}/a`, `${dirCreated}/b`);
+        await _validate_not_exists(`${dirCreated}/a`);
+        await _validate_exists(`${dirCreated}/b`);
+    });
+
+    it(`Should phoenix ${testType} rename dir test 2`, async function () {
+        let dirCreated = await _writeTestDir();
+        await _creatDirAndValidate(`${dirCreated}/a`);
+        await _creatDirAndValidate(`${dirCreated}/a/x`);
+        await _creatDirAndValidate(`${dirCreated}/z`);
+        await _validateRename(`${dirCreated}/a`, `${dirCreated}/z/b`);
+        await _validate_not_exists(`${dirCreated}/a`);
+        await _validate_exists(`${dirCreated}/z/b`);
+        await _validate_exists(`${dirCreated}/z/b/x`);
+    });
+
+    it(`Should phoenix ${testType} rename non-empty dir`, async function () {
+        let dirCreated = await _writeTestDir();
+        await _creatDirAndValidate(`${dirCreated}/a`);
+        await _creatDirAndValidate(`${dirCreated}/a/c`);
+        await _validateRename(`${dirCreated}/a`, `${dirCreated}/b`);
+        await _validate_not_exists(`${dirCreated}/a`);
+        await _validate_exists(`${dirCreated}/b`);
+        await _validate_exists(`${dirCreated}/b/c`);
     });
 }
 
@@ -390,4 +444,30 @@ describe(`Should phoenix be able to read root dir`, async function () {
             expect(contentsRead[0].dev.startsWith('tauri')).to.be.true;
         });
     }
+});
+
+
+describe(`Dir: Should misc tests`, async function () {
+    async function _RenameFailsWith(oldPath, newPath, errCode) {
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
+        let error;
+        fs.rename(oldPath, newPath, (err)=>{
+            error = err;
+            resolveP();
+        });
+        await promise;
+        expect(error.code).to.eql(errCode);
+    }
+    it(`Should phoenix rename fail rename of mount root path`, async function () {
+        await _RenameFailsWith(`/mnt/`, `/some/a/b`, fs.ERR_EPERM);
+        await _RenameFailsWith(`/mnt`, `/some/a/b`, fs.ERR_EPERM);
+        await _RenameFailsWith(`/some/a/b`, `/mnt/`, fs.ERR_EPERM);
+    });
+
+    it(`Should phoenix rename fail rename of tauri root path`, async function () {
+        await _RenameFailsWith(`/tauri/`, `/some/a/b`, fs.ERR_EPERM);
+        await _RenameFailsWith(`/tauri`, `/some/a/b`, fs.ERR_EPERM);
+        await _RenameFailsWith( `/some/a/b`, `/tauri`, fs.ERR_EPERM);
+    });
 });
