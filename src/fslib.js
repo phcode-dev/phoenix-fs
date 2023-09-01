@@ -189,16 +189,30 @@ const fileSystemLib = {
                 cb(...args);
             }
         }
-        if (_isSubPathOf(oldPath, newPath)){
-            callbackInterceptor(new Errors.EINVAL(`Error renaming: ${newPath} cannot be a subpath of ${oldPath}`));
+        if (_isSubPathOf(oldPath, newPath) || _isSubPathOf(newPath, oldPath)){
+            callbackInterceptor(new Errors.EINVAL(`Error renaming as one is a sub-path of other: ${newPath}, ${oldPath}`));
             return ;
         }
         if(Mounts.isMountPath(oldPath) || Mounts.isMountPath(newPath)) {
-            throw new Errors.EPERM('Mount root directory cannot be renamed.');
-        } else if(Mounts.isMountSubPath(oldPath) && Mounts.isMountSubPath(newPath)) {
-            return NativeFS.rename(oldPath, newPath, callbackInterceptor);
+            cb(new Errors.EPERM('Mount root directory cannot be renamed.'));
+            return;
+        } else if(TauriFS.isTauriPath(oldPath) || TauriFS.isTauriPath(newPath)) {
+            cb(new Errors.EPERM('Tauri root directory cannot be renamed.'));
+            return;
         }
-        return filerLib.fs.rename(oldPath, newPath, callbackInterceptor);
+        fileSystemLib.stat(newPath, (err)=>{
+            if(!err){
+                // the destination folder/file exists and we should not rename
+                cb(new Errors.EEXIST('Cannot rename, The destination path exists: ' + newPath));
+                return ;
+            }
+            if(TauriFS.isTauriSubPath(oldPath) && TauriFS.isTauriSubPath(newPath)) {
+                return TauriFS.rename(oldPath, newPath, callbackInterceptor);
+            } else if(Mounts.isMountSubPath(oldPath) && Mounts.isMountSubPath(newPath)) {
+                return NativeFS.rename(oldPath, newPath, callbackInterceptor);
+            }
+            return filerLib.fs.rename(oldPath, newPath, callbackInterceptor);
+        });
     },
     unlink: function (path, cb) {
         function callbackInterceptor(...args) {

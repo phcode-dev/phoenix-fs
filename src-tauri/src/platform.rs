@@ -3,6 +3,7 @@
 
 #[cfg(target_os = "windows")]
 extern crate winapi;
+use std::fs;
 
 #[cfg(target_os = "windows")]
 use winapi::um::fileapi::GetLogicalDriveStringsW;
@@ -35,4 +36,8 @@ pub fn get_windows_drives() -> Option<Vec<char>> {
     #[cfg(not(target_os = "windows"))] {
         None
     }
+}
+
+pub fn rename_path(old_path: &str, new_path: &str) -> Result<(), String> {
+    fs::rename(old_path, new_path).map_err(|e| e.to_string())
 }

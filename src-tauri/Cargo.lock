@@ -2391,6 +2391,8 @@ dependencies = [
 name = "phoenix-fs"
 version = "2.0.0"
 dependencies = [
+ "serde",
+ "serde_json",
  "tauri",
  "tauri-build",
  "tauri-plugin-fs-extra",
