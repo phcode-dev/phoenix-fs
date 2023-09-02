@@ -152,7 +152,7 @@ async function _getFileContents(fileHandle, encoding, callback) {
         if(decodedString !== null){
             callback(null, decodedString, encoding);
         } else {
-            callback(new Errors.EIO(`Encoding ${encoding} no supported`));
+            callback(new Errors.ECHARSET(`Encoding ${encoding} not supported`));
         }
     } catch (e) {
         callback(e);

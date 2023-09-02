@@ -21,6 +21,27 @@
 /*eslint strict: ["error", "global"]*/
 /* jshint ignore:start */
 
+const SUPPORTED_ENCODINGS = {
+    BYTE_ARRAY: 'byte-array',
+    ASCII: 'ASCII',
+    UTF8: 'UTF-8',
+    UTF16: 'UTF-16',
+    UTF16LE: 'utf-16le',
+    UCS2: 'ucs-2', // same as utf-16le
+    WINDOWS_1252: 'windows-1252',
+    LATIN_1: 'Latin1', // WINDOWS_1252
+    CP_1252: 'CP1252', // WINDOWS_1252
+    ISO_8859_1: 'ISO-8859-1', // WINDOWS_1252
+    GB2312: "GB2312",
+    BIG5: "Big5",
+    SHIFT_JIS: "Shift-JIS",
+    EUC_JP: "EUC-JP",
+    KOI8_R: "KOI8-R",
+    EUC_KR: "EUC-KR",
+    WINDOWS_874: "Windows-874",
+    MAC_ROMAN: "MacRoman",
+};
+
 const Constants = {
     MOUNT_DEVICE_NAME: 'nativeFsAccess',
     TAURI_DEVICE_NAME: 'tauri',
@@ -31,7 +52,8 @@ const Constants = {
     IDB_RW_TYPE: 'readwrite',
     MOUNT_POINT_ROOT: '/mnt',
     TAURI_ROOT: "/tauri",
-    BYTE_ARRAY_ENCODING: 'byte-array'
+    BYTE_ARRAY_ENCODING: SUPPORTED_ENCODINGS.BYTE_ARRAY,
+    SUPPORTED_ENCODINGS
 };
 
 module.exports ={

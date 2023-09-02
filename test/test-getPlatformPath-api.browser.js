@@ -24,7 +24,7 @@ describe(`test getTauriPlatformPath api`, function () {
                 err = e;
             }
             expect(err.message).to.eql('Invalid Phoenix FS path for windows: ' + invalidPath);
-            expect(err.code).to.eql(fs.ERR_EINVAL);
+            expect(err.code).to.eql(fs.ERR_CODES.EINVAL);
         });
     } else {
         it(`should getTauriPlatformPath return correct platform for tauri base paths`, function () {
@@ -49,7 +49,7 @@ describe(`test getTauriVirtualPath api`, function () {
             ex=e;
         }
         expect(ex.message).to.eql(errorMessage);
-        expect(ex.code).to.eql(expectedErrCode || fs.ERR_EINVAL);
+        expect(ex.code).to.eql(expectedErrCode || fs.ERR_CODES.EINVAL);
     }
 
     if(IS_WINDOWS){

@@ -202,39 +202,43 @@ and the code pushed to npm branch, GitHub actions will automatically publish the
 # API Docs
 
 ## Error Codes
- The `fs` object has all the stantard error codes used by the APIs. Here is a list:
+ The `fs.ERR_CODES` object has all the stantard error codes used by the APIs. Here is a list:
 ```json
 [
-    "ERR_ENOENT",
-    "ERR_EOF",
-    "ERR_EACCES",
-    "ERR_EAGAIN",
-    "ERR_EBADF",
-    "ERR_EBUSY",
-    "ERR_EINVAL",
-    "ERR_EMFILE",
-    "ERR_ENFILE",
-    "ERR_ENOBUFS",
-    "ERR_ENOTDIR",
-    "ERR_EISDIR",
-    "ERR_ENOSYS",
-    "ERR_ECHARSET",
-    "ERR_EEXIST",
-    "ERR_ENAMETOOLONG",
-    "ERR_EPERM",
-    "ERR_ELOOP",
-    "ERR_EXDEV",
-    "ERR_ENOTEMPTY",
-    "ERR_ENOSPC",
-    "ERR_EIO",
-    "ERR_EROFS",
-    "ERR_ESPIPE",
-    "ERR_ECANCELED"
+    "ENOENT",
+    "EOF",
+    "EACCES",
+    "EAGAIN",
+    "EBADF",
+    "EBUSY",
+    "EINVAL",
+    "EMFILE",
+    "ENFILE",
+    "ENOBUFS",
+    "ENOTDIR",
+    "EISDIR",
+    "ENOSYS",
+    "ECHARSET",
+    "EEXIST",
+    "ENAMETOOLONG",
+    "EPERM",
+    "ELOOP",
+    "EXDEV",
+    "ENOTEMPTY",
+    "ENOSPC",
+    "EIO",
+    "EROFS",
+    "ESPIPE",
+    "ECANCELED"
 ]
 ```
 
-You can use for example `fs.ERR_EIO` to compare the error code you got from
+You can use for example `fs.ERR_CODES.EIO` to compare the error code you got from
 any of the below APIs if there are some errors.
+
+## Supported file encodings
+When using file read and write apis, use `fs.SUPPORTED_ENCODINGS.*` to get a supported encoding.
+You may also pass in any encoding string supported by `new TextDecoder("<your encoding str>")` in your browser.
 
 ## `fs.mountNativeFolder` Function
 

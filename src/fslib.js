@@ -150,7 +150,9 @@ const fileSystemLib = {
             args[callbackIndex] = callbackInterceptor;
         }
 
-        if(Mounts.isMountSubPath(path)) {
+        if(TauriFS.isTauriSubPath(path)) {
+            return TauriFS.writeFile(...args);
+        } else if(Mounts.isMountSubPath(path)) {
             return NativeFS.writeFile(...args);
         }
         return filerLib.fs.writeFile(...args);
@@ -315,11 +317,13 @@ const fileSystemLib = {
     },
     BYTE_ARRAY_ENCODING: Constants.BYTE_ARRAY_ENCODING,
     MOUNT_POINT_ROOT: Constants.MOUNT_POINT_ROOT,
-    TAURI_ROOT: Constants.TAURI_ROOT
+    TAURI_ROOT: Constants.TAURI_ROOT,
+    ERR_CODES: {},
+    SUPPORTED_ENCODINGS: Constants.SUPPORTED_ENCODINGS
 };
 
 for(let errCode of Object.values(ERR_CODES.FS_ERROR_CODES)){
-    fileSystemLib[`ERR_${errCode}`] = errCode;
+    fileSystemLib.ERR_CODES[errCode] = errCode;
 }
 
 fileSystemLib.copyFile = fileSystemLib.copy;
