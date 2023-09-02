@@ -124,6 +124,39 @@ describe(`File: Browser virtual fs tests: filer paths`, function () {
     _setupTests(TEST_TYPE_FILER);
 });
 
+describe(`File: Misc tests`, function () {
+    it(`Should fs.BYTE_ARRAY_ENCODING constant`, async function () {
+        // unfortunately, this is required in fs for legacy reasons.
+        expect(fs.BYTE_ARRAY_ENCODING).to.equal('byte-array');
+    });
+
+    it(`Should have fs.SUPPORTED_ENCODINGS constant`, async function () {
+        const requiredEncodings = {
+            BYTE_ARRAY: 'byte-array',
+            ASCII: 'ASCII',
+            UTF8: 'UTF-8',
+            UTF16: 'UTF-16',
+            UTF16LE: 'utf-16le',
+            UCS2: 'ucs-2', // same as utf-16le
+            WINDOWS_1252: 'windows-1252',
+            LATIN_1: 'Latin1', // WINDOWS_1252
+            CP_1252: 'CP1252', // WINDOWS_1252
+            ISO_8859_1: 'ISO-8859-1', // WINDOWS_1252
+            GB2312: "GB2312",
+            BIG5: "Big5",
+            SHIFT_JIS: "Shift-JIS",
+            EUC_JP: "EUC-JP",
+            KOI8_R: "KOI8-R",
+            EUC_KR: "EUC-KR",
+            WINDOWS_874: "Windows-874",
+            MAC_ROMAN: "MacRoman",
+        };
+        for(let encodingKey of Object.keys(requiredEncodings)){
+            expect(fs.SUPPORTED_ENCODINGS[encodingKey]).to.equal(requiredEncodings[encodingKey]);
+        }
+    });
+});
+
 if(window.supportsFsAccessAPIs){
     describe(`File: Browser virtual fs tests: fs access mount point paths`, function () {
         if(window.__TAURI__){

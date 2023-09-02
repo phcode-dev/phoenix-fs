@@ -17,7 +17,7 @@
  */
 
 // jshint ignore: start
-/*global __TAURI__, globalObject*/
+/*global __TAURI__, globalObject, buffer*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
@@ -432,7 +432,7 @@ function _processContents(contents, encoding, callback) {
         if(decodedString !== null){
             callback(null, decodedString, encoding);
         } else {
-            callback(new Errors.EIO(`Encoding ${encoding} no supported`));
+            callback(new Errors.ECHARSET(`Encoding ${encoding} not supported`));
         }
     } catch (e) {
         callback(e);
@@ -456,6 +456,33 @@ function readFile(path, options, callback) {
         });
 }
 
+function writeFile (path, data, options, callback) {
+    callback = arguments[arguments.length - 1];
+    options = Utils.validateFileOptions(options, 'utf8', 'w');
+    if(!buffer.Buffer.isBuffer(data)) {
+        if(typeof data === 'number') {
+            data = '' + data;
+        }
+        data = data || '';
+        if(typeof data !== 'string') {
+            data = buffer.Buffer.from(data.toString());
+        } else {
+            data = buffer.Buffer.from(data || '', options.encoding || 'utf8');
+        }
+    }
+
+    path = globalObject.path.normalize(path);
+    const platformPath = getTauriPlatformPath(path);
+
+    __TAURI__.fs.writeBinaryFile(platformPath, data)
+        .then(() => {
+            callback(null);
+        })
+        .catch(err=>{
+            callback(mapErrorMessage(err, path, `Failed to write File at path ${path}`));
+        });
+}
+
 const TauriFS = {
     isTauriPath,
     isTauriSubPath,
@@ -468,7 +495,8 @@ const TauriFS = {
     mkdirs,
     rename,
     unlink,
-    readFile
+    readFile,
+    writeFile
 };
 
 module.exports ={
