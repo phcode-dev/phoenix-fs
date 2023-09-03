@@ -37,15 +37,16 @@ let filerLib = null;
  */
 function _processContents(contentsBuffer, encoding, callback, path) {
     try {
-        let arrayBuffer = contentsBuffer.buffer;
         if(encoding === Constants.BYTE_ARRAY_ENCODING) {
+            let arrayBuffer = contentsBuffer.buffer.slice(contentsBuffer.byteOffset,
+                contentsBuffer.byteOffset + contentsBuffer.byteLength);
             callback(null, arrayBuffer, encoding);
             return;
         } else if(encoding === Constants.BINARY_ENCODING) {
             callback(null, contentsBuffer, encoding);
             return;
         }
-        let decodedString = Utils.getDecodedString(arrayBuffer, encoding);
+        let decodedString = Utils.getDecodedStringFromBuffer(contentsBuffer, encoding);
         callback(null, decodedString, encoding);
     } catch (e) {
         if(ERR_CODES.ERROR_CODES[e.code]){

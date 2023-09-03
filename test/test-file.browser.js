@@ -356,9 +356,124 @@ function _setupTests(testType) {
         expect(err.code).to.eql(fs.ERR_CODES.ENOENT);
     });
 
-    // todo error cases
-    // readfile
-    // writefile
+    // write file tests (path, data, options, callback)
+
+    async function _writeTest(filePath, contentStr) {
+        let resolveP, rejectP;
+        const promise = new Promise((resolve,reject) => {resolveP = resolve;rejectP=reject;});
+        fs.writeFile(filePath, contentStr, (_err)=>{
+            if(_err){
+                rejectP(_err);
+                return;
+            }
+            resolveP();
+        });
+        await promise;
+        let {content, encoding} = await _readFile(filePath);
+        expect(Buffer.isBuffer(content)).to.be.true;
+        expect(encoding).to.eql('binary');
+        expect(fs.iconv.decode(content, 'utf8')).to.eql(contentStr);
+    }
+
+    it(`Should phoenix ${testType} write file without options`, async function () {
+        await _writeTest(`${testPath}/browserWrite.txt`, _fileContent());
+    });
+
+    it(`Should phoenix ${testType} overwrite file if exists`, async function () {
+        let filePathCreated = await _writeTestFile();
+        await _writeTest(filePathCreated, "some new content");
+    });
+
+    it(`Should phoenix ${testType} write file with options`, async function () {
+        const filePath = `${testPath}/browserWrite.txt`;
+        let resolveP, rejectP;
+        const promise = new Promise((resolve,reject) => {resolveP = resolve;rejectP=reject;});
+        const contentStr = "hello medfdsfsdfs";
+        fs.writeFile(filePath, contentStr, {encoding: "utf16"},(_err)=>{
+            if(_err){
+                rejectP(_err);
+                return;
+            }
+            resolveP();
+        });
+        await promise;
+        let {content, encoding} = await _readFile(filePath);
+        expect(Buffer.isBuffer(content)).to.be.true;
+        expect(encoding).to.eql('binary');
+        expect(fs.iconv.decode(content, 'utf16')).to.eql(contentStr);
+    });
+
+    function _writeFile(filePath, contents, encoding) {
+        return new Promise((resolve, reject)=>{
+            fs.writeFile(filePath, contents, encoding,(_err)=>{
+                if(_err){
+                    reject(_err);
+                    return;
+                }
+                resolve();
+            });
+        });
+    }
+
+    async function _writeBinTest(writeEncoding, useArrayBuffer) {
+        const filePath = `${testPath}/browserWrite.txt`;
+        let str = "ldkhjkxr htiou hbgoetruish";
+        const buf = useArrayBuffer? Buffer.from(str).buffer: Buffer.from(str);
+        await _writeFile(filePath, buf, writeEncoding);
+        let {content, encoding} = await _readFile(filePath, "utf8");
+        expect(encoding).to.eql('utf8');
+        expect(content).to.eql(str);
+    }
+
+    it(`Should phoenix ${testType} write file with Buffer`, async function () {
+        await _writeBinTest(fs.BYTE_ARRAY_ENCODING);
+        await _writeBinTest('binary');
+        await _writeBinTest(fs.BYTE_ARRAY_ENCODING, true);
+        await _writeBinTest('binary', true);
+    });
+
+    it(`Should phoenix ${testType} write file with number content`, async function () {
+        const filePath = `${testPath}/browserWrite.txt`;
+        let numContent = 42;
+        await _writeFile(filePath, numContent);
+        let {content, encoding} = await _readFile(filePath, "utf8");
+        expect(encoding).to.eql('utf8');
+        expect(content).to.eql(`${numContent}`);
+    });
+
+    async function _writeBinTestWindEncoding(writeStr, writeEncoding, fileName= "aTestFile.txt") {
+        const filePath = `${testPath}/${fileName}`;
+        await _writeFile(filePath, writeStr, writeEncoding);
+        let {content, encoding} = await _readFile(filePath, writeEncoding);
+        expect(encoding).to.eql(writeEncoding);
+        expect(content).to.eql(writeStr);
+    }
+
+    let excludedEncodings = [fs.BYTE_ARRAY_ENCODING, "binary", "base64", "hex"];
+    for(let encoding of fs.SUPPORTED_ENCODINGS) {
+        if (excludedEncodings.includes(encoding)) {
+            continue;
+        }
+        it(`Should phoenix ${testType} read and write files with ${encoding} encoding`, async function () {
+            await _writeBinTestWindEncoding("The Encoding is: "+encoding, encoding, `test-${encoding}.txt`);
+        });
+    }
+
+    it(`Should phoenix ${testType} write file fail if unknown encoding`, async function () {
+        const filePath = `${testPath}/browserWrite.txt`;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
+        const contentStr = "hello medfdsfsdfs";
+        fs.writeFile(filePath, contentStr, {encoding: "hehe not an encoding"},(_err)=>{
+            if(_err){
+                resolveP(_err);
+                return;
+            }
+            resolveP();
+        });
+        const err = await promise;
+        expect(err.code).to.eql(fs.ERR_CODES.ECHARSET);
+    });
 }
 
 describe(`File: Browser virtual fs tests: filer paths`, function () {
