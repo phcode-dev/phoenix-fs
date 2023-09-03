@@ -143,7 +143,7 @@ async function copy(src, dst, callback) {
     try {
         let srcStat = await _stat(src);
         if(!srcStat){
-            callback(new Errors.EIO(`Cannot copy src: ${src}`));
+            callback(new Errors.ENOENT(`Cannot copy src that doesnt exist: ${src}`));
             return;
         }
         if (srcStat.isFile()) {

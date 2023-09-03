@@ -157,24 +157,24 @@ const NATIVE_ENCODINGS = [
 ];
 
 // Buffer to string
-function getDecodedString(buffer, encoding) {
-    if(!Buffer.isBuffer(buffer)){
-        throw new Errors.EINVAL(`Buffer expected to decode ${encoding}`);
+function getDecodedString(arrayBuffer, encoding) {
+    if(!(arrayBuffer instanceof ArrayBuffer)){
+        throw new Errors.EINVAL(`ArrayBuffer expected to decode ${encoding}`);
     }
     try {
         if(NATIVE_ENCODINGS[encoding]) {
             // for utf8 we use the browser native decoder.
             // The browser encoder does only utf-8, so we only use the native encoder/decoder for utf8.
-            return new TextDecoder(encoding).decode(buffer.buffer);
+            return new TextDecoder(encoding).decode(arrayBuffer);
         } else {
-            return iconv.decode(buffer, encoding);
+            return iconv.decode(Buffer.from(arrayBuffer), encoding);
         }
     } catch (e) {
         throw new Errors.ECHARSET(`${encoding} not supported ${e.message}`);
     }
 }
 
-function getEncodedBuffer(str, encoding) {
+function getEncodedArrayBuffer(str, encoding) {
     if(typeof str !== "string"){
         throw new Errors.EINVAL(`String expected to Encode ${encoding} but got ${typeof str}`);
     }
@@ -183,9 +183,9 @@ function getEncodedBuffer(str, encoding) {
             // for utf8 we use the browser native decoder.
             // The browser encoder does only utf-8, so we only use the native encoder/decoder for utf8.
             let encoder = new TextEncoder(encoding);
-            return Buffer.from(encoder.encode(str).buffer);
+            return encoder.encode(str).buffer;
         } else {
-            return iconv.encode(str, encoding);
+            return iconv.encode(str, encoding).buffer;
         }
     } catch (e) {
         throw new Errors.ECHARSET(`${encoding} not supported ${e.message}`);
@@ -198,7 +198,7 @@ const Utils = {
     getTauriStat,
     validateFileOptions,
     getDecodedString,
-    getEncodedBuffer
+    getEncodedArrayBuffer
 };
 
 module.exports ={

@@ -143,12 +143,12 @@ async function _getFileContents(fileHandle, encoding, callback, path) {
     try {
         let file = await fileHandle.getFile();
         const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        if(encoding === Constants.BINARY) {
+        if(encoding === Constants.BINARY_ENCODING) {
+            const buffer = Buffer.from(arrayBuffer);
             callback(null, buffer, encoding);
             return;
         }
-        let decodedString = Utils.getDecodedString(buffer, encoding);
+        let decodedString = Utils.getDecodedString(arrayBuffer, encoding);
         callback(null, decodedString, encoding);
     } catch (e) {
         if(ERR_CODES.ERROR_CODES[e.code]){
@@ -163,7 +163,7 @@ function readFile(path, options, callback) {
     path = globalObject.path.normalize(path);
 
     callback = arguments[arguments.length - 1];
-    options = Utils.validateFileOptions(options, Constants.BINARY, 'r');
+    options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'r');
 
     Mounts.getHandleFromPath(path, (err, handle) => {
         if(err){
@@ -208,8 +208,13 @@ async function _writeFileWithName(paretDirHandle, fileName, encoding, data, call
 function writeFile (path, data, options, callback) {
     callback = arguments[arguments.length - 1];
     options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'w');
+    let arrayBuffer;
     try{
-        if(!Buffer.isBuffer(data)) {
+        if(data instanceof ArrayBuffer){
+            arrayBuffer = data;
+        } else if(Buffer.isBuffer(data)) {
+            arrayBuffer = data.buffer;
+        } else {
             if(typeof data === 'number') {
                 data = '' + data;
             }
@@ -217,7 +222,7 @@ function writeFile (path, data, options, callback) {
             if(typeof data !== 'string') {
                 data = data.toString();
             }
-            data = Utils.getEncodedBuffer(data, options.encoding);
+            arrayBuffer = Utils.getEncodedArrayBuffer(data, options.encoding);
         }
     } catch (e) {
         if(ERR_CODES.ERROR_CODES[e.code]){
@@ -237,7 +242,7 @@ function writeFile (path, data, options, callback) {
         } else if (handle.kind === Constants.KIND_FILE) {
             callback(new Errors.ENOTDIR('Parent path is not a directory.'));
         }else {
-            _writeFileWithName(handle, fileName, options.encoding, data.buffer, callback);
+            _writeFileWithName(handle, fileName, options.encoding, arrayBuffer, callback);
         }
     });
 }
