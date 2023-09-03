@@ -24,6 +24,7 @@
 const {ERR_CODES, Errors} = require('./errno');
 const {NativeFS} = require('./fslib_native');
 const {TauriFS} = require('./fslib_tauri');
+const {FilerFSModified} = require('./fslib_filer');
 const {Constants} = require('./constants');
 const {Mounts} = require('./fslib_mounts');
 const {FsWatch} = require('./fslib_watch');
@@ -132,7 +133,7 @@ const fileSystemLib = {
         } else if(Mounts.isMountSubPath(path)) {
             return NativeFS.readFile(...args);
         }
-        return filerLib.fs.readFile(...args);
+        return FilerFSModified.readFile(...args);
     },
     writeFile: function (...args) { // (path, data, options, callback)
         let path = args[0];
@@ -156,7 +157,7 @@ const fileSystemLib = {
         } else if(Mounts.isMountSubPath(path)) {
             return NativeFS.writeFile(...args);
         }
-        return filerLib.fs.writeFile(...args);
+        return FilerFSModified.writeFile(...args);
     },
     mkdir: function (...args) { // (path, mode, callback)
         let path = args[0];
@@ -333,6 +334,7 @@ fileSystemLib.name = 'phoenixFS';
 
 function initFsLib(FilerLib) {
     filerLib = FilerLib;
+    FilerFSModified.initFilerLib(filerLib);
     filerShell = new filerLib.fs.Shell();
     globalObject.path = FilerLib.path;
     globalObject.Buffer = FilerLib.Buffer;
