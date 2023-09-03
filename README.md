@@ -610,7 +610,7 @@ fs.rename("/tauri/some/path", "/tauri/new/path", function(err) {
 **Returns:**
 `void`
 
-### `fs.copy(src, dst, callback)` function
+## `fs.copy(src, dst, callback)` function
 
 Asynchronously copies a source file or directory to a destination.
 
@@ -648,3 +648,33 @@ copy('/path/to/src', '/path/to/dest', (err, copiedPath) => {
 ```
 
 **Returns**: `void`
+
+## `fs.SUPPORTED_ENCODINGS` Property
+
+**Description:**  
+This property holds an array of encodings that are compatible with the `fs.readFile` and `fs.readDir` APIs.
+
+**Note:**  
+The encodings within this list are in lowercase. If you need to verify the support for an encoding irrespective of its case (e.g., both `utf8` and `UTF8`), utilize the `fs.isEncodingSupported` method.
+
+
+## `fs.isEncodingSupported(encodingStr)` function
+
+**Description:**  
+Determines if a given encoding is supported.
+
+**Parameters:**
+- `encoding` (string): The encoding format to check.
+
+**Returns:**  
+A boolean value. Returns `true` if the encoding is supported, otherwise returns `false`.
+
+**Examples:**
+```javascript
+if (fs.isEncodingSupported('utf8')) {
+   // perform operation with utf8 encoding
+}
+
+const supported = fs.isEncodingSupported('LATIN1');  // returns true
+const notSupported = fs.isEncodingSupported('oopshehe');  // returns false
+```

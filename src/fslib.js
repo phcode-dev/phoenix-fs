@@ -321,8 +321,13 @@ const fileSystemLib = {
     MOUNT_POINT_ROOT: Constants.MOUNT_POINT_ROOT,
     TAURI_ROOT: Constants.TAURI_ROOT,
     ERR_CODES: {},
-    SUPPORTED_ENCODINGS: Constants.SUPPORTED_ENCODINGS,
-    iconv
+    iconv,
+    isEncodingSupported: function (encoding) {
+        if(encoding.toLowerCase() === Constants.BYTE_ARRAY_ENCODING){
+            return true;
+        }
+        return iconv.encodingExists(encoding);
+    }
 };
 
 for(let errCode of Object.values(ERR_CODES.FS_ERROR_CODES)){
@@ -331,6 +336,21 @@ for(let errCode of Object.values(ERR_CODES.FS_ERROR_CODES)){
 
 fileSystemLib.copyFile = fileSystemLib.copy;
 fileSystemLib.name = 'phoenixFS';
+
+function _populateSupportedEncodings() {
+    if(iconv.encodingExists('utf8')) {
+        // we do this as iconv bootstraps this
+        const SUPPORTED_ENCODINGS = [];
+        for(let encoding of Object.keys(iconv.encodings)) {
+            // the Object.keys list contains encoding functions and privates. so filter
+            if(iconv.encodingExists(encoding)) {
+                SUPPORTED_ENCODINGS.push(encoding);
+            }
+        }
+        SUPPORTED_ENCODINGS.push(fileSystemLib.BYTE_ARRAY_ENCODING);
+        fileSystemLib.SUPPORTED_ENCODINGS = SUPPORTED_ENCODINGS;
+    }
+}
 
 function initFsLib(FilerLib) {
     filerLib = FilerLib;
@@ -342,6 +362,7 @@ function initFsLib(FilerLib) {
     globalObject.fs = fileSystemLib;
     globalObject.fs.path = FilerLib.path;
     globalObject.fs.Buffer = FilerLib.Buffer;
+    _populateSupportedEncodings();
     _ensure_mount_directory();
 }
 
