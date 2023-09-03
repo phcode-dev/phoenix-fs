@@ -20,7 +20,10 @@
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
+import {Errors} from "./errno";
+
 const {Constants} = require('./constants');
+import * as iconv from 'iconv-lite';
 
 function _dateFromMs(ms) {
     if(ms === null || ms === undefined){
@@ -141,14 +144,51 @@ function validateFileOptions(options, enc, fileMode){
     } else if(typeof options === 'string') {
         options = { encoding: options, flag: fileMode };
     }
+    options.encoding = options.encoding || enc;
+    options.flag = options.flag || fileMode;
     return options;
 }
 
+const NATIVE_ENCODINGS = [
+    'utf8',
+    'UTF8',
+    'utf-8',
+    'UTF-8',
+];
+
+// Buffer to string
 function getDecodedString(buffer, encoding) {
+    if(!Buffer.isBuffer(buffer)){
+        throw new Errors.EINVAL(`Buffer expected to decode ${encoding}`);
+    }
     try {
-        return new TextDecoder(encoding).decode(buffer);
+        if(NATIVE_ENCODINGS[encoding]) {
+            // for utf8 we use the browser native decoder.
+            // The browser encoder does only utf-8, so we only use the native encoder/decoder for utf8.
+            return new TextDecoder(encoding).decode(buffer.buffer);
+        } else {
+            return iconv.decode(buffer, encoding);
+        }
     } catch (e) {
-        return null;
+        throw new Errors.ECHARSET(`${encoding} not supported ${e.message}`);
+    }
+}
+
+function getEncodedBuffer(str, encoding) {
+    if(typeof str !== "string"){
+        throw new Errors.EINVAL(`String expected to Encode ${encoding} but got ${typeof str}`);
+    }
+    try {
+        if(NATIVE_ENCODINGS[encoding]) {
+            // for utf8 we use the browser native decoder.
+            // The browser encoder does only utf-8, so we only use the native encoder/decoder for utf8.
+            let encoder = new TextEncoder(encoding);
+            return Buffer.from(encoder.encode(str).buffer);
+        } else {
+            return iconv.encode(str, encoding);
+        }
+    } catch (e) {
+        throw new Errors.ECHARSET(`${encoding} not supported ${e.message}`);
     }
 }
 
@@ -157,7 +197,8 @@ const Utils = {
     createDummyStatObject,
     getTauriStat,
     validateFileOptions,
-    getDecodedString
+    getDecodedString,
+    getEncodedBuffer
 };
 
 module.exports ={

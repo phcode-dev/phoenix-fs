@@ -140,20 +140,17 @@ function readdir(path, options, callback) {
 }
 
 async function _getFileContents(fileHandle, encoding, callback) {
-    encoding = encoding || 'utf-8';
+    encoding = encoding || Constants.BYTE_ARRAY_ENCODING;
     try {
         let file = await fileHandle.getFile();
-        let buffer = await file.arrayBuffer();
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = Buffer.from(arrayBuffer);
         if(encoding === Constants.BYTE_ARRAY_ENCODING) {
             callback(null, buffer, encoding);
             return;
         }
         let decodedString = Utils.getDecodedString(buffer, encoding);
-        if(decodedString !== null){
-            callback(null, decodedString, encoding);
-        } else {
-            callback(new Errors.ECHARSET(`Encoding ${encoding} not supported`));
-        }
+        callback(null, decodedString, encoding);
     } catch (e) {
         callback(e);
     }

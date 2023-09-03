@@ -28,6 +28,7 @@ const {Constants} = require('./constants');
 const {Mounts} = require('./fslib_mounts');
 const {FsWatch} = require('./fslib_watch');
 const {globalCopy} = require('./filerlib_copy.js');
+import * as iconv from 'iconv-lite';
 
 let filerLib = null;
 let filerShell = null;
@@ -319,7 +320,8 @@ const fileSystemLib = {
     MOUNT_POINT_ROOT: Constants.MOUNT_POINT_ROOT,
     TAURI_ROOT: Constants.TAURI_ROOT,
     ERR_CODES: {},
-    SUPPORTED_ENCODINGS: Constants.SUPPORTED_ENCODINGS
+    SUPPORTED_ENCODINGS: Constants.SUPPORTED_ENCODINGS,
+    iconv
 };
 
 for(let errCode of Object.values(ERR_CODES.FS_ERROR_CODES)){
@@ -333,8 +335,11 @@ function initFsLib(FilerLib) {
     filerLib = FilerLib;
     filerShell = new filerLib.fs.Shell();
     globalObject.path = FilerLib.path;
+    globalObject.Buffer = FilerLib.Buffer;
+    globalObject.iconv = iconv;
     globalObject.fs = fileSystemLib;
-
+    globalObject.fs.path = FilerLib.path;
+    globalObject.fs.Buffer = FilerLib.Buffer;
     _ensure_mount_directory();
 }
 

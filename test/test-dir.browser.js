@@ -1,4 +1,4 @@
-/* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI*/
+/* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI, path, iconv*/
 
 function _setupTests(testType) {
     let testPath;
@@ -72,6 +72,12 @@ function _setupTests(testType) {
 
     it(`Should load clean Phoenix fs in browser`,async function () {
         expect(fs).to.exist;
+        expect(Buffer).to.exist;
+        expect(path).to.exist;
+        expect(iconv).to.exist;
+        expect(fs.Buffer).to.exist;
+        expect(fs.iconv).to.exist;
+        expect(fs.path).to.exist;
         expect(fs.name).to.equal(`phoenixFS`);
         expect(fs.MOUNT_POINT_ROOT).to.equal(`/mnt`);
         expect(fs.TAURI_ROOT).to.equal(`/tauri`);

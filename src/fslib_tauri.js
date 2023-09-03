@@ -17,12 +17,12 @@
  */
 
 // jshint ignore: start
-/*global __TAURI__, globalObject, buffer*/
+/*global __TAURI__, globalObject*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
 const {Constants} = require('./constants');
-const {Errors} = require("./errno");
+const {Errors, ERR_CODES} = require("./errno");
 const {Utils} = require("./utils");
 
 const TAURI_PATH_PREFIX = Constants.TAURI_ROOT+ '/';
@@ -210,7 +210,7 @@ function extractErrorNumber(str) {
     }
 }
 
-function mapErrorMessage(tauriErrorMessage, path, userMessage= '') {
+function mapOSTauriErrorMessage(tauriErrorMessage, path, userMessage= '') {
     let errorNumber = extractErrorNumber(tauriErrorMessage);
     switch (errorNumber) {
     case '2': return new Errors.ENOENT(userMessage + ` No such File or Directory: ` + path + tauriErrorMessage, path);
@@ -249,7 +249,7 @@ function _readDirHelper(entries, path, options, callback, useDummyStats) {
                 callback(null, results);
             })
             .catch((err) => {
-                callback(mapErrorMessage(err, path, 'Failed to read directory: '));
+                callback(mapOSTauriErrorMessage(err, path, 'Failed to read directory: '));
             });
     }
 }
@@ -300,7 +300,7 @@ function readdir(path, options, callback) {
                 _readDirHelper(entries, path, options, callback, true);
             })
             .catch(err =>{
-                callback(mapErrorMessage(err, path, 'Failed to get drives: '));
+                callback(mapOSTauriErrorMessage(err, path, 'Failed to get drives: '));
             });
         return;
     }
@@ -311,7 +311,7 @@ function readdir(path, options, callback) {
             _readDirHelper(entries, path, options, callback);
         })
         .catch((err)=>{
-            callback(mapErrorMessage(err, path, 'Failed to read directory: '));
+            callback(mapOSTauriErrorMessage(err, path, 'Failed to read directory: '));
         });
 }
 
@@ -365,7 +365,7 @@ function mkdirs(path, mode, recursive, callback) {
             callback(null);
         })
         .catch((err)=>{
-            callback(mapErrorMessage(err, path, 'Failed to create directory: '));
+            callback(mapOSTauriErrorMessage(err, path, 'Failed to create directory: '));
         });
 }
 
@@ -376,14 +376,14 @@ function stat(path, callback) {
             callback(null, stat);
         })
         .catch((err)=>{
-            callback(mapErrorMessage(err, path, 'Failed to get stat'));
+            callback(mapOSTauriErrorMessage(err, path, 'Failed to get stat'));
         });
 }
 
 function unlink(path, callback) {
     path = globalObject.path.normalize(path);
     function errCallback(err) {
-        callback(mapErrorMessage(err, path, 'Failed to unlink'));
+        callback(mapOSTauriErrorMessage(err, path, 'Failed to unlink'));
     }
     Utils.getTauriStat(path)
         .then(stat =>{
@@ -410,32 +410,36 @@ function rename(oldPath, newPath, callback) {
         .invoke('_rename_path', {oldPath: oldPlatformPath, newPath: newPlatformPath})
         .then(()=>{callback(null);})
         .catch(err=>{
-            callback(mapErrorMessage(err, oldPath, `Failed to rename ${oldPath} to ${newPath}`));
+            callback(mapOSTauriErrorMessage(err, oldPath, `Failed to rename ${oldPath} to ${newPath}`));
         });
 }
 
 /**
  *
- * @param contents {Uint8Array}
+ * @param contents {ArrayBuffer}
  * @param encoding {string}
  * @param callback {function}
  * @private
  */
-function _processContents(contents, encoding, callback) {
-    encoding = encoding || 'utf-8';
+function _processContents(contents, encoding, callback, path) {
     try {
+        let arrayBuffer = contents;
+        if(contents.buffer instanceof ArrayBuffer) {
+            arrayBuffer = contents.buffer;
+        }
+        const contentBuffer = Buffer.from(arrayBuffer);
         if(encoding === Constants.BYTE_ARRAY_ENCODING) {
-            callback(null, contents.buffer, encoding);
+            callback(null, contentBuffer, encoding);
             return;
         }
-        let decodedString = Utils.getDecodedString(contents.buffer, encoding);
-        if(decodedString !== null){
-            callback(null, decodedString, encoding);
-        } else {
-            callback(new Errors.ECHARSET(`Encoding ${encoding} not supported`));
-        }
+        let decodedString = Utils.getDecodedString(contentBuffer, encoding);
+        callback(null, decodedString, encoding);
     } catch (e) {
-        callback(e);
+        if(ERR_CODES.ERROR_CODES[e.code]){
+            callback(e);
+        } else {
+            callback(new Errors.EIO(`IO error while processing data read from file on path: ${path}`, path));
+        }
     }
 }
 
@@ -444,42 +448,50 @@ function readFile(path, options, callback) {
     const platformPath = getTauriPlatformPath(path);
 
     callback = arguments[arguments.length - 1];
-    options = Utils.validateFileOptions(options, null, 'r');
+    options = Utils.validateFileOptions(options, Constants.BYTE_ARRAY_ENCODING, 'r');
 
     __TAURI__.fs.readBinaryFile(platformPath)
         .then(contents => {
             // contents is Uint8Array
-            _processContents(contents, options.encoding, callback);
+            _processContents(contents, options.encoding, callback, path);
         })
         .catch(err=>{
-            callback(mapErrorMessage(err, path, `Failed to read File at path ${path}`));
+            callback(mapOSTauriErrorMessage(err, path, `Failed to read File at path ${path}`));
         });
 }
 
 function writeFile (path, data, options, callback) {
     callback = arguments[arguments.length - 1];
-    options = Utils.validateFileOptions(options, 'utf8', 'w');
-    if(!buffer.Buffer.isBuffer(data)) {
-        if(typeof data === 'number') {
-            data = '' + data;
+    options = Utils.validateFileOptions(options, Constants.BYTE_ARRAY_ENCODING, 'w');
+    try{
+        if(!Buffer.isBuffer(data)) {
+            if(typeof data === 'number') {
+                data = '' + data;
+            }
+            data = data || ''; // this should be after number check as if data = 0, things break
+            if(typeof data !== 'string') {
+                data = data.toString();
+            }
+            data = Utils.getEncodedBuffer(data, options.encoding);
         }
-        data = data || '';
-        if(typeof data !== 'string') {
-            data = buffer.Buffer.from(data.toString());
+    } catch (e) {
+        if(ERR_CODES.ERROR_CODES[e.code]){
+            callback(e);
         } else {
-            data = buffer.Buffer.from(data || '', options.encoding || 'utf8');
+            callback(new Errors.EIO(`IO error while processing data read from file on path: ${path}`, path));
         }
+        return;
     }
 
     path = globalObject.path.normalize(path);
     const platformPath = getTauriPlatformPath(path);
 
-    __TAURI__.fs.writeBinaryFile(platformPath, data)
+    __TAURI__.fs.writeBinaryFile(platformPath, data.buffer)
         .then(() => {
             callback(null);
         })
         .catch(err=>{
-            callback(mapErrorMessage(err, path, `Failed to write File at path ${path}`));
+            callback(mapOSTauriErrorMessage(err, path, `Failed to write File at path ${path}`));
         });
 }
 
