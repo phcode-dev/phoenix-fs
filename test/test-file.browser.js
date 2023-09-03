@@ -17,6 +17,30 @@ function _setupTests(testType) {
         expect(err.code).to.equal(fs.ERR_CODES.ENOENT);
     }
 
+    function _creatDirAndValidate(path) {
+        return new Promise((resolve, reject)=>{
+            fs.mkdir(path, (err)=>{
+                if(err){
+                    reject();
+                } else {
+                    _validate_exists(path)
+                        .then(resolve)
+                        .catch(reject);
+                }
+            });
+        });
+    }
+
+    async function _validate_exists(path) {
+        let done, err;
+        fs.stat(path, (error)=>{
+            err = error;
+            done = true;
+        });
+        await waitForTrue(()=>{return done;},1000);
+        expect(err).to.be.null;
+    }
+
     async function _clean() {
         console.log(`cleaning: `, testPath);
         let cleanSuccess = false;
@@ -31,7 +55,7 @@ function _setupTests(testType) {
         case TEST_TYPE_FS_ACCESS: testPath = window.mountTestPath;break;
         case TEST_TYPE_FILER: testPath = window.virtualTestPath;break;
         case TEST_TYPE_TAURI:
-            testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}`);
+            testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}test-phoenix-fs`);
             consoleLogToShell("using tauri test path: "+ testPath);
             break;
         default: throw new Error("unknown file system impl");
@@ -198,9 +222,56 @@ function _setupTests(testType) {
         await _validate_not_exists(fileNotExistsPath);
     });
 
+    async function _validateRename(oldPath, newPath, errCode) {
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
+        let error;
+        fs.rename(oldPath, newPath, (err)=>{
+            error = err;
+            resolveP();
+        });
+        await promise;
+        if(!errCode){
+            expect(error).to.be.null;
+        } else {
+            expect(error.code).to.eql(errCode);
+        }
+    }
+
+    it(`Should phoenix ${testType} rename file`, async function () {
+        let filePathCreated = await _writeTestFile();
+        let newPath = `${testPath}/new_file.txt`;
+        await _validateRename(filePathCreated, newPath);
+        await _validate_not_exists(filePathCreated);
+        await _validate_exists(newPath);
+    });
+
+    it(`Should phoenix ${testType} rename file to another dir`, async function () {
+        let filePathCreated = await _writeTestFile();
+        await _creatDirAndValidate(`${testPath}/sub1`);
+        let newPath = `${testPath}/sub1/new_file.txt`;
+        await _validateRename(filePathCreated, newPath);
+        await _validate_not_exists(filePathCreated);
+        await _validate_exists(newPath);
+    });
+
+    it(`Should phoenix ${testType} rename file fail if dest parent dir not exist`, async function () {
+        let filePathCreated = await _writeTestFile();
+        let newPath = `${testPath}/sub1/new_file.txt`;
+        await _validateRename(filePathCreated, newPath, fs.ERR_CODES.ENOENT);
+        await _validate_exists(filePathCreated);
+        await _validate_not_exists(newPath);
+    });
+
+    it(`Should phoenix ${testType} rename file fail if src file not exist`, async function () {
+        let notExistFile = `${testPath}/nopeFile.txt`;
+        let newPath = `${testPath}/new_file.txt`;
+        await _validateRename(notExistFile, newPath, fs.ERR_CODES.ENOENT);
+        await _validate_not_exists(notExistFile);
+        await _validate_not_exists(newPath);
+    });
+
     // todo error cases
-    // todo: unlink file integration tests
-    // todo rename file tests
     // readfile
     // writefile
 }

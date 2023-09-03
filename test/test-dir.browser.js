@@ -103,6 +103,19 @@ function _setupTests(testType) {
         return path;
     }
 
+    async function _writeTestFile() {
+        let writeSuccess = false;
+        let filePath = `${testPath}/browserWrite.txt`;
+        fs.writeFile(filePath, `hello World`, `utf8`, (err)=>{
+            if(!err){
+                writeSuccess = true;
+            }
+        });
+        await waitForTrue(()=>{return writeSuccess;},10000);
+        expect(writeSuccess).to.be.true;
+        return filePath;
+    }
+
     it(`Should phoenix ${testType} read dir`, async function () {
         await _writeTestDir();
         let readSuccess = false, contentsRead;
@@ -350,6 +363,12 @@ function _setupTests(testType) {
         await _creatDirAndValidate(`${testPath}/a`);
         await _creatDirAndValidate(`${testPath}/b`);
         await _validateRename(`${testPath}/a`, `${testPath}/b`, fs.ERR_CODES.EEXIST);
+    });
+
+    it(`Should phoenix ${testType} rename fail if dst is a file and exists`, async function () {
+        await _creatDirAndValidate(`${testPath}/a`);
+        let filePath = await _writeTestFile();
+        await _validateRename(`${testPath}/a`, filePath, fs.ERR_CODES.EEXIST);
     });
 
     it(`Should phoenix ${testType} rename fail if dst parent doesnt exist`, async function () {
