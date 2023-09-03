@@ -23,9 +23,9 @@
 
 const SUPPORTED_ENCODINGS = {
     BYTE_ARRAY: 'byte-array',
-    ASCII: 'ASCII',
-    UTF8: 'UTF-8',
-    UTF16: 'UTF-16',
+    ASCII: 'ascii',
+    UTF8: 'utf-8',
+    UTF16: 'utf-16',
     UTF16LE: 'utf-16le',
     UCS2: 'ucs-2', // same as utf-16le
     WINDOWS_1252: 'windows-1252',

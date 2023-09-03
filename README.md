@@ -10,6 +10,7 @@ This ensures that if you use phoenix vfs as your file system layer, then the cod
 The fs lib is available across all browser contexts: the main browser window,
 web workers, shared workers, and service workers.
 
+The library supports file read and write in all encodings(Eg. utf8, utf16, latin1, ...) supported by [iconv](https://www.npmjs.com/package/iconv-lite) library. 
 
 ## File System Structure & Organization
 
@@ -238,7 +239,45 @@ any of the below APIs if there are some errors.
 
 ## Supported file encodings
 When using file read and write apis, use `fs.SUPPORTED_ENCODINGS.*` to get a supported encoding.
-You may also pass in any encoding string supported by `new TextDecoder("<your encoding str>")` in your browser.
+
+The [iconv](https://www.npmjs.com/package/iconv-lite) library can also be directly accessed under `fs.iconv` variable for advanced uses.
+
+```js
+// Examples:
+// Convert from an encoded buffer to a js string.
+str = fs.iconv.decode(Buffer.from([0x68, 0x65, 0x6c, 0x6c, 0x6f]), 'win1251');
+
+// Convert from a js string to an encoded buffer.
+buf = fs.iconv.encode("Sample input string", 'win1251');
+
+// Check if encoding is supported
+fs.iconv.encodingExists("us-ascii")
+```
+
+## `fs.Buffer`
+This is similar to nodejs buffer APIs implemented in the browser to work with binary files.
+It is available both in the global scope as `Buffer` or `fs.Buffer`.
+See Examples:
+
+```js
+// see more APIs in https://nodejs.org/dist/latest-v6.x/docs/api/buffer.html#buffer_class_buffer
+const buf = fs.Buffer.from([0x62, 0x75, 0x66, 0x66, 0x65, 0x72]);
+```
+
+### Buffer Encodings support
+`fs.Buffer.from` and `fs.Buffer.toString` APIs do not support all the encodings. So it is recommended
+to use iconv to work with custom file encodings and then use the buffer.
+
+```js
+// to get a buffer from string, instead of doing Buffer.from, use iconv.encode 
+buf = Buffer.from("Sample input string", 'win1251'); // not supported/recommended and wont work even if it works for some cases
+buf = fs.iconv.encode("Sample input string", 'win1251'); // recommended way to create buffer for encoding
+
+// to convert buffer to string, use iconv as well
+str = buf.toString('win1251'); // not supported/recommended and wont work even if it works for some cases
+str = fs.iconv.decode(buf, 'win1251'); // recommended way
+```
+
 
 ## `fs.mountNativeFolder` Function
 
