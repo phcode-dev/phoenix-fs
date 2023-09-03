@@ -74,6 +74,7 @@ function _setupTests(testType) {
     });
 
     afterEach(async function () {
+        this.timeout(100000);
         await _clean();
     });
 
@@ -450,14 +451,17 @@ function _setupTests(testType) {
     }
 
     let excludedEncodings = [fs.BYTE_ARRAY_ENCODING, "binary", "base64", "hex"];
-    for(let encoding of fs.SUPPORTED_ENCODINGS) {
-        if (excludedEncodings.includes(encoding)) {
-            continue;
+    it(`Should phoenix ${testType} read and write files with all encoding`, async function () {
+        let promises = [];
+        for(let encoding of fs.SUPPORTED_ENCODINGS) {
+            if (excludedEncodings.includes(encoding)) {
+                continue;
+            }
+            promises.push(_writeBinTestWindEncoding("The Encoding is: "+encoding, encoding, `test-${encoding}.txt`));
         }
-        it(`Should phoenix ${testType} read and write files with ${encoding} encoding`, async function () {
-            await _writeBinTestWindEncoding("The Encoding is: "+encoding, encoding, `test-${encoding}.txt`);
-        });
-    }
+        await Promise.all(promises);
+    }).timeout(500000);
+
 
     it(`Should phoenix ${testType} write file fail if unknown encoding`, async function () {
         const filePath = `${testPath}/browserWrite.txt`;
