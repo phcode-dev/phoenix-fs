@@ -419,6 +419,7 @@ function rename(oldPath, newPath, callback) {
  * @param contents {ArrayBuffer}
  * @param encoding {string}
  * @param callback {function}
+ * @param path {string}
  * @private
  */
 function _processContents(contents, encoding, callback, path) {
@@ -427,12 +428,12 @@ function _processContents(contents, encoding, callback, path) {
         if(contents.buffer instanceof ArrayBuffer) {
             arrayBuffer = contents.buffer;
         }
-        const contentBuffer = Buffer.from(arrayBuffer);
         if(encoding === Constants.BINARY_ENCODING) {
+            const contentBuffer = Buffer.from(arrayBuffer);
             callback(null, contentBuffer, encoding);
             return;
         }
-        let decodedString = Utils.getDecodedString(contentBuffer, encoding);
+        let decodedString = Utils.getDecodedString(arrayBuffer, encoding);
         callback(null, decodedString, encoding);
     } catch (e) {
         if(ERR_CODES.ERROR_CODES[e.code]){
@@ -463,8 +464,13 @@ function readFile(path, options, callback) {
 function writeFile (path, data, options, callback) {
     callback = arguments[arguments.length - 1];
     options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'w');
+    let arrayBuffer;
     try{
-        if(!Buffer.isBuffer(data)) {
+        if(data instanceof ArrayBuffer){
+            arrayBuffer = data;
+        } else if(Buffer.isBuffer(data)) {
+            arrayBuffer = data.buffer;
+        } else {
             if(typeof data === 'number') {
                 data = '' + data;
             }
@@ -472,7 +478,7 @@ function writeFile (path, data, options, callback) {
             if(typeof data !== 'string') {
                 data = data.toString();
             }
-            data = Utils.getEncodedBuffer(data, options.encoding);
+            arrayBuffer = Utils.getEncodedArrayBuffer(data, options.encoding);
         }
     } catch (e) {
         if(ERR_CODES.ERROR_CODES[e.code]){
@@ -486,7 +492,7 @@ function writeFile (path, data, options, callback) {
     path = globalObject.path.normalize(path);
     const platformPath = getTauriPlatformPath(path);
 
-    __TAURI__.fs.writeBinaryFile(platformPath, data.buffer)
+    __TAURI__.fs.writeBinaryFile(platformPath, arrayBuffer)
         .then(() => {
             callback(null);
         })
