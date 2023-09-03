@@ -156,7 +156,7 @@ const NATIVE_ENCODINGS = [
     'UTF-8',
 ];
 
-// Buffer to string
+// ArrayBuffer to string
 function getDecodedString(arrayBuffer, encoding) {
     if(!(arrayBuffer instanceof ArrayBuffer)){
         throw new Errors.EINVAL(`ArrayBuffer expected to decode ${encoding}`);
@@ -177,6 +177,22 @@ function getDecodedString(arrayBuffer, encoding) {
     }
 }
 
+function getDecodedStringFromBuffer(buf, encoding) {
+    if(!(Buffer.isBuffer(buf))){
+        throw new Errors.EINVAL(`Buffer expected to decode ${encoding}`);
+    }
+    if(encoding === Constants.BYTE_ARRAY_ENCODING) {
+        encoding = Constants.BINARY_ENCODING;
+    }
+    try {
+        // for buffer, we directly use iconv for even utf 8 to prevent large file array copys
+        return iconv.decode(buf, encoding);
+    } catch (e) {
+        throw new Errors.ECHARSET(`${encoding} not supported ${e.message}`);
+    }
+}
+
+
 // getEncodedArrayBuffer and getEncodedBuffer for performance. filer natively uses Buffer and tauri/fs access
 // uses array buffer. So we have both to prevent unnecessary large data buffer<>arrayBuffer conversions.
 function getEncodedArrayBuffer(str, encoding) {
@@ -193,7 +209,8 @@ function getEncodedArrayBuffer(str, encoding) {
             let encoder = new TextEncoder(encoding);
             return encoder.encode(str).buffer;
         } else {
-            return iconv.encode(str, encoding).buffer;
+            let buf = iconv.encode(str, encoding);
+            return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
         }
     } catch (e) {
         throw new Errors.ECHARSET(`${encoding} not supported ${e.message}`);
@@ -229,6 +246,7 @@ const Utils = {
     getTauriStat,
     validateFileOptions,
     getDecodedString,
+    getDecodedStringFromBuffer,
     getEncodedArrayBuffer,
     getEncodedBuffer
 };
