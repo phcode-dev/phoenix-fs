@@ -74,7 +74,7 @@ function _setupTests(testType) {
     });
 
     afterEach(async function () {
-        this.timeout(100000);
+        this.timeout(30000);
         await _clean();
     });
 
@@ -460,7 +460,7 @@ function _setupTests(testType) {
             promises.push(_writeBinTestWindEncoding("The Encoding is: "+encoding, encoding, `test-${encoding}.txt`));
         }
         await Promise.all(promises);
-    }).timeout(500000);
+    }).timeout(60000);
 
 
     it(`Should phoenix ${testType} write file fail if unknown encoding`, async function () {
