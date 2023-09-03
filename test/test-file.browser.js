@@ -91,10 +91,14 @@ function _setupTests(testType) {
         expect(fs.TAURI_ROOT).to.equal(`/tauri`);
     }, 10000);
 
+    function _fileContent() {
+        return "hello world";
+    }
+
     async function _writeTestFile() {
         let writeSuccess = false;
         let filePath = `${testPath}/browserWrite.txt`;
-        fs.writeFile(filePath, `hello World`, `utf8`, (err)=>{
+        fs.writeFile(filePath, _fileContent(), `utf8`, (err)=>{
             if(!err){
                 writeSuccess = true;
             }
@@ -269,6 +273,87 @@ function _setupTests(testType) {
         await _validateRename(notExistFile, newPath, fs.ERR_CODES.ENOENT);
         await _validate_not_exists(notExistFile);
         await _validate_not_exists(newPath);
+    });
+
+    // read file tests (path, options, callback)
+    it(`Should phoenix ${testType} read file without options`, async function () {
+        let filePathCreated = await _writeTestFile();
+        let resolveP, rejectP;
+        const promise = new Promise((resolve,reject) => {resolveP = resolve;rejectP=reject;});
+        fs.readFile(filePathCreated, (_err, content, encoding)=>{
+            if(_err){
+                rejectP();
+                return;
+            }
+            resolveP({content, encoding});
+        });
+        let {content, encoding} = await promise;
+        expect(Buffer.isBuffer(content)).to.be.true;
+        expect(encoding).to.eql('binary');
+        expect(fs.iconv.decode(content, 'utf8')).to.eql(_fileContent());
+    });
+
+    function _readFile(path, encoding) {
+        return new Promise((resolve, reject)=>{
+            fs.readFile(path, encoding,(_err, content,encoding)=>{
+                if(_err){
+                    reject(_err);
+                    return;
+                }
+                resolve({content, encoding});
+            });
+        });
+    }
+
+    it(`Should phoenix ${testType} read file as byte-array encoding`, async function () {
+        let filePathCreated = await _writeTestFile();
+        let resolveP, rejectP;
+        const promise = new Promise((resolve,reject) => {resolveP = resolve;rejectP=reject;});
+        fs.readFile(filePathCreated, {encoding: fs.BYTE_ARRAY_ENCODING},(_err, content, encoding)=>{
+            if(_err){
+                rejectP(_err);
+                return;
+            }
+            resolveP({content, encoding});
+        });
+        let {content, encoding} = await promise;
+        if(!(content instanceof ArrayBuffer)){
+            expect("content should be array buffer").to.be.true;
+        }
+        expect(encoding).to.eql(fs.BYTE_ARRAY_ENCODING);
+        expect(fs.iconv.decode(Buffer.from(content), 'utf8')).to.eql(_fileContent());
+    });
+
+    it(`Should phoenix ${testType} read file as utf8 string`, async function () {
+        let filePathCreated = await _writeTestFile();
+        let {content, encoding} = await _readFile(filePathCreated, 'utf8');
+        if(typeof content !== 'string'){
+            expect("content should be string").to.be.true;
+        }
+        expect(encoding).to.eql('utf8');
+        expect(content).to.eql(_fileContent());
+    });
+
+    it(`Should phoenix ${testType} read file fail if unknown encoding`, async function () {
+        let filePathCreated = await _writeTestFile();
+        let err;
+        try{
+            await _readFile(filePathCreated, 'noAnEncoding');
+        } catch (e) {
+            err = e;
+        }
+        expect(err.code).to.eql(fs.ERR_CODES.ECHARSET);
+    });
+
+    it(`Should phoenix ${testType} read file fail if not exists`, async function () {
+        let filePath = `${testPath}/browserWrite.txt`;
+        let err;
+        try{
+            await _readFile(filePath);
+        } catch (e) {
+            err = e;
+        }
+        expect(err.code).to.eql(fs.ERR_CODES.ENOENT);
     });
 
     // todo error cases
