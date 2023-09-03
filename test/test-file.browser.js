@@ -7,6 +7,16 @@ function _setupTests(testType) {
         return window.__TAURI__.invoke("console_log", {message});
     }
 
+    async function _validate_not_exists(path) {
+        let done, err;
+        fs.stat(path, (error)=>{
+            err = error;
+            done = true;
+        });
+        await waitForTrue(()=>{return done;},1000);
+        expect(err.code).to.equal(fs.ERR_CODES.ENOENT);
+    }
+
     async function _clean() {
         console.log(`cleaning: `, testPath);
         let cleanSuccess = false;
@@ -138,31 +148,54 @@ function _setupTests(testType) {
         expect(error).to.be.null;
         expect(stats.isFile()).to.be.true;
         expect(stats.name).to.equal(Filer.path.basename(filePathCreated));
+        expect(stats.mtime > 0).to.be.true;
+        expect(stats.mtime).to.be.an.instanceof(Date);
         switch (testType) {
         case TEST_TYPE_FS_ACCESS:
             expect(stats.dev).to.eql("nativeFsAccess");
-            expect(stats.mtime).to.be.null; // fs access pais directory doesnt yet have way to get modified time
             break;
         case TEST_TYPE_FILER:
             expect(stats.dev).to.eql("local");
-            expect(stats.mtime > 0).to.be.true;
             break;
         case TEST_TYPE_TAURI:
             expect(stats.dev.startsWith("tauri")).to.be.true;
-            expect(stats.mtime > 0).to.be.true;
             break;
         default: throw new Error("unknown file system impl");
         }
     });
 
     it(`Should phoenix ${testType} throw enoent if file doesnt exist`, async function () {
-        let dirNotExistsPath = `${testPath}/notExistsFile.txt`;
+        let fileNotExistsPath = `${testPath}/notExistsFile.txt`;
         let error;
-        fs.stat(dirNotExistsPath, (err)=>{
+        fs.stat(fileNotExistsPath, (err)=>{
             error = err;
         });
         await waitForTrue(()=>{return !!error;},1000);
         expect(error.code).to.equal(fs.ERR_CODES.ENOENT);
+    });
+
+    it(`Should phoenix ${testType} unlink(path, cb) work for files`, async function () {
+        let filePathCreated = await _writeTestFile();
+        let done, error;
+        fs.unlink(filePathCreated, (err)=>{
+            error = err;
+            done = true;
+        });
+        await waitForTrue(()=>{return done;},1000);
+        expect(error).to.be.null;
+        await _validate_not_exists(filePathCreated);
+    });
+
+    it(`Should phoenix ${testType} unlink(path, cb) non existent file enoent`, async function () {
+        let fileNotExistsPath = `${testPath}/notExistsFile.txt`;
+        let done, error;
+        fs.unlink(fileNotExistsPath, (err)=>{
+            error = err;
+            done = true;
+        });
+        await waitForTrue(()=>{return done;},1000);
+        expect(error.code).to.equal(fs.ERR_CODES.ENOENT);
+        await _validate_not_exists(fileNotExistsPath);
     });
 
     // todo error cases
