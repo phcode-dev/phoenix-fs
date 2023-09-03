@@ -307,7 +307,7 @@ str = fs.iconv.decode(buf, 'win1251'); // recommended way
 ```
 
 
-## `fs.mountNativeFolder` Function
+## `fs.mountNativeFolder(optionalDirHandle?, callback)` Function
 
 Mounts an fs access folder to the `/mnt` dir, prompting the user with a directory picker.
 
@@ -343,7 +343,7 @@ fs.mountNativeFolder(dirHandle, function(error, [mountPath]) {
 });
 ```
 
-## `fs.openTauriFilePickerAsync` Function
+## `fs.openTauriFilePickerAsync(options?)` Function
 
 Opens the Tauri file picker asynchronously with given options. If options aren't provided, defaults to picking a single file. If the `defaultPath` option isn't provided, it will default to the user's document directory.
 
@@ -397,7 +397,7 @@ Opens the Tauri file picker asynchronously with given options. If options aren't
    });
    ```
 
-## `fs.openTauriFileSaveDialogueAsync` Function
+## `fs.openTauriFileSaveDialogueAsync(options?)` Function
 
 Opens the Tauri file save dialogue asynchronously using the provided options. If the `defaultPath` option isn't provided, it defaults to the user's document directory.
 
@@ -469,7 +469,7 @@ On a *nix system:
 fs.getTauriPlatformPath('/tauri/home/user/a.txt');  // Returns: '/home/user/a.txt'
 ```
 
-## `fs.getTauriVirtualPath` function
+## `fs.getTauriVirtualPath(platformPath)` function
 
 Converts platform-specific Tauri paths to Phoenix virtual file system path. 
 
@@ -502,7 +502,7 @@ fs.getTauriVirtualPath('/home/user/a.txt');
 // Returns: '/tauri/home/user/a.txt'
 ```
 
-## `fs.mkdir` function
+## `fs.mkdir(path, mode?, callback?)` function
 
 Creates a directory at given path. Not that the parent dir should exist for this to work. else use `fs.mkdirs`.
 
@@ -527,7 +527,7 @@ Creates a directory at given path. Not that the parent dir should exist for this
   - `void`
 
 
-## `fs.mkdirs` function
+## `fs.mkdirs(path, mode?, recursive?, callback?)` function
 
 Creates a directory with optional mode and recursion (create all intermediate directories if those don't exist).
 
@@ -555,7 +555,7 @@ Creates a directory with optional mode and recursion (create all intermediate di
 - **Returns:**
   - `void`
 
-## `fs.readdir` function
+## `fs.readdir(path, options?, callback)` function
 
 Reads the contents of a directory. This method will list all the
 entries of a directory as an array of strings (filenames, directory names, or symbolic link names). If the `withFileTypes` option is set to `true`, it will return file stat objects array instead of strings.
@@ -609,3 +609,42 @@ fs.rename("/tauri/some/path", "/tauri/new/path", function(err) {
 
 **Returns:**
 `void`
+
+### `fs.copy(src, dst, callback)` function
+
+Asynchronously copies a source file or directory to a destination.
+
+- If the source is a file, it will be copied to the specified destination (the destination file doesn't exist).
+- If the source is a directory, the directory will be copied recursively to the destination.
+
+**Parameters**:
+
+- `src` (string): The path to the source file or directory.
+  
+- `dst` (string): The path to the destination. 
+  - If the source is a file, this should be the full path to the destination file.
+  - If the source is a directory, this should be the destination directory where the source directory's contents should be copied.
+  - If the destination directory exists, the source folder will be copied as a child of the destination folder.
+
+- `callback` (function): Callback function called once the copy operation completes.
+  - The first argument is an error if any occurred during the copy operation or `null` if the copy was successful.
+  - The second argument is the path to the copied file or directory if the copy was successful.
+
+**Exceptions**:
+
+- Throws `Errors.ENOENT` When the source doesn't exist.
+- Throws `Errors.EIO` For I/O related errors.
+- Throws `Errors.EEXIST` When the destination file or directory already exists.
+
+**Example**:
+```javascript
+copy('/path/to/src', '/path/to/dest', (err, copiedPath) => {
+  if (err) {
+    console.error('Copy failed:', err);
+  } else {
+    console.log('Copy succeeded:', copiedPath);
+  }
+});
+```
+
+**Returns**: `void`

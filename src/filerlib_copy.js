@@ -147,6 +147,34 @@ async function _copyFolder(srcFolder, dst) {
     }
 }
 
+/**
+ * Asynchronously copies a source file or directory to a destination.
+ * If the source is a file, it will be copied to the specified destination (the destination file doesn't exist).
+ * If the source is a directory, the directory will be copied recursively to the destination.
+ *
+ * @param {string} src - The path to the source file or directory.
+ * @param {string} dst - The path to the destination. If the source is a file, this should be the full path to the destination file.
+ * If the source is a directory, this should be the destination directory where the source directory's contents should be copied.
+ * If the destination directory exists, the source folder will be copied as a child of the destination folder.
+ * @param {function(Error|null, string?)} callback - Callback function called once the copy operation completes.
+ *        - The first argument is an error if any occurred during the copy operation or `null` if the copy was successful.
+ *        - The second argument is the path to the copied file or directory if the copy was successful.
+ *
+ * @throws {Errors.ENOENT} When the source doesn't exist.
+ * @throws {Errors.EIO} For I/O related errors.
+ * @throws {Errors.EEXIST} When the destination file or directory already exists.
+ *
+ * @example
+ * copy('/path/to/src', '/path/to/dest', (err, copiedPath) => {
+ *   if (err) {
+ *     console.error('Copy failed:', err);
+ *   } else {
+ *     console.log('Copy succeeded:', copiedPath);
+ *   }
+ * });
+ *
+ * @returns {void}
+ */
 async function copy(src, dst, callback) {
     try {
         let srcStat = await _stat(src);
