@@ -250,12 +250,12 @@ function writeFile (path, data, options, callback) {
     });
 }
 
-async function _deleteEntry(dirHandle, entryNameToDelete, callback, recursive=true){
+async function _deleteEntry(dirHandle, entryNameToDelete, callback, path){
     try {
-        await dirHandle.removeEntry(entryNameToDelete, { recursive: recursive });
+        await dirHandle.removeEntry(entryNameToDelete, { recursive: true });
         callback(null);
     } catch (err) {
-        callback(err);
+        callback(new Errors.EIO(`Error while deleting path: ${path}, ${err.message}`, path));
     }
 }
 
@@ -263,12 +263,19 @@ async function unlink(path, callback) {
     path = globalObject.path.normalize(path);
     let dirPath= globalObject.path.dirname(path);
     let baseName= globalObject.path.basename(path);
-    Mounts.getHandleFromPath(dirPath, async (err, dirHandle) => {
-        if(err){
-            callback(err);
-        } else {
-            _deleteEntry(dirHandle, baseName, callback);
+    stat(path, (_err)=>{
+        if(_err) {
+            // enoent or other error means delete will mostly fail. pass it through.
+            callback(_err);
+            return;
         }
+        Mounts.getHandleFromPath(dirPath, async (err, dirHandle) => {
+            if(err){
+                callback(err);
+            } else {
+                _deleteEntry(dirHandle, baseName, callback, path);
+            }
+        });
     });
 }
 

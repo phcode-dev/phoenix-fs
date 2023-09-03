@@ -269,6 +269,18 @@ function _setupTests(testType) {
         await _validate_not_exists(dirPathCreated);
     });
 
+    it(`Should phoenix ${testType} unlink(path, cb) non existent dir enoent`, async function () {
+        let fileNotExistsPath = `${testPath}/dirNotExists`;
+        let done, error;
+        fs.unlink(fileNotExistsPath, (err)=>{
+            error = err;
+            done = true;
+        });
+        await waitForTrue(()=>{return done;},1000);
+        expect(error.code).to.equal(fs.ERR_CODES.ENOENT);
+        await _validate_not_exists(fileNotExistsPath);
+    });
+
     it(`Should phoenix ${testType} get stat of dir`, async function () {
         let dirPathCreated = await _writeTestDir();
         let stats, error;
@@ -287,10 +299,12 @@ function _setupTests(testType) {
             break;
         case TEST_TYPE_FILER:
             expect(stats.dev).to.eql("local");
+            expect(stats.mtime).to.be.an.instanceof(Date);
             expect(stats.mtime > 0).to.be.true;
             break;
         case TEST_TYPE_TAURI:
             expect(stats.dev.startsWith("tauri")).to.be.true;
+            expect(stats.mtime).to.be.an.instanceof(Date);
             expect(stats.mtime > 0).to.be.true;
             break;
         default: throw new Error("unknown file system impl");
