@@ -316,7 +316,7 @@ const fileSystemLib = {
             _mkdir_p(fileSystemLib, path, mode, callback);
         }
     },
-    BINARY_ENCODING: Constants.BINARY_ENCODING,
+    BYTE_ARRAY_ENCODING: Constants.BYTE_ARRAY_ENCODING,
     MOUNT_POINT_ROOT: Constants.MOUNT_POINT_ROOT,
     TAURI_ROOT: Constants.TAURI_ROOT,
     ERR_CODES: {},

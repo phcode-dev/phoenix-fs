@@ -428,7 +428,10 @@ function _processContents(contents, encoding, callback, path) {
         if(contents.buffer instanceof ArrayBuffer) {
             arrayBuffer = contents.buffer;
         }
-        if(encoding === Constants.BINARY_ENCODING) {
+        if(encoding === Constants.BYTE_ARRAY_ENCODING) {
+            callback(null, arrayBuffer, encoding);
+            return;
+        } else if(encoding === Constants.BINARY_ENCODING) {
             const contentBuffer = Buffer.from(arrayBuffer);
             callback(null, contentBuffer, encoding);
             return;

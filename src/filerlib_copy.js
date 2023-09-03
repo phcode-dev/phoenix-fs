@@ -61,6 +61,7 @@ function _readDir(path) {
     });
 }
 
+// todo use byte array encoding here to improve performance.
 function _copyFileContents(src, dst) {
     return new Promise((resolve, reject) => {
         fs.readFile(src, (err, data) => {
