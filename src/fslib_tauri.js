@@ -369,6 +369,37 @@ function mkdirs(path, mode, recursive, callback) {
         });
 }
 
+/**
+ * Retrieves the status of a file or directory. The result will be an object with detailed information.
+ * The provided callback function will be called with either an error (as the first argument) or the stat object (as the second argument).
+ *
+ * @param {string} path - The path to the file or directory to retrieve the status for.
+ * @param {function} callback - The callback function that is executed when the operation is complete.
+ *                              The callback function will receive two arguments:
+ *                              1. An error object if an error occurred, otherwise null.
+ *                              2. The stat object containing the details about the file or directory.
+ *
+ * The stat object has the following properties:
+ * - 'name' : The base name of the file or directory.
+ * - 'isFile()', 'isDirectory()' and 'isSymbolicLink()'- functions that does what its name suggests.
+ * - 'type': Indicates the type of the node, which can be a string indicating directory, file, or symbolic link.
+ *           Prefer above `isFile()` type check over this.
+ * - `size`: The size of the file in bytes.
+ * - `mode`: The file's mode. It's an integer that represents the file's permission mode.
+ * - `readonly`: A boolean indicating if the file is read-only.
+ * - `ctime`: The time the file was created, in milliseconds since the POSIX Epoch.
+ * - `atime`: The time the file was last accessed, in milliseconds since the POSIX Epoch.
+ * - `mtime`: The time the file was last modified, in milliseconds since the POSIX Epoch.
+ * - `nlinks`: The number of hard links.
+ *
+ * @example
+ * stat("/tauri/some/path", function(err, statObj) {
+ *   if (err) throw err;
+ *   console.log(statObj);
+ * });
+ *
+ * @returns {void}
+ */
 function stat(path, callback) {
     path = globalObject.path.normalize(path);
     Utils.getTauriStat(path)
