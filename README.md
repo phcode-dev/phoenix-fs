@@ -678,3 +678,43 @@ if (fs.isEncodingSupported('utf8')) {
 const supported = fs.isEncodingSupported('LATIN1');  // returns true
 const notSupported = fs.isEncodingSupported('oopshehe');  // returns false
 ```
+
+## `fs.stat(path, callback)`
+
+Retrieves the status of a file or directory. Once the operation is complete, the result will be an object with detailed information. The provided callback function is executed with the status details.
+
+### Parameters
+
+- **path**: `string`
+  - The path to the file or directory to retrieve the status for.
+
+- **callback**: `function`
+  - The callback function executed when the operation is complete.
+  - Receives two arguments:
+    1. An error object if an error occurred, otherwise null.
+    2. The stat object containing the details about the file or directory.
+
+### Stat Object
+
+The returned `stat` object contains the following properties:
+
+- **name**: The base name of the file or directory.
+- **isFile()**, **isDirectory()**, and **isSymbolicLink()**: Functions to determine the type of the node.
+- **type**: Indicates the type of the node, which can be a string indicating directory, file, or symbolic link. Prefer above `isFile()` type check over this.
+- **size**: The size of the file in bytes.
+- **mode**: The file's mode (integer representing the file's permission mode).
+- **readonly**: Boolean value indicating if the file is read-only.
+- **ctime**: Time the file was created (milliseconds since the POSIX Epoch).
+- **atime**: Time the file was last accessed (milliseconds since the POSIX Epoch).
+- **mtime**: Time the file was last modified (milliseconds since the POSIX Epoch).
+- **nlinks**: The number of hard links.
+
+### Example
+
+```javascript
+stat("/tauri/some/path", function(err, statObj) {
+  if (err) throw err;
+  console.log(statObj);
+});
+```
+
