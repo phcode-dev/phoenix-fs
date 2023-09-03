@@ -22,6 +22,9 @@
 /*eslint strict: ["error", "global"]*/
 
 
+const {TauriFS} = require('./fslib_tauri');
+const {Mounts} = require('./fslib_mounts');
+const {Constants} = require('./constants');
 const {ERR_CODES, Errors} = require('./errno');
 const ERROR_CODES = ERR_CODES.ERROR_CODES;
 
@@ -61,14 +64,18 @@ function _readDir(path) {
     });
 }
 
-// todo use byte array encoding here to improve performance.
 function _copyFileContents(src, dst) {
+    let encoding = Constants.BINARY_ENCODING; // this is the Filer default binary return object
+    if((TauriFS.isTauriSubPath(src) && TauriFS.isTauriSubPath(dst)) ||
+        (Mounts.isMountSubPath(src) && Mounts.isMountSubPath(dst))){
+        encoding = Constants.BYTE_ARRAY_ENCODING; // this is the browser native encoding to make copying faster
+    }
     return new Promise((resolve, reject) => {
-        fs.readFile(src, (err, data) => {
+        fs.readFile(src, encoding, (err, data) => {
             if(err) {
                 reject(err);
             } else {
-                fs.writeFile(dst, data, function (writeErr) {
+                fs.writeFile(dst, data, encoding, function (writeErr) {
                     writeErr?
                         reject(writeErr):
                         resolve();

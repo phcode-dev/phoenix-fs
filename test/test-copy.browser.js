@@ -1,14 +1,23 @@
-/* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER*/
-
-function _getPathForTestType(testType) {
-    switch (testType) {
-    case TEST_TYPE_FS_ACCESS: return window.mountTestPath;
-    case TEST_TYPE_FILER: return window.virtualTestPath;
-    default: throw new Error("unknown file system impl");
-    }
-}
+/* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI*/
 
 function _setupTests(testTypeSrc, testTypeDst) {
+    function consoleLogToShell(message) {
+        return window.__TAURI__.invoke("console_log", {message});
+    }
+
+    async function _getPathForTestType(testType) {
+        let testPath;
+        switch (testType) {
+        case TEST_TYPE_FS_ACCESS: return window.mountTestPath;
+        case TEST_TYPE_FILER: return window.virtualTestPath;
+        case TEST_TYPE_TAURI:
+            testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}test-phoenix-fs`);
+            consoleLogToShell("using tauri test path: "+ testPath);
+            return testPath;
+        default: throw new Error("unknown file system impl");
+        }
+    }
+
     let srcTestPath, destTestPath;
     async function _clean() {
         console.log(`cleaning: `, srcTestPath);
@@ -24,11 +33,18 @@ function _setupTests(testTypeSrc, testTypeDst) {
             cleanSuccess = true;
         });
         await waitForTrue(()=>{return cleanSuccess;},10000);
+
+        console.log(`cleaning: `, destTestPath);
+        cleanSuccess = false;
+        fs.unlink(await _getPathForTestType(testTypeSrc), ()=>{
+            cleanSuccess = true;
+        });
+        await waitForTrue(()=>{return cleanSuccess;},10000);
     }
 
     before(async function () {
-        srcTestPath = _getPathForTestType(testTypeSrc) + '/src';
-        destTestPath = _getPathForTestType(testTypeDst)+ '/dest';
+        srcTestPath = await _getPathForTestType(testTypeSrc) + '/src';
+        destTestPath = await _getPathForTestType(testTypeDst)+ '/dest';
     });
 
     beforeEach(async function () {
@@ -76,9 +92,14 @@ function _setupTests(testTypeSrc, testTypeDst) {
             });
         });
     }
+
+    function _getContent() {
+        return `hello World`;
+    }
+
     function _createFile(path) {
         return new Promise((resolve, reject)=>{
-            fs.writeFile(path, `hello World`, `utf8`, (err)=>{
+            fs.writeFile(path, _getContent(), `utf8`, (err)=>{
                 if(!err){
                     resolve();
                 } else {
@@ -86,6 +107,19 @@ function _setupTests(testTypeSrc, testTypeDst) {
                 }
             });
         });
+    }
+
+    async function _verifyCreatedFile(path) {
+        let resolveP, rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve;rejectP=reject;});
+        fs.readFile(path, `utf8`, (_err, _content)=>{
+            if(_err){
+                rejectP();
+            }
+            resolveP(_content);
+        });
+        const content = await promise;
+        expect(content).to.eql(_getContent());
     }
 
     function _shouldExist(path) {
@@ -128,7 +162,7 @@ function _setupTests(testTypeSrc, testTypeDst) {
             expect(await _shouldExist(`${expectedPath}/${folder}`)).to.be.true;
         }
         for(let file of TEST_FILES){
-            expect(await _shouldExist(`${expectedPath}/${file}`)).to.be.true;
+            await _verifyCreatedFile(`${expectedPath}/${file}`);
         }
         expect(actualCopiedPath).to.equal(expectedPath);
     }
@@ -213,11 +247,27 @@ function _setupTests(testTypeSrc, testTypeDst) {
     });
 }
 
-// between filer and fs access start
 describe(`Browser copy tests from "filer" to "filer"`, function () {
     _setupTests(TEST_TYPE_FILER, TEST_TYPE_FILER);
 });
 
+if(window.__TAURI__){
+    describe(`Browser copy tests from "tauri" to "tauri"`, function () {
+        _setupTests(TEST_TYPE_TAURI, TEST_TYPE_TAURI);
+    });
+}
+
+if(window.supportsFsAccessAPIs){
+    describe(`Browser copy tests from "fs access" to "fs access"`, function () {
+        if(window.__TAURI__){
+            it(`fs access tests are disabled in tauri`, function () {});
+            return;
+        }
+        _setupTests(TEST_TYPE_FS_ACCESS, TEST_TYPE_FS_ACCESS);
+    });
+}
+
+// between filer and fs access start
 if(window.supportsFsAccessAPIs){
     describe(`Browser copy tests from "filer" to "fs access"`, function () {
         if(window.__TAURI__){
@@ -234,13 +284,19 @@ if(window.supportsFsAccessAPIs){
         }
         _setupTests(TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER);
     });
-
-    describe(`Browser copy tests from "fs access" to "fs access"`, function () {
-        if(window.__TAURI__){
-            it(`fs access tests are disabled in tauri`, function () {});
-            return;
-        }
-        _setupTests(TEST_TYPE_FS_ACCESS, TEST_TYPE_FS_ACCESS);
-    });
 }
 // between filer and fs access end
+
+// between filer and tauri start
+if(window.__TAURI__){
+    describe(`Browser copy tests from "filer" to "tauri"`, function () {
+        _setupTests(TEST_TYPE_FILER, TEST_TYPE_TAURI);
+    });
+
+    describe(`Browser copy tests from "tauri" to "filer"`, function () {
+        _setupTests(TEST_TYPE_TAURI, TEST_TYPE_FILER);
+    });
+}
+// between filer and tauri end
+
+// tauri and fs access are never enabled within the same context. So no tests for that.

@@ -177,6 +177,8 @@ function getDecodedString(arrayBuffer, encoding) {
     }
 }
 
+// getEncodedArrayBuffer and getEncodedBuffer for performance. filer natively uses Buffer and tauri/fs access
+// uses array buffer. So we have both to prevent unnecessary large data buffer<>arrayBuffer conversions.
 function getEncodedArrayBuffer(str, encoding) {
     if(typeof str !== "string"){
         throw new Errors.EINVAL(`String expected to Encode ${encoding} but got ${typeof str}`);
@@ -198,13 +200,37 @@ function getEncodedArrayBuffer(str, encoding) {
     }
 }
 
+// getEncodedArrayBuffer and getEncodedBuffer for performance. filer natively uses Buffer and tauri/fs access
+// uses array buffer. So we have both to prevent unnecessary large data buffer<>arrayBuffer conversions.
+function getEncodedBuffer(str, encoding) {
+    if(typeof str !== "string"){
+        throw new Errors.EINVAL(`String expected to Encode ${encoding} but got ${typeof str}`);
+    }
+    if(encoding === Constants.BYTE_ARRAY_ENCODING) {
+        encoding = Constants.BINARY_ENCODING;
+    }
+    try {
+        if(NATIVE_ENCODINGS[encoding]) {
+            // for utf8 we use the browser native decoder.
+            // The browser encoder does only utf-8, so we only use the native encoder/decoder for utf8.
+            let encoder = new TextEncoder(encoding);
+            return Buffer.from(encoder.encode(str).buffer);
+        } else {
+            return iconv.encode(str, encoding);
+        }
+    } catch (e) {
+        throw new Errors.ECHARSET(`${encoding} not supported ${e.message}`);
+    }
+}
+
 const Utils = {
     createStatObject,
     createDummyStatObject,
     getTauriStat,
     validateFileOptions,
     getDecodedString,
-    getEncodedArrayBuffer
+    getEncodedArrayBuffer,
+    getEncodedBuffer
 };
 
 module.exports ={
