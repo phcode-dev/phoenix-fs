@@ -1,7 +1,12 @@
-/* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER*/
+/* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI*/
 
 function _setupTests(testType) {
     let testPath;
+
+    function consoleLogToShell(message) {
+        return window.__TAURI__.invoke("console_log", {message});
+    }
+
     async function _clean() {
         console.log(`cleaning: `, testPath);
         let cleanSuccess = false;
@@ -15,6 +20,10 @@ function _setupTests(testType) {
         switch (testType) {
         case TEST_TYPE_FS_ACCESS: testPath = window.mountTestPath;break;
         case TEST_TYPE_FILER: testPath = window.virtualTestPath;break;
+        case TEST_TYPE_TAURI:
+            testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}`);
+            consoleLogToShell("using tauri test path: "+ testPath);
+            break;
         default: throw new Error("unknown file system impl");
         }
     });
@@ -50,13 +59,15 @@ function _setupTests(testType) {
 
     async function _writeTestFile() {
         let writeSuccess = false;
-        fs.writeFile(`${testPath}/browserWrite.txt`, `hello World`, `utf8`, (err)=>{
+        let filePath = `${testPath}/browserWrite.txt`;
+        fs.writeFile(filePath, `hello World`, `utf8`, (err)=>{
             if(!err){
                 writeSuccess = true;
             }
         });
         await waitForTrue(()=>{return writeSuccess;},10000);
         expect(writeSuccess).to.be.true;
+        return filePath;
     }
 
     it(`Should phoenix ${testType} write in browser`, async function () {
@@ -115,14 +126,61 @@ function _setupTests(testType) {
         expect(readSuccess).to.be.true;
         expect(contentsRead[0].type).to.exist;
     });
-    // todo: file stat integration tests
+
+    it(`Should phoenix ${testType} get stat of file`, async function () {
+        let filePathCreated = await _writeTestFile();
+        let stats, error;
+        fs.stat(filePathCreated, (err, stat)=>{
+            stats = stat;
+            error = err;
+        });
+        await waitForTrue(()=>{return !!stats;},1000);
+        expect(error).to.be.null;
+        expect(stats.isFile()).to.be.true;
+        expect(stats.name).to.equal(Filer.path.basename(filePathCreated));
+        switch (testType) {
+        case TEST_TYPE_FS_ACCESS:
+            expect(stats.dev).to.eql("nativeFsAccess");
+            expect(stats.mtime).to.be.null; // fs access pais directory doesnt yet have way to get modified time
+            break;
+        case TEST_TYPE_FILER:
+            expect(stats.dev).to.eql("local");
+            expect(stats.mtime > 0).to.be.true;
+            break;
+        case TEST_TYPE_TAURI:
+            expect(stats.dev.startsWith("tauri")).to.be.true;
+            expect(stats.mtime > 0).to.be.true;
+            break;
+        default: throw new Error("unknown file system impl");
+        }
+    });
+
+    it(`Should phoenix ${testType} throw enoent if file doesnt exist`, async function () {
+        let dirNotExistsPath = `${testPath}/notExistsFile.txt`;
+        let error;
+        fs.stat(dirNotExistsPath, (err)=>{
+            error = err;
+        });
+        await waitForTrue(()=>{return !!error;},1000);
+        expect(error.code).to.equal(fs.ERR_CODES.ENOENT);
+    });
+
+    // todo error cases
     // todo: unlink file integration tests
     // todo rename file tests
+    // readfile
+    // writefile
 }
 
 describe(`File: Browser virtual fs tests: filer paths`, function () {
     _setupTests(TEST_TYPE_FILER);
 });
+
+if(window.__TAURI__){
+    describe(`File: Browser virtual fs tests: tauri paths`, function () {
+        _setupTests(TEST_TYPE_TAURI);
+    });
+}
 
 if(window.supportsFsAccessAPIs){
     describe(`File: Browser virtual fs tests: fs access mount point paths`, function () {
