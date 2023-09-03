@@ -161,6 +161,9 @@ function getDecodedString(arrayBuffer, encoding) {
     if(!(arrayBuffer instanceof ArrayBuffer)){
         throw new Errors.EINVAL(`ArrayBuffer expected to decode ${encoding}`);
     }
+    if(encoding === Constants.BYTE_ARRAY_ENCODING) {
+        encoding = Constants.BINARY_ENCODING;
+    }
     try {
         if(NATIVE_ENCODINGS[encoding]) {
             // for utf8 we use the browser native decoder.
@@ -177,6 +180,9 @@ function getDecodedString(arrayBuffer, encoding) {
 function getEncodedArrayBuffer(str, encoding) {
     if(typeof str !== "string"){
         throw new Errors.EINVAL(`String expected to Encode ${encoding} but got ${typeof str}`);
+    }
+    if(encoding === Constants.BYTE_ARRAY_ENCODING) {
+        encoding = Constants.BINARY_ENCODING;
     }
     try {
         if(NATIVE_ENCODINGS[encoding]) {

@@ -125,13 +125,13 @@ describe(`File: Browser virtual fs tests: filer paths`, function () {
 });
 
 describe(`File: Misc tests`, function () {
-    it(`Should fs.BINARY_ENCODING constant`, async function () {
-        // unfortunately, this is required in fs for legacy reasons.
-        expect(fs.BINARY_ENCODING).to.equal('binary');
+    it(`Should fs.BYTE_ARRAY_ENCODING constant`, async function () {
+        expect(fs.BYTE_ARRAY_ENCODING).to.equal('byte-array');
     });
 
     it(`Should have fs.SUPPORTED_ENCODINGS constant`, async function () {
         const requiredEncodings = {
+            BYTE_ARRAY: "byte-array",
             BINARY: 'binary',
             ASCII: 'ascii',
             UTF8: 'utf-8',

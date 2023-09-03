@@ -45,6 +45,11 @@ You can then continue with installation instructions, usage, and other sections 
     * [Publishing to npm](#publishing-to-npm)
 * [API Docs](#api-docs)
   * [Error Codes](#error-codes)
+  * [Supported file encodings](#supported-file-encodings)
+    * [Usage of encoding in `fs.readFile` API](#usage-of-encoding-in-fsreadfile-api)
+    * [Use `fs.BYTE_ARRAY_ENCODING` for binary files](#use-fsbytearrayencoding-for-binary-files)
+  * [`fs.Buffer`](#fsbuffer)
+    * [Buffer Encodings support](#buffer-encodings-support)
   * [`fs.mountNativeFolder` Function](#fsmountnativefolder-function)
     * [Parameters:](#parameters)
     * [Example Usage:](#example-usage)
@@ -74,6 +79,7 @@ You can then continue with installation instructions, usage, and other sections 
   * [`fs.readdir` function](#fsreaddir-function)
     * [Parameters](#parameters-5)
     * [Examples](#examples-1)
+  * [`fs.rename(oldPath, newPath, callback)` function](#fsrenameoldpath-newpath-callback-function)
 <!-- TOC -->
 
 ## Installation
@@ -252,6 +258,28 @@ buf = fs.iconv.encode("Sample input string", 'win1251');
 
 // Check if encoding is supported
 fs.iconv.encodingExists("us-ascii")
+```
+
+### Usage of encoding in `fs.readFile` API
+
+```js
+// here you can use `utf16` encoding with `readFile` API to read a UTF16 file.
+fs.readFile("/tauri/path/utf16.txt",
+        "utf16", (e,contentStr)=>{console.log(contentStr);})
+fs.readFile("/tauri/path/utf16.txt",
+        fs.SUPPORTED_ENCODINGS.UTF16, (e,contentStr)=>{console.log(contentStr);})
+```
+
+### Use `fs.BYTE_ARRAY_ENCODING` for binary files
+When working with binary files in the `fs.readFile` and `fs.writeFile` APIs,
+you can utilize the `fs.BYTE_ARRAY_ENCODING` encoding. Using this encoding yields
+an `ArrayBuffer`, which is a native browser structure. Using this approach offers
+enhanced performance compared to the polyfilled `Buffer` object yielded when using just the `binary` encoding. 
+
+```js
+// here you can use `utf16` encoding with `readFile` API to read a UTF16 file.
+fs.readFile("/tauri/path/utf16.txt",
+        fs.BYTE_ARRAY_ENCODING, (e,contentStr)=>{console.log(contentStr);})
 ```
 
 ## `fs.Buffer`

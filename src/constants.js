@@ -22,6 +22,7 @@
 /* jshint ignore:start */
 
 const SUPPORTED_ENCODINGS = {
+    BYTE_ARRAY: 'byte-array',
     BINARY: 'binary',
     ASCII: 'ascii',
     UTF8: 'utf-8',
@@ -53,6 +54,7 @@ const Constants = {
     MOUNT_POINT_ROOT: '/mnt',
     TAURI_ROOT: "/tauri",
     BINARY_ENCODING: SUPPORTED_ENCODINGS.BINARY,
+    BYTE_ARRAY_ENCODING: SUPPORTED_ENCODINGS.BYTE_ARRAY,
     SUPPORTED_ENCODINGS
 };
 
