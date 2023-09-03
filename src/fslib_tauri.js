@@ -428,7 +428,7 @@ function _processContents(contents, encoding, callback, path) {
             arrayBuffer = contents.buffer;
         }
         const contentBuffer = Buffer.from(arrayBuffer);
-        if(encoding === Constants.BYTE_ARRAY_ENCODING) {
+        if(encoding === Constants.BINARY_ENCODING) {
             callback(null, contentBuffer, encoding);
             return;
         }
@@ -448,7 +448,7 @@ function readFile(path, options, callback) {
     const platformPath = getTauriPlatformPath(path);
 
     callback = arguments[arguments.length - 1];
-    options = Utils.validateFileOptions(options, Constants.BYTE_ARRAY_ENCODING, 'r');
+    options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'r');
 
     __TAURI__.fs.readBinaryFile(platformPath)
         .then(contents => {
@@ -462,7 +462,7 @@ function readFile(path, options, callback) {
 
 function writeFile (path, data, options, callback) {
     callback = arguments[arguments.length - 1];
-    options = Utils.validateFileOptions(options, Constants.BYTE_ARRAY_ENCODING, 'w');
+    options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'w');
     try{
         if(!Buffer.isBuffer(data)) {
             if(typeof data === 'number') {
