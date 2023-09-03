@@ -22,7 +22,7 @@
 /* jshint ignore:start */
 
 const SUPPORTED_ENCODINGS = {
-    BYTE_ARRAY: 'byte-array',
+    BINARY: 'binary',
     ASCII: 'ascii',
     UTF8: 'utf-8',
     UTF16: 'utf-16',
@@ -52,7 +52,7 @@ const Constants = {
     IDB_RW_TYPE: 'readwrite',
     MOUNT_POINT_ROOT: '/mnt',
     TAURI_ROOT: "/tauri",
-    BYTE_ARRAY_ENCODING: SUPPORTED_ENCODINGS.BYTE_ARRAY,
+    BINARY_ENCODING: SUPPORTED_ENCODINGS.BINARY,
     SUPPORTED_ENCODINGS
 };
 

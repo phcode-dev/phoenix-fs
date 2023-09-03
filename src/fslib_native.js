@@ -17,12 +17,12 @@
  */
 
 // jshint ignore: start
-/*global buffer, globalObject*/
+/*global globalObject*/
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
 const {Mounts} = require('./fslib_mounts');
-const {Errors} = require('./errno');
+const {Errors, ERR_CODES} = require('./errno');
 const {Constants} = require('./constants');
 const {Utils} =require('./utils');
 
@@ -139,20 +139,23 @@ function readdir(path, options, callback) {
     }
 }
 
-async function _getFileContents(fileHandle, encoding, callback) {
-    encoding = encoding || Constants.BYTE_ARRAY_ENCODING;
+async function _getFileContents(fileHandle, encoding, callback, path) {
     try {
         let file = await fileHandle.getFile();
         const arrayBuffer = await file.arrayBuffer();
         const buffer = Buffer.from(arrayBuffer);
-        if(encoding === Constants.BYTE_ARRAY_ENCODING) {
+        if(encoding === Constants.BINARY) {
             callback(null, buffer, encoding);
             return;
         }
         let decodedString = Utils.getDecodedString(buffer, encoding);
         callback(null, decodedString, encoding);
     } catch (e) {
-        callback(e);
+        if(ERR_CODES.ERROR_CODES[e.code]){
+            callback(e);
+        } else {
+            callback(new Errors.EIO(`IO error while processing data read from file on path: ${path}`, path));
+        }
     }
 }
 
@@ -160,7 +163,7 @@ function readFile(path, options, callback) {
     path = globalObject.path.normalize(path);
 
     callback = arguments[arguments.length - 1];
-    options = Utils.validateFileOptions(options, null, 'r');
+    options = Utils.validateFileOptions(options, Constants.BINARY, 'r');
 
     Mounts.getHandleFromPath(path, (err, handle) => {
         if(err){
@@ -168,7 +171,7 @@ function readFile(path, options, callback) {
         } else if (handle.kind === Constants.KIND_DIRECTORY) {
             callback(new Errors.EISDIR('Path is a directory.'));
         }else {
-            _getFileContents(handle, options.encoding, callback);
+            _getFileContents(handle, options.encoding, callback, path);
         }
     });
 }
@@ -204,17 +207,25 @@ async function _writeFileWithName(paretDirHandle, fileName, encoding, data, call
 
 function writeFile (path, data, options, callback) {
     callback = arguments[arguments.length - 1];
-    options = Utils.validateFileOptions(options, 'utf8', 'w');
-    if(!buffer.Buffer.isBuffer(data)) {
-        if(typeof data === 'number') {
-            data = '' + data;
+    options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'w');
+    try{
+        if(!Buffer.isBuffer(data)) {
+            if(typeof data === 'number') {
+                data = '' + data;
+            }
+            data = data || ''; // this should be after number check as if data = 0, things break
+            if(typeof data !== 'string') {
+                data = data.toString();
+            }
+            data = Utils.getEncodedBuffer(data, options.encoding);
         }
-        data = data || '';
-        if(typeof data !== 'string') {
-            data = buffer.Buffer.from(data.toString());
+    } catch (e) {
+        if(ERR_CODES.ERROR_CODES[e.code]){
+            callback(e);
         } else {
-            data = buffer.Buffer.from(data || '', options.encoding || 'utf8');
+            callback(new Errors.EIO(`IO error while processing data read from file on path: ${path}`, path));
         }
+        return;
     }
 
     path = globalObject.path.normalize(path);
@@ -226,7 +237,7 @@ function writeFile (path, data, options, callback) {
         } else if (handle.kind === Constants.KIND_FILE) {
             callback(new Errors.ENOTDIR('Parent path is not a directory.'));
         }else {
-            _writeFileWithName(handle, fileName, options.encoding, data, callback);
+            _writeFileWithName(handle, fileName, options.encoding, data.buffer, callback);
         }
     });
 }
