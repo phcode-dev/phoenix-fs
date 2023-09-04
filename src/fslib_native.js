@@ -163,20 +163,28 @@ async function _getFileContents(fileHandle, encoding, callback, path) {
 }
 
 function readFile(path, options, callback) {
-    path = globalObject.path.normalize(path);
+    try {
+        path = globalObject.path.normalize(path);
 
-    callback = arguments[arguments.length - 1];
-    options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'r');
+        callback = arguments[arguments.length - 1];
+        options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'r');
 
-    Mounts.getHandleFromPath(path, (err, handle) => {
-        if(err){
-            callback(err);
-        } else if (handle.kind === Constants.KIND_DIRECTORY) {
-            callback(new Errors.EISDIR('Path is a directory.'));
-        }else {
-            _getFileContents(handle, options.encoding, callback, path);
+        Mounts.getHandleFromPath(path, (err, handle) => {
+            if(err){
+                callback(err);
+            } else if (handle.kind === Constants.KIND_DIRECTORY) {
+                callback(new Errors.EISDIR('Path is a directory.'));
+            }else {
+                _getFileContents(handle, options.encoding, callback, path);
+            }
+        });
+    } catch (e) {
+        if(ERR_CODES.ERROR_CODES[e.code]){
+            callback(e);
+        } else {
+            callback(new Errors.EIO(`IO error while processing data read from file on path: ${path}`, path));
         }
-    });
+    }
 }
 
 
@@ -209,10 +217,10 @@ async function _writeFileWithName(paretDirHandle, fileName, encoding, data, call
 }
 
 function writeFile (path, data, options, callback) {
-    callback = arguments[arguments.length - 1];
-    options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'w');
-    let arrayBuffer;
     try{
+        callback = arguments[arguments.length - 1];
+        options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'w');
+        let arrayBuffer;
         if(data instanceof ArrayBuffer){
             arrayBuffer = data;
         } else if(Buffer.isBuffer(data)) {
@@ -227,27 +235,25 @@ function writeFile (path, data, options, callback) {
             }
             arrayBuffer = Utils.getEncodedArrayBuffer(data, options.encoding);
         }
+        path = globalObject.path.normalize(path);
+        let dirname= globalObject.path.dirname(path);
+        let fileName= globalObject.path.basename(path);
+        Mounts.getHandleFromPath(dirname, (err, handle) => {
+            if(err){
+                callback(err);
+            } else if (handle.kind === Constants.KIND_FILE) {
+                callback(new Errors.ENOTDIR('Parent path is not a directory.'));
+            }else {
+                _writeFileWithName(handle, fileName, options.encoding, arrayBuffer, callback);
+            }
+        });
     } catch (e) {
         if(ERR_CODES.ERROR_CODES[e.code]){
             callback(e);
         } else {
-            callback(new Errors.EIO(`IO error while processing data read from file on path: ${path}`, path));
+            callback(new Errors.EIO(`IO error while processing data write from file on path: ${path}`, path));
         }
-        return;
     }
-
-    path = globalObject.path.normalize(path);
-    let dirname= globalObject.path.dirname(path);
-    let fileName= globalObject.path.basename(path);
-    Mounts.getHandleFromPath(dirname, (err, handle) => {
-        if(err){
-            callback(err);
-        } else if (handle.kind === Constants.KIND_FILE) {
-            callback(new Errors.ENOTDIR('Parent path is not a directory.'));
-        }else {
-            _writeFileWithName(handle, fileName, options.encoding, arrayBuffer, callback);
-        }
-    });
 }
 
 async function _deleteEntry(dirHandle, entryNameToDelete, callback, path){

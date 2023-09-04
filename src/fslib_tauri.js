@@ -511,20 +511,28 @@ function _processContents(contents, encoding, callback, path) {
  */
 
 function readFile(path, options, callback) {
-    path = globalObject.path.normalize(path);
-    const platformPath = getTauriPlatformPath(path);
+    try {
+        path = globalObject.path.normalize(path);
+        const platformPath = getTauriPlatformPath(path);
 
-    callback = arguments[arguments.length - 1];
-    options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'r');
+        callback = arguments[arguments.length - 1];
+        options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'r');
 
-    __TAURI__.fs.readBinaryFile(platformPath)
-        .then(contents => {
-            // contents is Uint8Array
-            _processContents(contents, options.encoding, callback, path);
-        })
-        .catch(err=>{
-            callback(mapOSTauriErrorMessage(err, path, `Failed to read File at path ${path}`));
-        });
+        __TAURI__.fs.readBinaryFile(platformPath)
+            .then(contents => {
+                // contents is Uint8Array
+                _processContents(contents, options.encoding, callback, path);
+            })
+            .catch(err=>{
+                callback(mapOSTauriErrorMessage(err, path, `Failed to read File at path ${path}`));
+            });
+    } catch (e) {
+        if(ERR_CODES.ERROR_CODES[e.code]){
+            callback(e);
+        } else {
+            callback(new Errors.EIO(`IO error while processing data read from file on path: ${path}`, path));
+        }
+    }
 }
 
 /**
@@ -557,10 +565,10 @@ function readFile(path, options, callback) {
  * @returns {void}
  */
 function writeFile (path, data, options, callback) {
-    callback = arguments[arguments.length - 1];
-    options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'w');
-    let arrayBuffer;
     try{
+        callback = arguments[arguments.length - 1];
+        options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'w');
+        let arrayBuffer;
         if(data instanceof ArrayBuffer){
             arrayBuffer = data;
         } else if(Buffer.isBuffer(data)) {
@@ -575,25 +583,23 @@ function writeFile (path, data, options, callback) {
             }
             arrayBuffer = Utils.getEncodedArrayBuffer(data, options.encoding);
         }
+        path = globalObject.path.normalize(path);
+        const platformPath = getTauriPlatformPath(path);
+
+        __TAURI__.fs.writeBinaryFile(platformPath, arrayBuffer)
+            .then(() => {
+                callback(null);
+            })
+            .catch(err=>{
+                callback(mapOSTauriErrorMessage(err, path, `Failed to write File at path ${path}`));
+            });
     } catch (e) {
         if(ERR_CODES.ERROR_CODES[e.code]){
             callback(e);
         } else {
-            callback(new Errors.EIO(`IO error while processing data read from file on path: ${path}`, path));
+            callback(new Errors.EIO(`IO error while processing data write from file on path: ${path}`, path));
         }
-        return;
     }
-
-    path = globalObject.path.normalize(path);
-    const platformPath = getTauriPlatformPath(path);
-
-    __TAURI__.fs.writeBinaryFile(platformPath, arrayBuffer)
-        .then(() => {
-            callback(null);
-        })
-        .catch(err=>{
-            callback(mapOSTauriErrorMessage(err, path, `Failed to write File at path ${path}`));
-        });
 }
 
 const TauriFS = {

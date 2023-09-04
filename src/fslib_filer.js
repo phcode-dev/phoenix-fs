@@ -58,29 +58,37 @@ function _processContents(contentsBuffer, encoding, callback, path) {
 }
 
 function readFile(path, options, callback) {
-    path = globalObject.path.normalize(path);
+    try{
+        path = globalObject.path.normalize(path);
 
-    callback = arguments[arguments.length - 1];
-    options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'r');
-    const originalEncoding = options.encoding;
+        callback = arguments[arguments.length - 1];
+        options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'r');
+        const originalEncoding = options.encoding;
 
-    // always read as binary
-    options.encoding = Constants.BINARY_ENCODING;
-    filerLib.fs.readFile(path, options, (err, contents)=>{
-        if(err){
-            callback(err);
-            return;
+        // always read as binary
+        options.encoding = Constants.BINARY_ENCODING;
+        filerLib.fs.readFile(path, options, (err, contents)=>{
+            if(err){
+                callback(err);
+                return;
+            }
+            _processContents(contents, originalEncoding, callback, path);
+        });
+    } catch (e) {
+        if(ERR_CODES.ERROR_CODES[e.code]){
+            callback(e);
+        } else {
+            callback(new Errors.EIO(`IO error while processing data read from file on path: ${path}`, path));
         }
-        _processContents(contents, originalEncoding, callback, path);
-    });
+    }
 }
 
 function writeFile (path, data, options, callback) {
-    callback = arguments[arguments.length - 1];
-    options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'w');
-
-    let bufferData;
     try{
+        callback = arguments[arguments.length - 1];
+        options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'w');
+
+        let bufferData;
         if(data instanceof ArrayBuffer){
             bufferData = Buffer.from(data);
         } else if(Buffer.isBuffer(data)) {
@@ -95,26 +103,24 @@ function writeFile (path, data, options, callback) {
             }
             bufferData = Utils.getEncodedBuffer(data, options.encoding);
         }
+        path = globalObject.path.normalize(path);
+
+        // always write as binary
+        options.encoding = Constants.BINARY_ENCODING;
+        filerLib.fs.writeFile(path, bufferData, options, (err)=>{
+            if(err){
+                callback(err);
+            } else {
+                callback(null);
+            }
+        });
     } catch (e) {
         if(ERR_CODES.ERROR_CODES[e.code]){
             callback(e);
         } else {
             callback(new Errors.EIO(`IO error while processing data read from file on path: ${path}`, path));
         }
-        return;
     }
-
-    path = globalObject.path.normalize(path);
-
-    // always write as binary
-    options.encoding = Constants.BINARY_ENCODING;
-    filerLib.fs.writeFile(path, bufferData, options, (err)=>{
-        if(err){
-            callback(err);
-        } else {
-            callback(null);
-        }
-    });
 }
 
 function initFilerLib(FilerLib) {
