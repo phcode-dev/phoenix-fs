@@ -393,7 +393,7 @@ function mkdirs(path, mode, recursive, callback) {
  * - `nlinks`: The number of hard links.
  *
  * @example
- * stat("/tauri/some/path", function(err, statObj) {
+ * fs.stat("/tauri/some/path", function(err, statObj) {
  *   if (err) throw err;
  *   console.log(statObj);
  * });
@@ -478,6 +478,38 @@ function _processContents(contents, encoding, callback, path) {
     }
 }
 
+/**
+ * Reads the contents of a file.
+ *
+ * @param {string} path - The path of the file to read.
+ * @param {Object|string} [options] - An object with encoding and flag options or a string representing the encoding.
+ *   - If a string is provided, it specifies the encoding. Default is `'binary'` which returns a `'Buffer'`. To return a
+ *     `UTF8` string use `utf8`. Get list of all supported encodings from `'fs.SUPPORTED_ENCODINGS'`.
+ *      If reading binary files from within `/tauri/` or fsAccess(`/mnt/`) paths, then instead of `'binary'` encoding,
+ *      prefer `'fs.BYTE_ARRAY_ENCODING'` for improved binary read performance. This will instead return an `ArrayBuffer`
+ *      that is native to the browser environment instead of the 'Buffer' polyfill that we use.
+ *   - If an object is provided, it can have the following properties:
+ *     - `encoding` (string): The encoding type. Default is `'binary'`. Get list of supported encodings from `'fs.SUPPORTED_ENCODINGS'`.
+ *     - `flag` (string): The file system flag. Default is `'r'`.
+ * @param {function} callback - The callback function to execute when the file read operation is complete.
+ *   - The callback is passed two arguments:
+ *     1. An error object or null if no error occurred.
+ *     2. The data read from the file (type depends on the encoding option).
+ *
+ * @example
+ * fs.readFile("/path/to/file", { encoding: 'utf8' }, function(err, data) {
+ *   if (err) throw err;
+ *   console.log(data);
+ * });
+ * // OR
+ * fs.readFile("/path/to/file", 'utf8', function(err, data) {
+ *   if (err) throw err;
+ *   console.log(data);
+ * });
+ *
+ * @returns {void}
+ */
+
 function readFile(path, options, callback) {
     path = globalObject.path.normalize(path);
     const platformPath = getTauriPlatformPath(path);
@@ -495,6 +527,35 @@ function readFile(path, options, callback) {
         });
 }
 
+/**
+ * Writes data to a file, replacing the file if it already exists.
+ *
+ * @param {string} path - The path of the file where data should be written.
+ * @param {ArrayBuffer|Buffer|string|number} data - The data to write. This can be an ArrayBuffer, Buffer, string, or number.
+ * @param {Object|string} [options] - An object with encoding and flag options or a string representing the encoding.
+ *   - If a string is provided, it specifies the encoding. Default is `'binary'` which writes the buffer as is.
+ *      Get list of all supported encodings from `'fs.SUPPORTED_ENCODINGS'`.
+ *      If writing binary files from within `/tauri/` or fsAccess(`/mnt/`) paths, then instead of `'binary'` encoding,
+ *      prefer `'fs.BYTE_ARRAY_ENCODING'` and `ArrayBuffer` data.
+ *   - If provided as an `object`, it can have the following keys:
+ *     - `encoding` (string): The type of encoding. Default is `'binary'`.
+ *     - `flag` (string): The file system flag. Default is `'w'`.
+ * @param {function} callback - The callback function to execute once the file write operation concludes.
+ *   - The callback receives one argument:
+ *     1. An error object (or null if there were no errors).
+ *
+ * @example
+ * fs.writeFile("/path/to/file", "Hello World", { encoding: 'utf8' }, function(err) {
+ *   if (err) throw err;
+ *   console.log("File written successfully!");
+ * });
+ * // or
+ * fs.writeFile("/path/to/file", "Hello World", 'utf8', function(err) {
+ *   if (err) throw err;
+ *   console.log("File written successfully!");
+ * });
+ * @returns {void}
+ */
 function writeFile (path, data, options, callback) {
     callback = arguments[arguments.length - 1];
     options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'w');

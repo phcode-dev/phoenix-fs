@@ -638,7 +638,7 @@ Asynchronously copies a source file or directory to a destination.
 
 **Example**:
 ```javascript
-copy('/path/to/src', '/path/to/dest', (err, copiedPath) => {
+fs.copy('/path/to/src', '/path/to/dest', (err, copiedPath) => {
   if (err) {
     console.error('Copy failed:', err);
   } else {
@@ -712,9 +712,87 @@ The returned `stat` object contains the following properties:
 ### Example
 
 ```javascript
-stat("/tauri/some/path", function(err, statObj) {
+fs.stat("/tauri/some/path", function(err, statObj) {
   if (err) throw err;
   console.log(statObj);
 });
 ```
 
+## `fs.readFile(path, options?, callback)` Function
+
+**Description**:  
+Reads the contents of a file.
+
+**Parameters**:
+
+- **path** (`string`):  
+  The path of the file to read.
+
+- **options** (`Object|string`):  
+  This can either be a string representing the encoding or an object with more specific options.
+  - If provided as a `string`, it determines the encoding. The default encoding is `'binary'`, which returns a `'Buffer'`. To obtain content as a `UTF8` string, specify it as `utf8`. A list of all supported encodings can be found in `'fs.SUPPORTED_ENCODINGS'`.
+
+    Note: When reading binary files from paths like `/tauri/` or using `fsAccess` from `/mnt/`, it's advisable to use `'fs.BYTE_ARRAY_ENCODING'` instead of the `'binary'` encoding. This ensures improved performance during binary reads. The result would be an `ArrayBuffer` native to the browser rather than using the 'Buffer' polyfill.
+  - If provided as an `object`, it can have the following keys:
+    - `encoding` (`string`): The type of encoding. Default is `'binary'`. Supported encodings can be seen in `'fs.SUPPORTED_ENCODINGS'`.
+    - `flag` (`string`): The file system flag. Default is `'r'`.
+
+- **callback** (`function`):  
+  The callback function to execute once the file read operation concludes.
+  - This callback receives two arguments:
+    1. An error object (or null if there were no errors).
+    2. The data read from the file (its type is based on the encoding option).
+
+**Example**:
+```javascript
+fs.readFile("/path/to/file", { encoding: 'utf8' }, function(err, data) {
+   if (err) throw err;
+   console.log(data);
+});
+// or
+fs.readFile("/path/to/file", 'utf8', function(err, data) {
+  if (err) throw err;
+  console.log(data);
+});
+```
+
+**Returns**:  
+`void` (This function does not return anything)
+
+### `fs.writeFile(path, data, options?, callback)` Function
+
+Writes data to a file, replacing the file if it already exists.
+
+#### Parameters:
+
+- **path**: (`string`)
+  - The path of the file where data should be written.
+
+- **data**: (`ArrayBuffer|Buffer|string|number`)
+  - The data to write. This can be an `ArrayBuffer`, `Buffer`, `string`, or `number`.
+
+- **options**: (`Object|string`) [Optional]
+  - If provided as a `string`, it determines the encoding. Default is `'binary'`, which writes the buffer as is.
+    Retrieve the list of all supported encodings from `'fs.SUPPORTED_ENCODINGS'`.
+    If writing binary files from within `/tauri/` or `fsAccess(`/mnt/`)` paths, then instead of `'binary'` encoding, prefer `'fs.BYTE_ARRAY_ENCODING'` with `ArrayBuffer` data.
+  - If provided as an `object`, it can have the following properties:
+    - `encoding` (`string`): The type of encoding. Default is `'binary'`.
+    - `flag` (`string`): The file system flag. Default is `'w'`.
+
+- **callback**: (`function`)
+  - The callback function executed once the file write operation concludes.
+    - Receives one argument: An error object (or `null` if there were no errors).
+
+#### Example:
+
+```javascript
+fs.writeFile("/path/to/file", "Hello World", { encoding: 'utf8' }, function(err) {
+   if (err) throw err;
+   console.log("File written successfully!");
+});
+// or
+fs.writeFile("/path/to/file", "Hello World", 'utf8', function(err) {
+  if (err) throw err;
+  console.log("File written successfully!");
+});
+```
