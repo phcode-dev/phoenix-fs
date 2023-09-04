@@ -160,7 +160,22 @@ async function openTauriFilePickerAsync(options) {
     if(!options.defaultPath){
         options.defaultPath = await __TAURI__.path.documentDir();
     }
-    return __TAURI__.dialog.open(options);
+    return new Promise((resolve, reject)=>{
+        __TAURI__.dialog.open(options)
+            .then(filePaths => {
+                if(typeof filePaths === 'string'){
+                    resolve(getTauriVirtualPath(filePaths));
+                } else if(Array.isArray(filePaths)){
+                    let virtualPaths = [];
+                    for(let platformPath of filePaths){
+                        virtualPaths.push(getTauriVirtualPath(platformPath));
+                    }
+                    resolve(virtualPaths);
+                } else {
+                    resolve(null);
+                }
+            }).catch(reject);
+    });
 }
 
 /**
@@ -196,7 +211,17 @@ async function openTauriFileSaveDialogueAsync(options) {
     if(!options.defaultPath){
         options.defaultPath = await __TAURI__.path.documentDir();
     }
-    return __TAURI__.dialog.save(options);
+
+    return new Promise((resolve, reject)=>{
+        __TAURI__.dialog.save(options)
+            .then(filePath => {
+                if(typeof filePath === 'string'){
+                    resolve(getTauriVirtualPath(filePath));
+                } else {
+                    resolve(null);
+                }
+            }).catch(reject);
+    });
 }
 
 function extractErrorNumber(str) {
