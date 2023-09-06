@@ -19,11 +19,50 @@
         const TEST_TYPE_TAURI = "tauri";
         window.IS_WINDOWS = navigator.userAgent.includes('Windows');
     </script>
+    <script>
+        window.NODE_COMMANDS = {
+            TERMINATE: "terminate",
+            PING: "ping"
+        };
+        let command, child;
+        let commandId = 0, pendingCommands = {};
+        if(window.__TAURI__){
+            window.__TAURI__.path.resolveResource("node-src/index.js").then(async nodeSrcPath=>{
+                command = new window.__TAURI__.shell.Command('node', nodeSrcPath);
+                command.on('close', data => {
+                    window.isNodeTerminated = true;
+                    console.log(`Node: command finished with code ${data.code} and signal ${data.signal}`)
+                });
+                command.on('error', error => console.error(`Node: command error: "${error}"`));
+                command.stdout.on('data', line => {
+                    console.log(`Node: "${line}"`);
+                    if(line){
+                        const jsonMsg = JSON.parse(line);
+                        pendingCommands[jsonMsg.commandId].resolve(jsonMsg.message);
+                        delete pendingCommands[jsonMsg.commandId];
+                    }
+                });
+                command.stderr.on('data', line => console.log(`Node: "${line}"`));
+                child = await command.spawn();
+
+                window.execNode = function (commandCode) {
+                    const newCommandID = commandId ++;
+                    child.write(JSON.stringify({commandCode: commandCode, commandId: newCommandID}) + "\n");
+                    let resolveP, rejectP;
+                    const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
+                    pendingCommands[newCommandID]= {resolve:resolveP, reject:rejectP};
+                    return promise;
+                }
+                window.isNodeSetup = true;
+            }). catch(console.error);
+        }
+    </script>
     <script src="https://unpkg.com/chai/chai.js"></script>
     <script src="https://unpkg.com/mocha/mocha.js"></script>
 
     <script class="mocha-init">
         mocha.setup('bdd');
+        mocha.globals(['isNodeTerminated']);
         mocha.checkLeaks();
     </script>
 
@@ -120,6 +159,14 @@
                 observeRunStatus(mocha.run());
             }
         }
+    </script>
+    <script>
+        after(async function () {
+            if(window.__TAURI__){
+                execNode(NODE_COMMANDS.TERMINATE);
+                await waitForTrue(()=>{return window.isNodeTerminated;},1000);
+            }
+        });
     </script>
 </head>
 <body onload="runTauriTests()">
