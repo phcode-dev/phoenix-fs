@@ -22,3 +22,9 @@ window.waitForTrue = async function(checkFn, timeoutMs) {
         interVal = setInterval(checkMessage, 10);
     });
 };
+
+if(window.__TAUTI__) {
+    before(async function () {
+        await window.waitForTrue(()=>{return window.isNodeSetup;},1000);
+    });
+}
