@@ -124,11 +124,11 @@
             });
 
             runner.on('pass', function(test) {
-                consoleLogToShell(`\u2714 '${test.title}' passed!`);
+                consoleLogToShell(`\u2714 '${test.title}' passed! ( ${test.duration}ms )`);
             });
 
             runner.on('fail', function(test, err) {
-                consoleLogToShell(`\u2716 Test '${test.title}' failed! \nReason: ${err.message} \n${err.stack}`);
+                consoleLogToShell(`\u2716 Test '${test.title}' failed after ( ${test.duration}ms )! \nReason: ${err.message} \n${err.stack}`);
             });
 
             runner.on('pending', function(test) {
