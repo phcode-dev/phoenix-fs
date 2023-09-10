@@ -12,7 +12,7 @@
   "homepage": "https://github.com/phcode-dev/phoenix-fs",
   "license": "GNU-AGPL3.0",
   "scripts": {
-    "postinstall": "npm install -C ./src-tauri/node-src/",
+    "postinstall": "cd ./src-tauri/node-src/ && npm install && cd ../../",
     "tauri": "tauri",
     "eslint": "eslint src test",
     "eslint:fix": "eslint src test --fix",
