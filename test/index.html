@@ -172,12 +172,12 @@
         }
     </script>
     <script>
-        // after(async function () {
-        //     if(window.__TAURI__){
-        //         execNode(NODE_COMMANDS.TERMINATE);
-        //         await waitForTrue(()=>{return window.isNodeTerminated;},1000);
-        //     }
-        // });
+        after(async function () {
+            if(window.__TAURI__){
+                execNode(NODE_COMMANDS.TERMINATE);
+                await waitForTrue(()=>{return window.isNodeTerminated;},1000);
+            }
+        });
     </script>
 </head>
 <body onload="runTauriTests()">
