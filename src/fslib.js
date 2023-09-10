@@ -24,6 +24,7 @@
 const {ERR_CODES, Errors} = require('./errno');
 const {NativeFS} = require('./fslib_native');
 const {TauriFS} = require('./fslib_tauri');
+const {NodeTauriFS} = require('./fslib_node_ws');
 const {FilerFSModified} = require('./fslib_filer');
 const {Constants} = require('./constants');
 const {Mounts} = require('./fslib_mounts');
@@ -316,6 +317,9 @@ const fileSystemLib = {
         } else {
             _mkdir_p(fileSystemLib, path, mode, callback);
         }
+    },
+    testNodeWsEndpoint: function (wsEndPoint, echoData, echoBuffer) {
+        return NodeTauriFS.testNodeWsEndpoint(wsEndPoint, echoData, echoBuffer);
     },
     BYTE_ARRAY_ENCODING: Constants.BYTE_ARRAY_ENCODING,
     MOUNT_POINT_ROOT: Constants.MOUNT_POINT_ROOT,

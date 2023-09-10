@@ -224,7 +224,7 @@ function writeFile (path, data, options, callback) {
         if(data instanceof ArrayBuffer){
             arrayBuffer = data;
         } else if(Buffer.isBuffer(data)) {
-            arrayBuffer = data.buffer.slice(data.byteOffset, data.byteOffset + data.byteLength);
+            arrayBuffer = Utils.toArrayBuffer(data);
         } else {
             if(typeof data === 'number') {
                 data = '' + data;

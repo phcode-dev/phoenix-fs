@@ -240,15 +240,93 @@ function getEncodedBuffer(str, encoding) {
     }
 }
 
+/**
+ * Converts a buffer to an `ArrayBuffer`.
+ *
+ * @param {Buffer} buf The buffer to convert
+ * @return {ArrayBuffer} Converted buffer
+ * @public
+ */
+function toArrayBuffer(buf) {
+    if (buf.length === buf.buffer.byteLength) {
+        return buf.buffer;
+    }
+
+    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.length);
+}
+
+/**
+ *
+ * @param metadata {Object} Max size can be 4GB
+ * @param bufferData {ArrayBuffer} [optional]
+ * @return {ArrayBuffer}
+ * @private
+ */
+function mergeMetadataAndArrayBuffer(metadata, bufferData = new ArrayBuffer(0)) {
+    if (typeof metadata !== 'object') {
+        throw new Error("metadata should be an object, but was " + typeof metadata);
+    }
+    if (!(bufferData instanceof ArrayBuffer)) {
+        throw new Error("Expected bufferData to be an instance of ArrayBuffer, but was " + typeof bufferData);
+    }
+
+    const metadataString = JSON.stringify(metadata);
+    const metadataUint8Array = new TextEncoder().encode(metadataString);
+    const metadataBuffer = metadataUint8Array.buffer;
+    const sizePrefixLength = 4; // 4 bytes for a 32-bit integer
+
+    if (metadataBuffer.byteLength > 4294000000) {
+        throw new Error("metadata too large. Should be below 4,294MB, but was " + metadataBuffer.byteLength);
+    }
+
+    const concatenatedBuffer = new ArrayBuffer(sizePrefixLength + metadataBuffer.byteLength + bufferData.byteLength);
+    const concatenatedUint8Array = new Uint8Array(concatenatedBuffer);
+
+    // Write the length of metadataBuffer as a 32-bit integer
+    new DataView(concatenatedBuffer).setUint32(0, metadataBuffer.byteLength, true);
+
+    // Copy the metadataUint8Array and bufferData (if provided) to the concatenatedUint8Array
+    concatenatedUint8Array.set(metadataUint8Array, sizePrefixLength);
+    if (bufferData.byteLength > 0) {
+        concatenatedUint8Array.set(new Uint8Array(bufferData), sizePrefixLength + metadataBuffer.byteLength);
+    }
+
+    return concatenatedBuffer;
+}
+
+function splitMetadataAndBuffer(concatenatedBuffer) {
+    if(!(concatenatedBuffer instanceof ArrayBuffer)){
+        throw new Error("Expected ArrayBuffer message from websocket");
+    }
+    const sizePrefixLength = 4;
+    const buffer1Length = new DataView(concatenatedBuffer).getUint32(0, true); // Little endian
+
+    const buffer1 = concatenatedBuffer.slice(sizePrefixLength, sizePrefixLength + buffer1Length);
+    let buffer2;
+    if (concatenatedBuffer.byteLength > sizePrefixLength + buffer1Length) {
+        buffer2 = concatenatedBuffer.slice(sizePrefixLength + buffer1Length);
+    }
+
+    return {
+        metadata: JSON.parse(new TextDecoder().decode(buffer1)),
+        bufferData: buffer2
+    };
+}
+
+
+
 const Utils = {
     createStatObject,
     createDummyStatObject,
     getTauriStat,
     validateFileOptions,
+    toArrayBuffer,
     getDecodedString,
     getDecodedStringFromBuffer,
     getEncodedArrayBuffer,
-    getEncodedBuffer
+    getEncodedBuffer,
+    mergeMetadataAndArrayBuffer,
+    splitMetadataAndBuffer
 };
 
 module.exports ={
