@@ -41,7 +41,7 @@ describe(`node ws fs tests`, function () {
         expect(uint8ViewOutput[0]).to.eql(uint8ArraySent[0]);
     });
 
-    let sizeMBs = [1, 10, 50, 100, 250, 500];
+    let sizeMBs = [1, 2,4, 8, 16, 32, 50, 100, 250, 500];
     for(let sizeMB of sizeMBs) {
         it(`Node should ping pong web socket with ${sizeMB} MB of binary data`, async function () {
             await fs.testNodeWsEndpoint(`ws://localhost:${wssPort}`);

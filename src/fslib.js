@@ -321,6 +321,9 @@ const fileSystemLib = {
     testNodeWsEndpoint: function (wsEndPoint, echoData, echoBuffer) {
         return NodeTauriFS.testNodeWsEndpoint(wsEndPoint, echoData, echoBuffer);
     },
+    setNodeWSEndpoint: function (wsEndPoint) {
+        return NodeTauriFS.setNodeWSEndpoint(wsEndPoint);
+    },
     BYTE_ARRAY_ENCODING: Constants.BYTE_ARRAY_ENCODING,
     MOUNT_POINT_ROOT: Constants.MOUNT_POINT_ROOT,
     TAURI_ROOT: Constants.TAURI_ROOT,
