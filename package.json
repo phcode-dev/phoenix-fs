@@ -19,9 +19,10 @@
     "test": "",
     "test-browser": "npm run serve & open-cli http://127.0.0.1:8080/test/index.html",
     "test-tauri": "tauri dev",
+    "_copy-node-src-dist": "node src-build/copy-node-src-dist.js",
     "_copy-test-dist": "node src-build/copy-dist-to-test.js",
-    "_build-optimized": "parcel build src/virtualfs.js --detailed-report",
-    "_build-nonopt": "parcel build src/virtualfs.js --detailed-report --no-optimize",
+    "_build-optimized": "parcel build src/virtualfs.js --detailed-report && npm run _copy-node-src-dist",
+    "_build-nonopt": "parcel build src/virtualfs.js --detailed-report --no-optimize && npm run _copy-node-src-dist",
     "build": "npm run eslint && npm run _build-optimized && echo '\\\\\\\\e[34m!!!please run build:dev if you are trying to debug!!!\\\\\\\\033[0m' && npm run _copy-test-dist",
     "build:dev": "npm run eslint && npm run _build-nonopt && npm run _copy-test-dist",
     "serve": "http-server . -p 8080 -c-1",
@@ -36,7 +37,8 @@
   },
   "files": [
     "dist/virtualfs.js",
-    "dist/virtualfs.js.map"
+    "dist/virtualfs.js.map",
+    "dist/phoenix-fs.js"
   ],
   "devDependencies": {
     "@tauri-apps/cli": "1.4.0",
@@ -51,9 +53,10 @@
     "process": "0.11.10",
     "run.env": "1.1.0",
     "string_decoder": "^1.3.0",
-    "workbox-window": "4.2.0"
+    "workbox-window": "4.2.0",
+    "iconv-lite": "^0.6.3"
   },
   "dependencies": {
-    "iconv-lite": "^0.6.3"
+    "ws": "^8.13.0"
   }
 }

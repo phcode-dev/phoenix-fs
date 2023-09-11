@@ -5,13 +5,14 @@ describe(`node ws fs tests`, function () {
         return;
     }
 
-    let wssPort;
+    let wssPort, wssEndpoint;
 
     before(async function () {
         await window.waitForTrue(()=>{return window.isNodeSetup;},1000);
         let message = await execNode(NODE_COMMANDS.GET_PORT);
         expect(message.port).to.be.a('number');
         wssPort = message.port;
+        wssEndpoint = `ws://localhost:${wssPort}/phoenixFS`;
     });
 
     it(`Node be present and ping pong`, async function () {
@@ -26,14 +27,14 @@ describe(`node ws fs tests`, function () {
     });
 
     it(`Node should ping pong web socket`, async function () {
-        await fs.testNodeWsEndpoint(`ws://localhost:${wssPort}`);
+        await fs.testNodeWsEndpoint(wssEndpoint);
         const echoDataSent = {hello: 'world', arr: [1,2,3,4]};
         const uint8ArraySent = new Uint8Array([65, 20, 30, 40, 50]);
         const arrayBufferSent = (uint8ArraySent).buffer;
-        let op = await fs.testNodeWsEndpoint(`ws://localhost:${wssPort}`, echoDataSent);
+        let op = await fs.testNodeWsEndpoint(wssEndpoint, echoDataSent);
         expect(op.echoData).to.eql(echoDataSent);
         expect(op.echoBuffer).to.be.undefined;
-        op = await fs.testNodeWsEndpoint(`ws://localhost:${wssPort}`, echoDataSent, arrayBufferSent);
+        op = await fs.testNodeWsEndpoint(wssEndpoint, echoDataSent, arrayBufferSent);
         expect(op.echoData).to.eql(echoDataSent);
         const uint8ViewOutput = new Uint8Array(op.echoBuffer);
         expect(op.echoBuffer).to.eql(arrayBufferSent);
@@ -44,13 +45,13 @@ describe(`node ws fs tests`, function () {
     let sizeMBs = [1, 2,4, 8, 16, 32, 50, 100, 250, 500];
     for(let sizeMB of sizeMBs) {
         it(`Node should ping pong web socket with ${sizeMB} MB of binary data`, async function () {
-            await fs.testNodeWsEndpoint(`ws://localhost:${wssPort}`);
+            await fs.testNodeWsEndpoint(wssEndpoint);
             const echoDataSent = {hello: 'world', arr: [1,2,3,4]};
             const size = 1024 * 1024 * sizeMB;
             const uint8ArraySent = new Uint8Array(size);
             uint8ArraySent[0] = 156; uint8ArraySent[940] = 223; uint8ArraySent[uint8ArraySent.length - 1] = 42;
             const arrayBufferSent = (uint8ArraySent).buffer;
-            const op = await fs.testNodeWsEndpoint(`ws://localhost:${wssPort}`, echoDataSent, arrayBufferSent);
+            const op = await fs.testNodeWsEndpoint(wssEndpoint, echoDataSent, arrayBufferSent);
             expect(op.echoData).to.eql(echoDataSent);
             const uint8ViewOutput = new Uint8Array(op.echoBuffer);
             expect(op.echoBuffer).to.eql(arrayBufferSent);

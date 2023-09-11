@@ -164,6 +164,53 @@ Then:
 2. Copy all `#[tauri::command]` from `src-tauri/src/main.rs` to your tauri main file.
 3. Update your `tauri::Builder::default()` section in your tauri `main fn()`
 
+Certainly! Here's a polished presentation for a GitHub `README.md` for your project:
+
+---
+
+## Usage in Tauri with Node Websocket Connector
+
+Tauri APIs are accessible exclusively from the main thread.
+As a workaround, we provide a unique connector that facilitates communication with Node.js
+through websockets directly from the browser, granting access to the file system from webWorkers.
+This setup ensures flexibility, enabling the utilization of this library from both the primary browser tab and any worker threads.
+
+For a detailed Node.js implementation, refer to this repository.
+If the requirement arises to bundle your Node binary, the tauri sidecar feature can be used to bundle node with your tauri app.
+
+### Example: Setting Up Your Own `phoenix-fs` Server in Node.js
+
+Below is a quick guide to get your Phoenix-FS server up and running.
+
+```javascript
+// If you're using CommonJS syntax:
+const { CreatePhoenixFsServer } = require('@phcode/fs/dist/phoenix-fs');
+
+// If you prefer ES6 module syntax, use the import statement instead:
+// import { CreatePhoenixFsServer } from '@phcode/fs/dist/phoenix-fs';
+
+// Initialize an HTTP server
+const server = http.createServer((req, res) => {
+  res.writeHead(200, { 'Content-Type': 'text/plain' });
+  res.end('WebSocket server is operational');
+});
+
+// Attach the Phoenix websocket server to the HTTP server. 
+// By default, the WebSocket server endpoint will be `ws://localhost:3000/phoenixFS`
+CreatePhoenixFsServer(server);
+
+// If you wish to use a custom path, pass it as the second argument:
+// CreatePhoenixFsServer(server, "/yourCustomPath");
+
+// Activate the HTTP server on port 3000
+const port = 3000;
+server.listen(port, () => {
+  console.log(`Server is live on http://localhost:${port}`);
+});
+```
+
+Save the code above in a file, run it, and you'll have both an HTTP server and WebSocket server running concurrently.
+
 ## Development
 This segment is dedicated to those contributing or modifying the codebase of this repository.
 If you are just using this as a library, please skip this section.
@@ -807,3 +854,17 @@ fs.writeFile("/path/to/file", "Hello World", 'utf8', function(err) {
   console.log("File written successfully!");
 });
 ```
+
+
+### `fs.setNodeWSEndpoint(websocketEndpoint)`
+
+Sets the websocket endpoint and returns a promise that resolves
+when the tauri node fs connection is open. It ensures the socket remains
+open across failures and automatically reconnects as necessary.
+
+- **Parameters:**
+  - `websocketEndpoint` : string. Eg.: `ws://localhost:3000/phoenixFS` 
+
+- **Returns:**
+  - Promise<void>
+

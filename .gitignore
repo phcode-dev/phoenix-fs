@@ -9,6 +9,7 @@ src-tauri/target
 dist/*
 !dist/virtualfs.js
 !dist/virtualfs.js.map
+!dist/phoenix-fs.js
 test/virtualfs.js
 test/virtualfs.js.map
 phcode-fs-*.tgz
