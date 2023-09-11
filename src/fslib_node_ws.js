@@ -21,6 +21,7 @@
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
+const {Errors} = require("./errno");
 const {Utils} = require("./utils");
 
 const WS_COMMAND = {
@@ -182,7 +183,7 @@ async function _establishAndMaintainConnection(socketType, firstConnectCB) {
 async function setNodeWSEndpoint(websocketEndpoint) {
     return new Promise((resolve, reject)=>{
         if(websocketEndpoint === wssEndpoint) {
-            reject("A connection on the same websocket address is in progress!");
+            reject(new Errors.EEXIST("A connection on the same websocket address is in progress: ", websocketEndpoint));
         }
         _silentlyCloseSocket(controlSocket);
         controlSocket = null;
@@ -220,11 +221,11 @@ function testNodeWsEndpoint(wsEndPoint, echoData, echoBuffer) {
             console.log("testNodeWsPort: received ws data", metadata, bufferData);
             ws.close();
             if(metadata.commandCode !== WS_COMMAND.RESPONSE){
-                reject(`Expected commandCode ${metadata.commandCode} to be ${WS_COMMAND.RESPONSE}`);
+                reject(new Errors.EIO(`Expected commandCode ${metadata.commandCode} to be ${WS_COMMAND.RESPONSE}`, wsEndPoint));
             } else if(metadata.commandId !== commandSent.commandId){
-                reject(`Mismatched commandId ${metadata.commandId} to be ${commandSent.commandId}`);
+                reject(new Errors.EIO(`Mismatched commandId ${metadata.commandId} to be ${commandSent.commandId}`, wsEndPoint));
             } else if(metadata.socketGroupID !== commandSent.socketGroupID){
-                reject(`Mismatched socketGroupID ${metadata.socketGroupID} to be ${commandSent.socketGroupID}`);
+                reject(new Errors.EIO(`Mismatched socketGroupID ${metadata.socketGroupID} to be ${commandSent.socketGroupID}`, wsEndPoint));
             } else {
                 resolve({echoData: metadata.data, echoBuffer: bufferData});
             }
@@ -232,14 +233,14 @@ function testNodeWsEndpoint(wsEndPoint, echoData, echoBuffer) {
 
         ws.addEventListener('error', function (event) {
             console.error(event);
-            reject("Websocket error");
+            reject(new Errors.EIO("Websocket error", wsEndPoint));
             ws.close();
         });
 
         ws.addEventListener('close', function(event) {
             console.log('WebSocket connection closed:', event.code, event.reason);
             if(!opened){
-                reject("Socket not opened: "+ event.reason);
+                reject(new Errors.EIO("Socket not opened: "+ event.reason, wsEndPoint));
             }
         });
     });
