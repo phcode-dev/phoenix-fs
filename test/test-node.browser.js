@@ -13,6 +13,7 @@ describe(`node ws fs tests`, function () {
         expect(message.port).to.be.a('number');
         wssPort = message.port;
         wssEndpoint = `ws://localhost:${wssPort}/phoenixFS`;
+        await fs.setNodeWSEndpoint(wssEndpoint);
     });
 
     it(`Node be present and ping pong`, async function () {
@@ -24,6 +25,10 @@ describe(`node ws fs tests`, function () {
         let message = await execNode(NODE_COMMANDS.GET_PORT);
         expect(message.port).to.be.a('number');
         expect(wssPort).to.be.a('number');
+    });
+
+    it(`Node should get node wss endpoint`, async function () {
+        expect(fs.getNodeWSEndpoint()).to.eql(wssEndpoint);
     });
 
     it(`Node should ping pong web socket`, async function () {
@@ -43,6 +48,13 @@ describe(`node ws fs tests`, function () {
     });
 
     let sizeMBs = [1, 2,4, 8, 16, 32, 50, 100, 250, 500];
+    if(location.href.startsWith("http://localhost:8081/test/")){
+        // during development, large data transfer seems to get the developer tools stuck. so we only run small tests
+        sizeMBs = [1, 2, 4];
+        it(`Node should ping pong web socket with 8, 16, 32, 50, 100, 250, 500 MB disabled in dev builds due to possible dev tools crash`, async function () {
+            expect(1).to.eql(1);
+        });
+    }
     for(let sizeMB of sizeMBs) {
         it(`Node should ping pong web socket with ${sizeMB} MB of binary data`, async function () {
             await fs.testNodeWsEndpoint(wssEndpoint);

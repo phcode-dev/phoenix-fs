@@ -97,7 +97,16 @@
                 return __TAURI__.invoke("console_log", {message});
             }
 
-            function quitIfNeeded(exitStatus) {
+            async function quitIfNeeded(exitStatus) {
+                if(!window.__TAURI__){
+                    return;
+                }
+                if(!location.href.startsWith("http://localhost:8081/test/")) {
+                    // during development, we dont switch off node at end of tests for ease of development and debug
+                    fs.stopNodeWSEndpoint();
+                    window.execNode(NODE_COMMANDS.TERMINATE);
+                    await waitForTrue(()=>{return window.isNodeTerminated;},1000);
+                }
                 __TAURI__.cli.getMatches().then(matches=>{
                     if(matches?.args["quit-when-done"]?.occurrences) {
                         __TAURI__.process.exit(exitStatus)
@@ -170,14 +179,6 @@
                 observeRunStatus(mocha.run());
             }
         }
-    </script>
-    <script>
-        after(async function () {
-            if(window.__TAURI__){
-                execNode(NODE_COMMANDS.TERMINATE);
-                await waitForTrue(()=>{return window.isNodeTerminated;},1000);
-            }
-        });
     </script>
 </head>
 <body onload="runTauriTests()">
