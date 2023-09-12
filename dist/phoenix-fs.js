@@ -1,4 +1,21 @@
 const WebSocket = require('ws');
+const { exec } = require('child_process');
+
+function getWindowsDrives(callback) {
+    exec('wmic logicaldisk get name', (error, stdout) => {
+        if (error) {
+            callback(error, null);
+            return;
+        }
+
+        // Parse the result
+        const drives = stdout.split('\n')
+            .filter(value => /^[A-Z]:/.test(value.trim()))
+            .map(value => value.trim()[0]);
+
+        callback(null, drives);
+    });
+}
 
 /**
  *
@@ -63,7 +80,9 @@ function splitMetadataAndBuffer(concatenatedBuffer) {
 const WS_COMMAND = {
     PING: "ping",
     RESPONSE: "response",
-    LARGE_DATA_SOCKET_ANNOUNCE: "largeDataSock"
+    LARGE_DATA_SOCKET_ANNOUNCE: "largeDataSock",
+    CONTROL_SOCKET_ANNOUNCE: "controlSock",
+    GET_WINDOWS_DRIVES: "getWinDrives"
 };
 
 const LARGE_DATA_THRESHOLD = 2*1024*1024; // 2MB
@@ -75,9 +94,11 @@ const largeDataSocketMap = {};
 
 function _getResponse(originalMetadata, data = null) {
     return {
+        originalCommand: originalMetadata.commandCode,
         commandCode: WS_COMMAND.RESPONSE,
         commandId: originalMetadata.commandId,
         socketGroupID: originalMetadata.socketGroupID,
+        error: originalMetadata.error,
         data
     }
 }
@@ -103,11 +124,25 @@ function processWSCommand(ws, metadata, dataBuffer) {
     try{
         switch (metadata.commandCode) {
         case WS_COMMAND.PING: _sendResponse(ws, metadata, metadata.data, dataBuffer); return;
+        case WS_COMMAND.GET_WINDOWS_DRIVES:
+            getWindowsDrives((error, drives)=>{
+                if(error) {
+                    metadata.error = error.message || "Cannot read windows drive letters.";
+                }
+                _sendResponse(ws, metadata, {drives}, dataBuffer);
+            });
+            return;
         case WS_COMMAND.LARGE_DATA_SOCKET_ANNOUNCE:
+            console.log("Large Data Transfer Socket established, socket Group: ", metadata.socketGroupID);
             ws.isLargeData = true;
             ws.LargeDataSocketGroupID = metadata.socketGroupID;
             largeDataSocketMap[metadata.socketGroupID] = ws;
-            _sendResponse(ws, metadata, {}, dataBuffer); return;
+            _sendResponse(ws, metadata, {}, dataBuffer);
+            return;
+        case WS_COMMAND.CONTROL_SOCKET_ANNOUNCE:
+            console.log("Control Socket established, socket Group:", metadata.socketGroupID);
+            _sendResponse(ws, metadata, {}, dataBuffer);
+            return;
         default: console.error("unknown command: "+ metadata);
         }
     } catch (e) {

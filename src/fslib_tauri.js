@@ -24,9 +24,11 @@
 const {Constants} = require('./constants');
 const {Errors, ERR_CODES} = require("./errno");
 const {Utils} = require("./utils");
+const {NodeTauriFS} = require("./fslib_node_ws");
 
 const TAURI_PATH_PREFIX = Constants.TAURI_ROOT+ '/';
 const IS_WINDOWS = navigator.userAgent.includes('Windows');
+let preferNodeWs = false;
 
 /**
  * Convert Phoenix virtual file system path to platform-specific paths.
@@ -313,6 +315,10 @@ function readdir(path, options, callback) {
     if (typeof options === 'function') {
         callback = options;
         options = {};
+    }
+
+    if(!window.__TAURI__ || preferNodeWs) {
+        return NodeTauriFS.readdir(path, options, callback);
     }
 
     if(IS_WINDOWS && path === Constants.TAURI_ROOT){
@@ -627,6 +633,10 @@ function writeFile (path, data, options, callback) {
     }
 }
 
+function forceUseNodeWSEndpoint(use) {
+    preferNodeWs = use;
+}
+
 const TauriFS = {
     isTauriPath,
     isTauriSubPath,
@@ -640,7 +650,8 @@ const TauriFS = {
     rename,
     unlink,
     readFile,
-    writeFile
+    writeFile,
+    forceUseNodeWSEndpoint
 };
 
 module.exports ={

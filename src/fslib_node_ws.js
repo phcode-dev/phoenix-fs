@@ -23,23 +23,48 @@
 
 const {Errors} = require("./errno");
 const {Utils} = require("./utils");
+const {Constants} = require("./constants");
+
+const IS_WINDOWS = navigator.userAgent.includes('Windows');
 
 const WS_COMMAND = {
     PING: "ping",
     RESPONSE: "response",
-    LARGE_DATA_SOCKET_ANNOUNCE: "largeDataSock"
+    LARGE_DATA_SOCKET_ANNOUNCE: "largeDataSock",
+    CONTROL_SOCKET_ANNOUNCE: "controlSock",
+    GET_WINDOWS_DRIVES: "getWinDrives"
 };
 
 // each browser context belongs to a single socket group. So multiple websocket connections can be pooled
 // to increase throughput. Note that socketGroupID will be different for each web workers/threads in the window as
 // they are separate contexts.
 const socketGroupID = Math.floor(Math.random() * 4294967296);
-let commandIdCounter = 0;
+let commandIdCounter = 1; // should be greater than 0!
 let wssEndpoint, controlSocket, dataSocket;
 const SOCKET_TYPE_DATA = "data",
     SOCKET_TYPE_CONTROL = "control";
 const LARGE_DATA_THRESHOLD = 2*1024*1024; // 2MB
 const MAX_RECONNECT_BACKOFF_TIME_MS = 1000;
+
+function mapNodeTauriErrorMessage(nodeErrorMessage, path, userMessage= '') {
+    switch (nodeErrorMessage) {
+    case '2': return new Errors.ENOENT(userMessage + ` No such File or Directory: ` + path + nodeErrorMessage, path);
+    case '3': return new Errors.ENOENT(userMessage + ` System cannot find the path specified: ` + path + nodeErrorMessage, path); // windows
+    case '17': return new Errors.EEXIST(userMessage + ` File exists: ` + path + nodeErrorMessage, path);
+    case '183': return new Errors.EEXIST(userMessage + ` File exists: ` + path + nodeErrorMessage, path); // windows
+    case '39': return new Errors.ENOTEMPTY(userMessage + ` Directory not empty: ` + path + nodeErrorMessage, path);
+    case '20': return new Errors.ENOTDIR(userMessage + ` Not a Directory: ` + path + nodeErrorMessage, path);
+    case '13': return new Errors.EACCES(userMessage + ` Permission denied: ` + path + nodeErrorMessage, path);
+    case '21': return new Errors.EISDIR(userMessage + ` Is a directory: ` + path + nodeErrorMessage, path);
+    case '9': return new Errors.EBADF(userMessage + ` Bad file number: ` + path + nodeErrorMessage, path);
+    case '30': return new Errors.EROFS(userMessage + ` Read-only file system: ` + path + nodeErrorMessage, path);
+    case '28': return new Errors.ENOSPC(userMessage + ` No space left on device: ` + path + nodeErrorMessage, path);
+    case '16': return new Errors.EBUSY(userMessage + ` Device or resource busy: ` + path + nodeErrorMessage, path);
+    case '22': return new Errors.EINVAL(userMessage + ` Invalid argument: ` + path + nodeErrorMessage, path);
+    default: return new Errors.EIO(userMessage + ` IO error on path: ` + path + nodeErrorMessage, path);
+    }
+}
+
 
 function _getCommand(command, data) {
     return {
@@ -84,6 +109,7 @@ function _execCommandInternal(command, commandData, binaryData, resolve, reject)
  * @param command {string}
  * @param commandData {Object}
  * @param binaryData {ArrayBuffer}
+ * @returns {Promise<{metadata: Object, bufferData: ArrayBuffer}>} A promise that resolves with an object containing `metadata` and `bufferData` or rejects with error.
  */
 function _execCommand(command, commandData, binaryData) {
     return new Promise((resolve, reject)=>{
@@ -109,7 +135,7 @@ function _execPendingCommands() {
 function _processMessage(data) {
     const {metadata, bufferData} = Utils.splitMetadataAndBuffer(data);
     if(!metadata.commandId || !commandIdMap[metadata.commandId]){
-        throw new Error("CommandID not found in ws response! " + JSON.parse(metadata));
+        throw new Error("CommandID not found in ws response! " + metadata);
     }
     const {resolve, reject} = commandIdMap[metadata.commandId];
     if(metadata.error){
@@ -148,6 +174,9 @@ async function _establishAndMaintainConnection(socketType, firstConnectCB) {
             if(ws.isLargeDataWS){
                 _execCommand(WS_COMMAND.LARGE_DATA_SOCKET_ANNOUNCE)
                     .catch(console.error);
+            } else {
+                _execCommand(WS_COMMAND.CONTROL_SOCKET_ANNOUNCE)
+                    .catch(console.error);
             }
             _execPendingCommands();
         });
@@ -164,10 +193,13 @@ async function _establishAndMaintainConnection(socketType, firstConnectCB) {
             wsClosePromiseResolve();
         });
         await wsClosePromise;
-        ws.backoffTime = Math.min(ws.backoffTime * 2, MAX_RECONNECT_BACKOFF_TIME_MS) || 1;
-        await _wait(ws.backoffTime);
+        const backoffTime = Math.min(ws.backoffTime * 2, MAX_RECONNECT_BACKOFF_TIME_MS) || 1;
+        ws.backoffTime = backoffTime;
+        await _wait(backoffTime);
         if(ws.autoReconnect) {
+            console.log(wssEndpoint);
             ws = new WebSocket(wssEndpoint);
+            ws.backoffTime = backoffTime;
             ws.binaryType = 'arraybuffer';
             ws.autoReconnect = true;
         }
@@ -200,6 +232,18 @@ async function setNodeWSEndpoint(websocketEndpoint) {
         _establishAndMaintainConnection(SOCKET_TYPE_CONTROL, firstConnectCB);
         _establishAndMaintainConnection(SOCKET_TYPE_DATA, firstConnectCB);
     });
+}
+
+function stopNodeWSEndpoint() {
+    _silentlyCloseSocket(controlSocket);
+    controlSocket = null;
+    _silentlyCloseSocket(dataSocket);
+    dataSocket = null;
+    wssEndpoint = null;
+}
+
+function getNodeWSEndpoint() {
+    return wssEndpoint;
 }
 
 function testNodeWsEndpoint(wsEndPoint, echoData, echoBuffer) {
@@ -246,9 +290,31 @@ function testNodeWsEndpoint(wsEndPoint, echoData, echoBuffer) {
     });
 }
 
+function readdir(path, options, callback) {
+    if(IS_WINDOWS && path === Constants.TAURI_ROOT){
+        _execCommand(WS_COMMAND.GET_WINDOWS_DRIVES)
+            .then(drives=>{
+                console.log(drives);
+                // let entries = [];
+                // for(let drive of drives) {
+                //     entries.push({name: drive});
+                // }
+                //_readDirHelper(entries, path, options, callback, true);
+                // console.log(entries);
+            })
+            .catch((err)=>{
+                callback(mapNodeTauriErrorMessage(err, path, 'Failed to get drives: '));
+            });
+        return;
+    }
+}
+
 const NodeTauriFS = {
     testNodeWsEndpoint,
-    setNodeWSEndpoint
+    setNodeWSEndpoint,
+    stopNodeWSEndpoint,
+    getNodeWSEndpoint,
+    readdir
 };
 
 module.exports = {
