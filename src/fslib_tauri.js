@@ -28,7 +28,8 @@ const {NodeTauriFS} = require("./fslib_node_ws");
 
 const TAURI_PATH_PREFIX = Constants.TAURI_ROOT+ '/';
 const IS_WINDOWS = navigator.userAgent.includes('Windows');
-let preferNodeWs = false;
+let preferNodeWs = false,
+    forceNodeWs = false;
 
 /**
  * Check if the given path is a subpath of the '/tauri' folder.
@@ -251,7 +252,7 @@ function readdir(path, options, callback) {
         options = {};
     }
 
-    if(!window.__TAURI__ || preferNodeWs) {
+    if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
         return NodeTauriFS.readdir(path, options, callback);
     }
 
@@ -367,7 +368,7 @@ function mkdirs(path, mode, recursive, callback) {
  */
 function stat(path, callback, options= {}) {
     path = globalObject.path.normalize(path);
-    if(!window.__TAURI__ || preferNodeWs) {
+    if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
         return NodeTauriFS.stat(path, callback, options);
     }
     _getTauriStat(path)
@@ -485,7 +486,7 @@ function readFile(path, options, callback) {
         callback = arguments[arguments.length - 1];
         options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'r');
 
-        if(!window.__TAURI__ || preferNodeWs) {
+        if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
             NodeTauriFS.readBinaryFile(path)
                 .then(contents => {
                     // contents is Array buffer
@@ -562,7 +563,7 @@ function writeFile (path, data, options, callback) {
             }
             arrayBuffer = Utils.getEncodedArrayBuffer(data, options.encoding);
         }
-        if(!window.__TAURI__ || preferNodeWs) {
+        if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
             NodeTauriFS.writeBinaryFile(path, arrayBuffer)
                 .then(() => {
                     callback(null);
@@ -588,7 +589,30 @@ function writeFile (path, data, options, callback) {
     }
 }
 
+/**
+ * Forces the usage of the Node WebSocket endpoint.
+ * Throws an error if the Node WebSocket endpoint is not set.
+ *
+ * @param {boolean} use - If `true`, forces the use of the Node WebSocket endpoint.
+ * @throws {Error} Throws an error if the Node WebSocket endpoint has not been set.
+ */
 function forceUseNodeWSEndpoint(use) {
+    if(!NodeTauriFS.getNodeWSEndpoint()) {
+        throw new Error("Please call fs.setNodeWSEndpoint('ws://your server') before calling this function.");
+    }
+    forceNodeWs = use;
+}
+
+/**
+ * Sets the preference to use the Node WebSocket endpoint if available.
+ * Throws an error if the Node WebSocket endpoint is not set.
+ * If a Node connection is not available, it falls back to Tauri.
+ * To always force the library to use the Node WebSocket endpoint for all FS APIs, use `forceUseNodeWSEndpoint`.
+ *
+ * @param {boolean} use - If `true`, prefers the use of the Node WebSocket endpoint.
+ * @throws {Error} Throws an error if the Node WebSocket endpoint has not been set.
+ */
+function preferNodeWSEndpoint(use) {
     if(!NodeTauriFS.getNodeWSEndpoint()) {
         throw new Error("Please call fs.setNodeWSEndpoint('ws://your server') before calling this function.");
     }
@@ -609,7 +633,8 @@ const TauriFS = {
     unlink,
     readFile,
     writeFile,
-    forceUseNodeWSEndpoint
+    forceUseNodeWSEndpoint,
+    preferNodeWSEndpoint
 };
 
 module.exports ={
