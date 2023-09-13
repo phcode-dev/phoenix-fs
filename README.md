@@ -39,6 +39,8 @@ You can then continue with installation instructions, usage, and other sections 
     * [Usage in browser](#usage-in-browser)
     * [Usage in web-worker in browser](#usage-in-web-worker-in-browser)
     * [Usage in Tauri](#usage-in-tauri)
+  * [Usage in Tauri with Node Websocket Connector](#usage-in-tauri-with-node-websocket-connector)
+    * [Example: Setting Up Your Own `phoenix-fs` Server in Node.js](#example-setting-up-your-own-phoenix-fs-server-in-nodejs)
   * [Development](#development)
   * [Tests in Browser](#tests-in-browser)
   * [Tests in tauri](#tests-in-tauri)
@@ -91,6 +93,9 @@ You can then continue with installation instructions, usage, and other sections 
     * [`fs.writeFile(path, data, options?, callback)` Function](#fswritefilepath-data-options-callback-function)
       * [Parameters:](#parameters-7)
       * [Example:](#example-2)
+    * [`fs.setNodeWSEndpoint(websocketEndpoint)`](#fssetnodewsendpointwebsocketendpoint)
+    * [`fs.forceUseNodeWSEndpoint(use)`](#fsforceusenodewsendpointuse)
+    * [`fs.preferNodeWSEndpoint(use)`](#fsprefernodewsendpointuse)
 <!-- TOC -->
 
 ## Installation
@@ -566,7 +571,7 @@ Creates a directory at given path. Not that the parent dir should exist for this
 
 - **Parameters:**
   - `path` _(string)_ - The path where the directory should be created.
-  - `mode` _(number|function)_ (Optional, default: `0o666`) - The directory permissions.
+  - `mode` _(number|function)_ (Optional, default: `0o777`) - The directory permissions.
   - `callback` _(function)_ (Optional) - Callback to execute once directory creation is done. Called with an error as the first argument on failure, and null on success.
 
 - **Examples:**
