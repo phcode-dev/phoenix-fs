@@ -493,6 +493,61 @@ function _setupTests(testType) {
         const err = await promise;
         expect(err.code).to.eql(fs.ERR_CODES.ECHARSET);
     });
+
+    function getRandomChar() {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~!@#$%^&*()_+{}|:"<>?-=[]\\;\',./';
+        return chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+
+    function createRandomString(length) {
+        let str = '';
+        for (let i = 0; i < length; i++) {
+            str += getRandomChar();
+        }
+        return str;
+    }
+
+    async function _testLargeFileRW(filePath, sizeBytes) {
+        console.log("creating random string of size", sizeBytes);
+        const stringWrittenToFile = createRandomString(sizeBytes);
+        console.log("random string created");
+        let resolveP, rejectP;
+        const writePromise = new Promise((resolve, reject) => {resolveP = resolve; rejectP = reject;});
+        fs.writeFile(filePath, stringWrittenToFile, "utf8", (_err)=>{
+            if(_err){
+                rejectP(_err);
+                return;
+            }
+            resolveP();
+        });
+        await writePromise;
+
+        const readPromise = new Promise((resolve, reject) => {resolveP = resolve; rejectP = reject;});
+        fs.readFile(filePath, "utf8", (_err, data)=>{
+            if(_err){
+                rejectP(_err);
+                return;
+            }
+            resolveP(data);
+        });
+        const strReadFromFile = await readPromise;
+        expect(strReadFromFile).to.eql(stringWrittenToFile);
+    }
+
+    let sizeMBs = [1, 2, 4, 8, 16];
+    if(location.href.startsWith("http://localhost:8081/test/")){
+        // during development, large data transfer seems to get the developer tools stuck. so we only run small tests
+        sizeMBs = [1, 2, 4];
+        it(`Should phoenix ${testType} read and write a large text file with 8, 16 MB disabled in dev builds due to possible dev tools crash`, async function () {
+            expect(1).to.eql(1);
+        });
+    }
+    for(let sizeMB of sizeMBs) {
+        it(`Should phoenix ${testType} read and write a large text file of size ${sizeMB} MB`, async function () {
+            const filePath = `${testPath}/browserWrite.txt`;
+            await _testLargeFileRW(filePath, sizeMB * 1024 * 1024); // Roughly 4MB considering 1 byte per char
+        }).timeout(60000);
+    }
 }
 
 describe(`File: Browser virtual fs tests: filer paths`, function () {
