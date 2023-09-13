@@ -408,8 +408,14 @@ function unlink(path, callback) {
 
 function rename(oldPath, newPath, callback) {
     oldPath = globalObject.path.normalize(oldPath);
-    const oldPlatformPath = Utils.getTauriPlatformPath(oldPath);
     newPath = globalObject.path.normalize(newPath);
+
+    if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
+        NodeTauriFS.rename(oldPath, newPath, callback);
+        return;
+    }
+
+    const oldPlatformPath = Utils.getTauriPlatformPath(oldPath);
     const newPlatformPath = Utils.getTauriPlatformPath(newPath);
     __TAURI__
         .invoke('_rename_path', {oldPath: oldPlatformPath, newPath: newPlatformPath})
