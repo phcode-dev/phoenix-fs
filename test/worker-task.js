@@ -57,12 +57,33 @@ function checkDeleteInPath(path) {
     });
 }
 
+function checkStatInPath(path) {
+    console.log('worker: checkStatInPath');
+    fs.stat(path,  (err, stat)=>{
+        if(!err && stat.dev.startsWith("tauriWS")){
+            postMessage('checkStatInPath.ok');
+            return;
+        }
+        console.error('Stats error/not as expected:', err, stat);
+    });
+}
+
+async function tauriWSInit(wsEndpoint) {
+    if(Filer && Filer.fs && Filer.Shell){
+        await fs.setNodeWSEndpoint(wsEndpoint);
+        postMessage('tauriWSInit.ok');
+    }
+}
+
 self.addEventListener('message', (event) => {
     console.log('Worker received: ', event);
     const command = event.data.command;
     const path = event.data.path;
+    const wsEndpoint = event.data.wsEndpoint;
     switch (command) {
     case 'fsCheck': fsCheck(); break;
+    case 'checkStatInPath': checkStatInPath(path); break;
+    case 'tauriWSInit': tauriWSInit(wsEndpoint); break;
     case 'phoenixFsCheck': phoenixFsCheck(); break;
     case 'writeCheck': checkWriteInPath(path); break;
     case 'readCheck': checkReadInPath(path); break;
