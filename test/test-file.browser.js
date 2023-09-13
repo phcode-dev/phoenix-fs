@@ -73,7 +73,7 @@ function _setupTests(testType) {
         await _clean();
         console.log(`mkdir: `, testPath);
         let cleanSuccess = false;
-        fs.mkdirs(testPath, 777 ,true, ()=>{
+        fs.mkdirs(testPath, 0o777 ,true, ()=>{
             cleanSuccess = true;
         });
         await waitForTrue(()=>{return cleanSuccess;},10000);

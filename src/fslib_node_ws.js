@@ -36,7 +36,8 @@ const WS_COMMAND = {
     READ_DIR: "readDir",
     STAT: "stat",
     READ_BIN_FILE: "readBinFile",
-    WRITE_BIN_FILE: "writeBinFile"
+    WRITE_BIN_FILE: "writeBinFile",
+    MKDIR: "mkdir"
 };
 
 // each browser context belongs to a single socket group. So multiple websocket connections can be pooled
@@ -383,15 +384,27 @@ function readBinaryFile(path) {
     });
 }
 
-function writeBinaryFile(path, dataArrayBuffer) {
+function writeBinaryFile(path, mode, flag, dataArrayBuffer) {
     return new Promise((resolve, reject)=>{
         const platformPath = Utils.getTauriPlatformPath(path);
-        _execCommand(WS_COMMAND.WRITE_BIN_FILE, {path: platformPath}, dataArrayBuffer)
+        _execCommand(WS_COMMAND.WRITE_BIN_FILE, {path: platformPath, mode, flag}, dataArrayBuffer)
             .then(resolve)
             .catch((err)=>{
                 reject(mapNodeTauriErrorMessage(err, path, 'Failed to write file: '));
             });
     });
+}
+
+function mkdirs(path, mode, recursive, callback) {
+    const platformPath = Utils.getTauriPlatformPath(path);
+    _execCommand(WS_COMMAND.MKDIR, {path: platformPath, mode, recursive})
+        .then(()=>{
+            console.log("dir created: ", platformPath);
+            callback(null);
+        })
+        .catch((err)=>{
+            callback(mapNodeTauriErrorMessage(err, path, 'Failed to mkdir: '));
+        });
 }
 
 const NodeTauriFS = {
@@ -401,6 +414,7 @@ const NodeTauriFS = {
     getNodeWSEndpoint,
     isNodeWSReady,
     readdir,
+    mkdirs,
     stat,
     readBinaryFile,
     writeBinaryFile

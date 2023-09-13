@@ -106,7 +106,8 @@ const WS_COMMAND = {
     READ_DIR: "readDir",
     STAT: "stat",
     READ_BIN_FILE: "readBinFile",
-    WRITE_BIN_FILE: "writeBinFile"
+    WRITE_BIN_FILE: "writeBinFile",
+    MKDIR: "mkdir"
 };
 
 const LARGE_DATA_THRESHOLD = 2*1024*1024; // 2MB
@@ -229,8 +230,20 @@ function _readBinaryFile(ws, metadata) {
  * @private
  */
 function _writeBinaryFile(ws, metadata, dataBuffer) {
-    const fullPath = metadata.data.path;
-    fs.writeFile(fullPath, Buffer.from(dataBuffer))
+    const fullPath = metadata.data.path,
+        mode = metadata.data.mode,
+        flag = metadata.data.flag;
+    fs.writeFile(fullPath, Buffer.from(dataBuffer), {mode, flag})
+        .then( ()=> {
+            _sendResponse(ws, metadata);
+        }).catch((err)=>_reportError(ws, metadata, err, `Failed to write file at path ${fullPath}`));
+}
+
+function _mkdir(ws, metadata, dataBuffer) {
+    const fullPath = metadata.data.path,
+        recursive = metadata.data.recursive,
+        mode = metadata.data.mode;
+    fs.mkdir(fullPath, {recursive, mode})
         .then( ()=> {
             _sendResponse(ws, metadata);
         }).catch((err)=>_reportError(ws, metadata, err, `Failed to write file at path ${fullPath}`));
@@ -259,6 +272,9 @@ function processWSCommand(ws, metadata, dataBuffer) {
             return;
         case WS_COMMAND.WRITE_BIN_FILE:
             _writeBinaryFile(ws, metadata, dataBuffer);
+            return;
+        case WS_COMMAND.MKDIR:
+            _mkdir(ws, metadata, dataBuffer);
             return;
         case WS_COMMAND.LARGE_DATA_SOCKET_ANNOUNCE:
             console.log("Large Data Transfer Socket established, socket Group: ", metadata.socketGroupID);
