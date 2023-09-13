@@ -285,7 +285,7 @@ function readdir(path, options, callback) {
  * Creates a directory with optional mode and recursion(create all intermediate directories if those don't exist).
  *
  * @param {string} path - The path where the directory should be created.
- * @param {(number)} [mode=0o666] - The directory permissions. Defaults to `0o666` if not provided.
+ * @param {(number)} [mode=0o777] - The directory permissions. Defaults to `0o777` if not provided.
  * @param {(boolean)} [recursive=false] - Whether to create directories recursively. Defaults to `false` if not provided.
  * @param {function} [callback] - Callback to execute once directory creation is done. Called with an error as the first argument on failure, and null on success.
  *
@@ -309,7 +309,7 @@ function mkdirs(path, mode, recursive, callback) {
     if (typeof mode !== 'number') {
         callback = recursive;
         recursive = mode;
-        mode = 0o666; // Default mode (or any other default you'd like to set)
+        mode = 0o777; // Default mode (or any other default you'd like to set)
     }
 
     // Determine if 'recursive' is provided

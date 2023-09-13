@@ -714,7 +714,7 @@ case"17":case"183":return new eS.EEXIST(r+` File exists: ${t} `+e,t);case"39":re
  * Creates a directory with optional mode and recursion(create all intermediate directories if those don't exist).
  *
  * @param {string} path - The path where the directory should be created.
- * @param {(number)} [mode=0o666] - The directory permissions. Defaults to `0o666` if not provided.
+ * @param {(number)} [mode=0o777] - The directory permissions. Defaults to `0o777` if not provided.
  * @param {(boolean)} [recursive=false] - Whether to create directories recursively. Defaults to `false` if not provided.
  * @param {function} [callback] - Callback to execute once directory creation is done. Called with an error as the first argument on failure, and null on success.
  *
@@ -732,7 +732,7 @@ case"17":case"183":return new eS.EEXIST(r+` File exists: ${t} `+e,t);case"39":re
  * fs.mkdirs("/tauri/some/path");
  *
  * @returns {void}
- */function(e,t,r,n){if("number"!=typeof t&&(n=r,r=t,t=438),"boolean"!=typeof r&&(n=r,r=!1),"function"!=typeof n&&(n=function(){// Do Nothing
+ */function(e,t,r,n){if("number"!=typeof t&&(n=r,r=t,t=511),"boolean"!=typeof r&&(n=r,r=!1),"function"!=typeof n&&(n=function(){// Do Nothing
 }),!window.__TAURI__||e1||e0&&eJ.isNodeWSReady()){eJ.mkdirs(e,t,r,n);return}let a=eI.getTauriPlatformPath(e);__TAURI__.fs.createDir(a,{recursive:r}).then(()=>{n(null)}).catch(t=>{n(e2(t,e,"Failed to create directory: "))})},rename:function(e,t,r){e=globalObject.path.normalize(e);let n=eI.getTauriPlatformPath(e);t=globalObject.path.normalize(t);let a=eI.getTauriPlatformPath(t);__TAURI__.invoke("_rename_path",{oldPath:n,newPath:a}).then(()=>{r(null)}).catch(n=>{r(e2(n,e,`Failed to rename ${e} to ${t}`))})},unlink:function(e,t){function r(r){t(e2(r,e,"Failed to unlink"))}e5(e=globalObject.path.normalize(e)).then(n=>{let a=eI.getTauriPlatformPath(e);n.isDirectory()?__TAURI__.fs.removeDir(a,{recursive:!0}).then(()=>{t(null)}).catch(r):__TAURI__.fs.removeFile(a).then(()=>{t(null)}).catch(r)}).catch(r)},readFile:/**
  * Reads the contents of a file.
  *
