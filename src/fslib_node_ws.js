@@ -35,7 +35,8 @@ const WS_COMMAND = {
     GET_WINDOWS_DRIVES: "getWinDrives",
     READ_DIR: "readDir",
     STAT: "stat",
-    READ_BIN_FILE: "readBinFile"
+    READ_BIN_FILE: "readBinFile",
+    WRITE_BIN_FILE: "writeBinFile"
 };
 
 // each browser context belongs to a single socket group. So multiple websocket connections can be pooled
@@ -366,6 +367,17 @@ function readBinaryFile(path) {
     });
 }
 
+function writeBinaryFile(path, dataArrayBuffer) {
+    return new Promise((resolve, reject)=>{
+        const platformPath = Utils.getTauriPlatformPath(path);
+        _execCommand(WS_COMMAND.WRITE_BIN_FILE, {path: platformPath}, dataArrayBuffer)
+            .then(resolve)
+            .catch((err)=>{
+                reject(mapNodeTauriErrorMessage(err, path, 'Failed to write file: '));
+            });
+    });
+}
+
 const NodeTauriFS = {
     testNodeWsEndpoint,
     setNodeWSEndpoint,
@@ -373,7 +385,8 @@ const NodeTauriFS = {
     getNodeWSEndpoint,
     readdir,
     stat,
-    readBinaryFile
+    readBinaryFile,
+    writeBinaryFile
 };
 
 module.exports = {

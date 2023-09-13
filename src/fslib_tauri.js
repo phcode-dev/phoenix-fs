@@ -544,6 +544,7 @@ function readFile(path, options, callback) {
  */
 function writeFile (path, data, options, callback) {
     try{
+        path = globalObject.path.normalize(path);
         callback = arguments[arguments.length - 1];
         options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'w');
         let arrayBuffer;
@@ -561,9 +562,16 @@ function writeFile (path, data, options, callback) {
             }
             arrayBuffer = Utils.getEncodedArrayBuffer(data, options.encoding);
         }
-        path = globalObject.path.normalize(path);
-        const platformPath = Utils.getTauriPlatformPath(path);
+        if(!window.__TAURI__ || preferNodeWs) {
+            NodeTauriFS.writeBinaryFile(path, arrayBuffer)
+                .then(() => {
+                    callback(null);
+                })
+                .catch(callback);
+            return;
+        }
 
+        const platformPath = Utils.getTauriPlatformPath(path);
         __TAURI__.fs.writeBinaryFile(platformPath, arrayBuffer)
             .then(() => {
                 callback(null);
