@@ -33,7 +33,8 @@ const WS_COMMAND = {
     LARGE_DATA_SOCKET_ANNOUNCE: "largeDataSock",
     CONTROL_SOCKET_ANNOUNCE: "controlSock",
     GET_WINDOWS_DRIVES: "getWinDrives",
-    READ_DIR: "readDir"
+    READ_DIR: "readDir",
+    STAT: "stat"
 };
 
 // each browser context belongs to a single socket group. So multiple websocket connections can be pooled
@@ -49,18 +50,18 @@ const MAX_RECONNECT_BACKOFF_TIME_MS = 1000;
 
 function mapNodeTauriErrorMessage(nodeError, path, userMessage= '') {
     switch (nodeError.code) {
-    case 'ENOENT': return new Errors.ENOENT(userMessage + ` No such File or Directory: ` + path + nodeError.message, path);
-    case 'EEXIST': return new Errors.EEXIST(userMessage + ` File exists: ` + path + nodeError.message, path);
-    case '39': return new Errors.ENOTEMPTY(userMessage + ` Directory not empty: ` + path + nodeError.message, path);
-    case '20': return new Errors.ENOTDIR(userMessage + ` Not a Directory: ` + path + nodeError.message, path);
-    case '13': return new Errors.EACCES(userMessage + ` Permission denied: ` + path + nodeError.message, path);
-    case '21': return new Errors.EISDIR(userMessage + ` Is a directory: ` + path + nodeError.message, path);
-    case '9': return new Errors.EBADF(userMessage + ` Bad file number: ` + path + nodeError.message, path);
-    case '30': return new Errors.EROFS(userMessage + ` Read-only file system: ` + path + nodeError.message, path);
-    case '28': return new Errors.ENOSPC(userMessage + ` No space left on device: ` + path + nodeError.message, path);
-    case '16': return new Errors.EBUSY(userMessage + ` Device or resource busy: ` + path + nodeError.message, path);
-    case '22': return new Errors.EINVAL(userMessage + ` Invalid argument: ` + path + nodeError.message, path);
-    default: return new Errors.EIO(userMessage + ` IO error on path: ` + path + nodeError.message + "\nNode Error stack: " + nodeError.stack, path);
+    case 'ENOENT': return new Errors.ENOENT(userMessage + ` No such File or Directory: ${path} ` + nodeError.message, path);
+    case 'EEXIST': return new Errors.EEXIST(userMessage + ` File exists: ${path} ` + nodeError.message, path);
+    case '39': return new Errors.ENOTEMPTY(userMessage + ` Directory not empty: ${path} ` + nodeError.message, path);
+    case '20': return new Errors.ENOTDIR(userMessage + ` Not a Directory: ${path} ` + nodeError.message, path);
+    case '13': return new Errors.EACCES(userMessage + ` Permission denied: ${path} ` + nodeError.message, path);
+    case '21': return new Errors.EISDIR(userMessage + ` Is a directory: ${path} ` + nodeError.message, path);
+    case '9': return new Errors.EBADF(userMessage + ` Bad file number: ${path} ` + nodeError.message, path);
+    case '30': return new Errors.EROFS(userMessage + ` Read-only file system: ${path} ` + nodeError.message, path);
+    case '28': return new Errors.ENOSPC(userMessage + ` No space left on device: ${path} ` + nodeError.message, path);
+    case '16': return new Errors.EBUSY(userMessage + ` Device or resource busy: ${path} ` + nodeError.message, path);
+    case '22': return new Errors.EINVAL(userMessage + ` Invalid argument: ${path} ` + nodeError.message, path);
+    default: return new Errors.EIO(userMessage + ` IO error on path: ${path} ` + nodeError.message + "\nNode Error stack: " + nodeError.stack, path);
     }
 }
 
@@ -333,12 +334,24 @@ function readdir(path, options, callback) {
         });
 }
 
+function stat(path, callback) {
+    let platformPath = Utils.getTauriPlatformPath(path);
+    _execCommand(WS_COMMAND.STAT, {path: platformPath})
+        .then(({metadata})=>{
+            callback(null, Utils.createFromNodeStat(`${path}/${metadata.data.stat.name}`,metadata.data.stat));
+        })
+        .catch((err)=>{
+            callback(mapNodeTauriErrorMessage(err, path, 'Failed to get stat: '));
+        });
+}
+
 const NodeTauriFS = {
     testNodeWsEndpoint,
     setNodeWSEndpoint,
     stopNodeWSEndpoint,
     getNodeWSEndpoint,
-    readdir
+    readdir,
+    stat
 };
 
 module.exports = {

@@ -85,7 +85,8 @@ const WS_COMMAND = {
     LARGE_DATA_SOCKET_ANNOUNCE: "largeDataSock",
     CONTROL_SOCKET_ANNOUNCE: "controlSock",
     GET_WINDOWS_DRIVES: "getWinDrives",
-    READ_DIR: "readDir"
+    READ_DIR: "readDir",
+    STAT: "stat"
 };
 
 const LARGE_DATA_THRESHOLD = 2*1024*1024; // 2MB
@@ -148,20 +149,20 @@ function _getStat(fullPath) {
     });
 }
 
+function _reportError(ws, metadata, err, defaultMessage = "Operation failed! ") {
+    metadata.error = {
+        message: err.message || defaultMessage,
+        code: err.code || "EIO",
+        stack: err.stack
+    };
+    _sendResponse(ws, metadata);
+}
+
 function _readDir(ws, metadata) {
     const fullPath = metadata.data.path,
         options = metadata.data.options || {};
     const withFileTypes = options.withFileTypes;
     options.withFileTypes = null;
-
-    function _reportError(err) {
-        metadata.error = {
-            message: err.message || "Cannot readdir "+ fullPath,
-            code: err.code || "EIO",
-            stack: err.stack
-        };
-        _sendResponse(ws, metadata);
-    }
 
     fs.readdir(fullPath, options)
         .then(contents=>{
@@ -174,11 +175,19 @@ function _readDir(ws, metadata) {
                     .then(contentStats =>{
                         _sendResponse(ws, metadata, {contentStats});
                     })
-                    .catch(_reportError);
+                    .catch((err)=>_reportError(ws, metadata, err, `Cannot readdir ${fullPath}`));
             } else {
                 _sendResponse(ws, metadata, {contents});
             }
-        }).catch(_reportError);
+        }).catch((err)=>_reportError(ws, metadata, err, `Cannot readdir ${fullPath}`));
+}
+
+function _stat(ws, metadata) {
+    const fullPath = metadata.data.path;
+    _getStat(fullPath)
+        .then(stat=>{
+            _sendResponse(ws, metadata, {stat});
+        }).catch((err)=>_reportError(ws, metadata, err, `Failed to get stat for ${fullPath}`));
 }
 
 function processWSCommand(ws, metadata, dataBuffer) {
@@ -195,6 +204,9 @@ function processWSCommand(ws, metadata, dataBuffer) {
             return;
         case WS_COMMAND.READ_DIR:
             _readDir(ws, metadata);
+            return;
+        case WS_COMMAND.STAT:
+            _stat(ws, metadata);
             return;
         case WS_COMMAND.LARGE_DATA_SOCKET_ANNOUNCE:
             console.log("Large Data Transfer Socket established, socket Group: ", metadata.socketGroupID);
