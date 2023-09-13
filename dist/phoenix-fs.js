@@ -105,7 +105,8 @@ const WS_COMMAND = {
     GET_WINDOWS_DRIVES: "getWinDrives",
     READ_DIR: "readDir",
     STAT: "stat",
-    READ_BIN_FILE: "readBinFile"
+    READ_BIN_FILE: "readBinFile",
+    WRITE_BIN_FILE: "writeBinFile"
 };
 
 const LARGE_DATA_THRESHOLD = 2*1024*1024; // 2MB
@@ -220,6 +221,21 @@ function _readBinaryFile(ws, metadata) {
         }).catch((err)=>_reportError(ws, metadata, err, `Failed to read file at path ${fullPath}`));
 }
 
+/**
+ *
+ * @param ws
+ * @param metadata
+ * @param dataBuffer {ArrayBuffer}
+ * @private
+ */
+function _writeBinaryFile(ws, metadata, dataBuffer) {
+    const fullPath = metadata.data.path;
+    fs.writeFile(fullPath, Buffer.from(dataBuffer))
+        .then( ()=> {
+            _sendResponse(ws, metadata);
+        }).catch((err)=>_reportError(ws, metadata, err, `Failed to write file at path ${fullPath}`));
+}
+
 function processWSCommand(ws, metadata, dataBuffer) {
     try{
         switch (metadata.commandCode) {
@@ -240,6 +256,9 @@ function processWSCommand(ws, metadata, dataBuffer) {
             return;
         case WS_COMMAND.READ_BIN_FILE:
             _readBinaryFile(ws, metadata);
+            return;
+        case WS_COMMAND.WRITE_BIN_FILE:
+            _writeBinaryFile(ws, metadata, dataBuffer);
             return;
         case WS_COMMAND.LARGE_DATA_SOCKET_ANNOUNCE:
             console.log("Large Data Transfer Socket established, socket Group: ", metadata.socketGroupID);
