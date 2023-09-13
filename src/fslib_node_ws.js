@@ -49,20 +49,27 @@ const LARGE_DATA_THRESHOLD = 2*1024*1024; // 2MB
 const MAX_RECONNECT_BACKOFF_TIME_MS = 1000;
 
 function mapNodeTauriErrorMessage(nodeError, path, userMessage= '') {
+    let error;
     switch (nodeError.code) {
-    case 'ENOENT': return new Errors.ENOENT(userMessage + ` No such File or Directory: ${path} ` + nodeError.message, path);
-    case 'EEXIST': return new Errors.EEXIST(userMessage + ` File exists: ${path} ` + nodeError.message, path);
-    case '39': return new Errors.ENOTEMPTY(userMessage + ` Directory not empty: ${path} ` + nodeError.message, path);
-    case '20': return new Errors.ENOTDIR(userMessage + ` Not a Directory: ${path} ` + nodeError.message, path);
-    case '13': return new Errors.EACCES(userMessage + ` Permission denied: ${path} ` + nodeError.message, path);
-    case '21': return new Errors.EISDIR(userMessage + ` Is a directory: ${path} ` + nodeError.message, path);
-    case '9': return new Errors.EBADF(userMessage + ` Bad file number: ${path} ` + nodeError.message, path);
-    case '30': return new Errors.EROFS(userMessage + ` Read-only file system: ${path} ` + nodeError.message, path);
-    case '28': return new Errors.ENOSPC(userMessage + ` No space left on device: ${path} ` + nodeError.message, path);
-    case '16': return new Errors.EBUSY(userMessage + ` Device or resource busy: ${path} ` + nodeError.message, path);
-    case '22': return new Errors.EINVAL(userMessage + ` Invalid argument: ${path} ` + nodeError.message, path);
-    default: return new Errors.EIO(userMessage + ` IO error on path: ${path} ` + nodeError.message + "\nNode Error stack: " + nodeError.stack, path);
+    case 'ENOENT': error = new Errors.ENOENT(userMessage + ` No such File or Directory: ${path} ` + nodeError.message, path); break;
+    case 'EEXIST': error =  new Errors.EEXIST(userMessage + ` File exists: ${path} ` + nodeError.message, path);  break;
+    case 'ENOTEMPTY': error =  new Errors.ENOTEMPTY(userMessage + ` Directory not empty: ${path} ` + nodeError.message, path);  break;
+    case 'ENOTDIR': error =  new Errors.ENOTDIR(userMessage + ` Not a Directory: ${path} ` + nodeError.message, path);  break;
+    case 'EACCES': error =  new Errors.EACCES(userMessage + ` Permission denied: ${path} ` + nodeError.message, path);  break;
+    case 'EISDIR': error =  new Errors.EISDIR(userMessage + ` Is a directory: ${path} ` + nodeError.message, path);  break;
+    case 'EBADF': error =  new Errors.EBADF(userMessage + ` Bad file number: ${path} ` + nodeError.message, path);  break;
+    case 'EROFS': error =  new Errors.EROFS(userMessage + ` Read-only file system: ${path} ` + nodeError.message, path);  break;
+    case 'ENOSPC': error =  new Errors.ENOSPC(userMessage + ` No space left on device: ${path} ` + nodeError.message, path);  break;
+    case 'EBUSY': error =  new Errors.EBUSY(userMessage + ` Device or resource busy: ${path} ` + nodeError.message, path);  break;
+    case 'EINVAL': error =  new Errors.EINVAL(userMessage + ` Invalid argument: ${path} ` + nodeError.message, path);  break;
     }
+    if(!error && Errors[nodeError.code]) {
+        error =  new Errors[nodeError.code](userMessage + ` Error for: ${path} ` + nodeError.message, path);
+    } else if(!error) {
+        error = new Errors.EIO(userMessage + ` IO error on path: ${path} ` + nodeError.message + "\nNode Error stack: " + nodeError.nodeStack, path);
+    }
+    error.nodeStack = nodeError.nodeStack;
+    return error;
 }
 
 

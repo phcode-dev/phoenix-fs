@@ -1,7 +1,10 @@
 const WebSocket = require('ws');
 const fs = require("fs/promises");
 const path = require("path");
+const os = require('os');
 const { exec } = require('child_process');
+
+const IS_MACOS = os.platform() === 'darwin';
 
 function getWindowsDrives(callback) {
     exec('wmic logicaldisk get name', (error, stdout) => {
@@ -153,7 +156,7 @@ function _reportError(ws, metadata, err, defaultMessage = "Operation failed! ") 
     metadata.error = {
         message: err.message || defaultMessage,
         code: err.code || "EIO",
-        stack: err.stack
+        nodeStack: err.stack
     };
     _sendResponse(ws, metadata);
 }
@@ -169,7 +172,10 @@ function _readDir(ws, metadata) {
             if(withFileTypes){
                 let statPromises = [];
                 for(let name of contents) {
-                    statPromises.push(_getStat(path.join(fullPath, name)));
+                    const contentPath = path.join(fullPath, name);
+                    if(!IS_MACOS || (IS_MACOS && contentPath !== '/.VolumeIcon.icns')) { // in mac, this file in the root fs is not accessible.
+                        statPromises.push(_getStat(contentPath));
+                    }
                 }
                 Promise.all(statPromises)
                     .then(contentStats =>{
