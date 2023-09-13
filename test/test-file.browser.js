@@ -507,13 +507,31 @@ function _setupTests(testType) {
         return str;
     }
 
-    async function _testLargeFileRW(filePath, sizeBytes) {
+    function stringToArrayBuffer(string) {
+        const buffer = new ArrayBuffer(string.length);
+        const array = new Uint8Array(buffer);
+        for (let i = 0; i < string.length; i++) {
+            array[i] = string.charCodeAt(i);
+        }
+        return buffer;
+    }
+
+    async function _testLargeFileRW(filePath, sizeBytes, isBinary) {
         console.log("creating random string of size", sizeBytes);
-        const stringWrittenToFile = createRandomString(sizeBytes);
-        console.log("random string created");
+        let timerLabel = "random data generated " + sizeBytes/1024/1024 +"MB";
+        console.time(timerLabel);
+        let contentWrittenToFile = createRandomString(sizeBytes);
+        const binaryConversion = stringToArrayBuffer(contentWrittenToFile);
+        if(isBinary) {
+            contentWrittenToFile = binaryConversion;
+        }
+        console.timeEnd(timerLabel);
+
+        timerLabel = "File write completed " + sizeBytes/1024/1024 +"MB";
+        console.time(timerLabel);
         let resolveP, rejectP;
         const writePromise = new Promise((resolve, reject) => {resolveP = resolve; rejectP = reject;});
-        fs.writeFile(filePath, stringWrittenToFile, "utf8", (_err)=>{
+        fs.writeFile(filePath, contentWrittenToFile, isBinary? fs.BYTE_ARRAY_ENCODING : "utf8", (_err)=>{
             if(_err){
                 rejectP(_err);
                 return;
@@ -521,17 +539,27 @@ function _setupTests(testType) {
             resolveP();
         });
         await writePromise;
+        console.timeEnd(timerLabel);
+
+        timerLabel = "File read completed " + sizeBytes/1024/1024 +"MB";
+        console.time(timerLabel);
 
         const readPromise = new Promise((resolve, reject) => {resolveP = resolve; rejectP = reject;});
-        fs.readFile(filePath, "utf8", (_err, data)=>{
+        fs.readFile(filePath, isBinary? fs.BYTE_ARRAY_ENCODING : "utf8", (_err, data)=>{
             if(_err){
                 rejectP(_err);
                 return;
             }
             resolveP(data);
         });
-        const strReadFromFile = await readPromise;
-        expect(strReadFromFile).to.eql(stringWrittenToFile);
+        const dataReadFromFile = await readPromise;
+        console.timeEnd(timerLabel);
+
+        timerLabel = "File verify completed " + sizeBytes/1024/1024 +"MB";
+        console.time(timerLabel);
+
+        expect(dataReadFromFile).to.eql(contentWrittenToFile);
+        console.timeEnd(timerLabel);
     }
 
     let sizeMBs = [1, 2, 4, 8, 16];
@@ -546,6 +574,11 @@ function _setupTests(testType) {
         it(`Should phoenix ${testType} read and write a large text file of size ${sizeMB} MB`, async function () {
             const filePath = `${testPath}/browserWrite.txt`;
             await _testLargeFileRW(filePath, sizeMB * 1024 * 1024); // Roughly 4MB considering 1 byte per char
+        }).timeout(60000);
+
+        it(`Should phoenix ${testType} read and write a large Binary file of size ${sizeMB} MB`, async function () {
+            const filePath = `${testPath}/browserWrite.txt`;
+            await _testLargeFileRW(filePath, sizeMB * 1024 * 1024, true); // Roughly 4MB considering 1 byte per char
         }).timeout(60000);
     }
 }
