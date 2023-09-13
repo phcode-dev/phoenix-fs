@@ -31,79 +31,6 @@ const IS_WINDOWS = navigator.userAgent.includes('Windows');
 let preferNodeWs = false;
 
 /**
- * Convert Phoenix virtual file system path to platform-specific paths.
- * For Windows, `/tauri/c/d/a.txt` will correspond to `c:\d\a.txt`.
- * For *nix systems (Linux/Mac/Unix), `/tauri/x/y/a.txt` will correspond to `/x/y/a.txt`.
- *
- * @param {string} phoenixFSPath - The Phoenix virtual file system path to be converted.
- * @returns {string} The platform-specific path.
- *
- * @throws {Errors.EINVAL} If the provided path doesn't start with `/tauri/` or cannot resolve to system path.
- *
- * @example
- * // On a Windows system
- * getTauriPlatformPath('/tauri/c/users/user/a.txt');  // Returns: 'c:\users\user\a.txt'
- *
- * // On a *nix system
- * getTauriPlatformPath('/tauri/home/user/a.txt');  // Returns: '/home/user/a.txt'
- */
-function getTauriPlatformPath(phoenixFSPath) {
-    if(phoenixFSPath === Constants.TAURI_ROOT){
-        phoenixFSPath = TAURI_PATH_PREFIX;
-    }
-    if (!phoenixFSPath.startsWith(TAURI_PATH_PREFIX)) {
-        console.error("noop", phoenixFSPath);
-        throw new Errors.EINVAL('Invalid Phoenix FS path- tauri path prefix expected: ' + phoenixFSPath);
-    }
-
-    if (IS_WINDOWS) {
-        let parts = phoenixFSPath.split('/').slice(2);
-        if(!parts[0].length){
-            // maps to just ":\", no drive prefix available
-            throw new Errors.EINVAL('Invalid Phoenix FS path for windows: ' + phoenixFSPath);
-        }
-        return `${parts[0]}:\\${parts.slice(1).join('\\')}`;
-    } else {
-        return phoenixFSPath.slice(Constants.TAURI_ROOT.length);
-    }
-}
-
-/**
- * Convert platform-specific Tauri paths to Phoenix virtual file system path.
- * For Windows, `c:\d\a.txt` will correspond to `/tauri/c/d/a.txt`.
- * For *nix systems (Linux/Mac/Unix), `/x/y/a.txt` will correspond to `/tauri/x/y/a.txt`.
- *
- * @param {string} platformPath - The platform-specific path to be converted.
- * @returns {string} The Phoenix virtual file system path.
- *
- * @throws {Errors.EINVAL} If the provided path cannot be converted to Phoenix FS path.
- *
- * @example
- * // On a Windows system
- * getTauriVirtualPath('c:\users\user\a.txt');  // Returns: '/tauri/c/users/user/a.txt'
- *
- * // On a *nix system
- * getTauriVirtualPath('/home/user/a.txt');  // Returns: '/tauri/home/user/a.txt'
- */
-function getTauriVirtualPath(platformPath) {
-    if (IS_WINDOWS) {
-        // For Windows, we split using both forward and backward slashes because users might use either
-        let parts = platformPath.split(/[\\/]/);
-        if (!parts[0].endsWith(':') || parts[0].length !== 2) {
-            throw new Errors.EINVAL('Invalid Windows path format: ' + platformPath);
-        }
-        let driveLetter = parts[0].slice(0, -1);  // Remove the ':' from 'c:'
-        return `/tauri/${driveLetter}/${parts.slice(1).join('/')}`;
-    } else {
-        if (!platformPath.startsWith('/')) {
-            throw new Errors.EINVAL('Invalid Unix path format: ' + platformPath);
-        }
-        return Constants.TAURI_ROOT + platformPath;
-    }
-}
-
-
-/**
  * Check if the given path is a subpath of the '/tauri' folder.
  * @param path
  */
@@ -166,11 +93,11 @@ async function openTauriFilePickerAsync(options) {
         __TAURI__.dialog.open(options)
             .then(filePaths => {
                 if(typeof filePaths === 'string'){
-                    resolve(getTauriVirtualPath(filePaths));
+                    resolve(Utils.getTauriVirtualPath(filePaths));
                 } else if(Array.isArray(filePaths)){
                     let virtualPaths = [];
                     for(let platformPath of filePaths){
-                        virtualPaths.push(getTauriVirtualPath(platformPath));
+                        virtualPaths.push(Utils.getTauriVirtualPath(platformPath));
                     }
                     resolve(virtualPaths);
                 } else {
@@ -218,7 +145,7 @@ async function openTauriFileSaveDialogueAsync(options) {
         __TAURI__.dialog.save(options)
             .then(filePath => {
                 if(typeof filePath === 'string'){
-                    resolve(getTauriVirtualPath(filePath));
+                    resolve(Utils.getTauriVirtualPath(filePath));
                 } else {
                     resolve(null);
                 }
@@ -257,6 +184,13 @@ function mapOSTauriErrorMessage(tauriErrorMessage, path, userMessage= '') {
     }
 }
 
+async function _getTauriStat(vfsPath) {
+    let stats = await window.__TAURI__.invoke("plugin:fs-extra|metadata", {
+        path: globalObject.fs.getTauriPlatformPath(vfsPath)
+    });
+    return Utils.createFromTauriStat(vfsPath, stats);
+}
+
 function _readDirHelper(entries, path, options, callback, useDummyStats) {
     let children = [];
     for (const entry of entries) {
@@ -265,7 +199,7 @@ function _readDirHelper(entries, path, options, callback, useDummyStats) {
         } else if(useDummyStats){
             children.push(Utils.createDummyStatObject(`${path}/${entry.name}`, true, Constants.TAURI_DEVICE_NAME));
         } else {
-            children.push(Utils.getTauriStat(`${path}/${entry.name}`));
+            children.push(_getTauriStat(`${path}/${entry.name}`));
         }
     }
     if(!options.withFileTypes || useDummyStats){
@@ -317,7 +251,7 @@ function readdir(path, options, callback) {
         options = {};
     }
 
-    if(!window.__TAURI__ || preferNodeWs) {
+    if(!window.__TAURI__ || preferNodeWs || options.useNodeWSEndpoint) {
         return NodeTauriFS.readdir(path, options, callback);
     }
 
@@ -336,7 +270,7 @@ function readdir(path, options, callback) {
         return;
     }
 
-    let platformPath = getTauriPlatformPath(path);
+    let platformPath = Utils.getTauriPlatformPath(path);
     __TAURI__.fs.readDir(platformPath)
         .then((entries)=>{
             _readDirHelper(entries, path, options, callback);
@@ -390,7 +324,7 @@ function mkdirs(path, mode, recursive, callback) {
         };
     }
 
-    let platformPath = getTauriPlatformPath(path);
+    let platformPath = Utils.getTauriPlatformPath(path);
     __TAURI__.fs.createDir(platformPath,  {recursive})
         .then(()=>{
             callback(null);
@@ -433,7 +367,7 @@ function mkdirs(path, mode, recursive, callback) {
  */
 function stat(path, callback) {
     path = globalObject.path.normalize(path);
-    Utils.getTauriStat(path)
+    _getTauriStat(path)
         .then(stat =>{
             callback(null, stat);
         })
@@ -447,9 +381,9 @@ function unlink(path, callback) {
     function errCallback(err) {
         callback(mapOSTauriErrorMessage(err, path, 'Failed to unlink'));
     }
-    Utils.getTauriStat(path)
+    _getTauriStat(path)
         .then(stat =>{
-            let platformPath = getTauriPlatformPath(path);
+            let platformPath = Utils.getTauriPlatformPath(path);
             if(stat.isDirectory()){
                 __TAURI__.fs.removeDir(platformPath, {recursive: true})
                     .then(()=>{callback(null);})
@@ -465,9 +399,9 @@ function unlink(path, callback) {
 
 function rename(oldPath, newPath, callback) {
     oldPath = globalObject.path.normalize(oldPath);
-    const oldPlatformPath = getTauriPlatformPath(oldPath);
+    const oldPlatformPath = Utils.getTauriPlatformPath(oldPath);
     newPath = globalObject.path.normalize(newPath);
-    const newPlatformPath = getTauriPlatformPath(newPath);
+    const newPlatformPath = Utils.getTauriPlatformPath(newPath);
     __TAURI__
         .invoke('_rename_path', {oldPath: oldPlatformPath, newPath: newPlatformPath})
         .then(()=>{callback(null);})
@@ -544,7 +478,7 @@ function _processContents(contents, encoding, callback, path) {
 function readFile(path, options, callback) {
     try {
         path = globalObject.path.normalize(path);
-        const platformPath = getTauriPlatformPath(path);
+        const platformPath = Utils.getTauriPlatformPath(path);
 
         callback = arguments[arguments.length - 1];
         options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'r');
@@ -615,7 +549,7 @@ function writeFile (path, data, options, callback) {
             arrayBuffer = Utils.getEncodedArrayBuffer(data, options.encoding);
         }
         path = globalObject.path.normalize(path);
-        const platformPath = getTauriPlatformPath(path);
+        const platformPath = Utils.getTauriPlatformPath(path);
 
         __TAURI__.fs.writeBinaryFile(platformPath, arrayBuffer)
             .then(() => {
@@ -634,14 +568,17 @@ function writeFile (path, data, options, callback) {
 }
 
 function forceUseNodeWSEndpoint(use) {
+    if(!NodeTauriFS.getNodeWSEndpoint()) {
+        throw new Error("Please call fs.setNodeWSEndpoint('ws://your server') before calling this function.");
+    }
     preferNodeWs = use;
 }
 
 const TauriFS = {
     isTauriPath,
     isTauriSubPath,
-    getTauriPlatformPath,
-    getTauriVirtualPath,
+    getTauriPlatformPath: Utils.getTauriPlatformPath,
+    getTauriVirtualPath: Utils.getTauriVirtualPath,
     openTauriFilePickerAsync,
     openTauriFileSaveDialogueAsync,
     stat,

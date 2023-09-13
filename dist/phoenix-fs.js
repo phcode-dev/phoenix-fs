@@ -1,4 +1,6 @@
 const WebSocket = require('ws');
+const fs = require("fs/promises");
+const path = require("path");
 const { exec } = require('child_process');
 
 function getWindowsDrives(callback) {
@@ -82,7 +84,8 @@ const WS_COMMAND = {
     RESPONSE: "response",
     LARGE_DATA_SOCKET_ANNOUNCE: "largeDataSock",
     CONTROL_SOCKET_ANNOUNCE: "controlSock",
-    GET_WINDOWS_DRIVES: "getWinDrives"
+    GET_WINDOWS_DRIVES: "getWinDrives",
+    READ_DIR: "readDir"
 };
 
 const LARGE_DATA_THRESHOLD = 2*1024*1024; // 2MB
@@ -120,6 +123,64 @@ function _sendResponse(ws, metadata, dataObjectToSend = null, dataBuffer = new A
     socketToUse.send(mergeMetadataAndArrayBuffer(response, dataBuffer));
 }
 
+function _getStat(fullPath) {
+    return new Promise((resolve, reject) => {
+        fs.stat(fullPath)
+            .then((stat)=>{
+                const isOwnerReadOnly = (stat.mode & fs.constants.S_IWUSR) === 0;
+                resolve({
+                    dev: stat.dev,
+                    isFile: stat.isFile(),
+                    isDirectory: stat.isDirectory(),
+                    isSymbolicLink: stat.isSymbolicLink(),
+                    size: stat.size,
+                    nlink: stat.nlink,
+                    // Unix timestamp MS Numbers
+                    atimeMs: stat.atimeMs,
+                    mtimeMs: stat.mtimeMs,
+                    ctimeMs: stat.ctimeMs,
+                    mode: stat.mode,
+                    readonly: isOwnerReadOnly,
+                    name: path.basename(fullPath)
+                });
+            })
+            .catch(reject);
+    });
+}
+
+function _readDir(ws, metadata) {
+    const fullPath = metadata.data.path,
+        options = metadata.data.options || {};
+    const withFileTypes = options.withFileTypes;
+    options.withFileTypes = null;
+
+    function _reportError(err) {
+        metadata.error = {
+            message: err.message || "Cannot readdir "+ fullPath,
+            code: err.code || "EIO",
+            stack: err.stack
+        };
+        _sendResponse(ws, metadata);
+    }
+
+    fs.readdir(fullPath, options)
+        .then(contents=>{
+            if(withFileTypes){
+                let statPromises = [];
+                for(let name of contents) {
+                    statPromises.push(_getStat(path.join(fullPath, name)));
+                }
+                Promise.all(statPromises)
+                    .then(contentStats =>{
+                        _sendResponse(ws, metadata, {contentStats});
+                    })
+                    .catch(_reportError);
+            } else {
+                _sendResponse(ws, metadata, {contents});
+            }
+        }).catch(_reportError);
+}
+
 function processWSCommand(ws, metadata, dataBuffer) {
     try{
         switch (metadata.commandCode) {
@@ -131,6 +192,9 @@ function processWSCommand(ws, metadata, dataBuffer) {
                 }
                 _sendResponse(ws, metadata, {drives}, dataBuffer);
             });
+            return;
+        case WS_COMMAND.READ_DIR:
+            _readDir(ws, metadata);
             return;
         case WS_COMMAND.LARGE_DATA_SOCKET_ANNOUNCE:
             console.log("Large Data Transfer Socket established, socket Group: ", metadata.socketGroupID);
