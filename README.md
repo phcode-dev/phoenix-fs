@@ -566,7 +566,7 @@ Creates a directory at given path. Not that the parent dir should exist for this
 
 - **Parameters:**
   - `path` _(string)_ - The path where the directory should be created.
-  - `mode` _(number|function)_ (Optional, default: `0o777`) - The directory permissions.
+  - `mode` _(number|function)_ (Optional, default: `0o666`) - The directory permissions.
   - `callback` _(function)_ (Optional) - Callback to execute once directory creation is done. Called with an error as the first argument on failure, and null on success.
 
 - **Examples:**
@@ -591,7 +591,7 @@ Creates a directory with optional mode and recursion (create all intermediate di
 
 - **Parameters:**
   - `path` _(string)_ - The path where the directory should be created.
-  - `mode` _(number|function)_ (Optional, default: `0o777`) - The directory permissions.
+  - `mode` _(number|function)_ (Optional, default: `0o666`) - The directory permissions.
   - `recursive` _(boolean|function)_ (Optional, default: `false`) - Whether to create directories recursively.
   - `callback` _(function)_ (Optional) - Callback to execute once directory creation is done. Called with an error as the first argument on failure, and null on success.
 
@@ -836,6 +836,7 @@ Writes data to a file, replacing the file if it already exists.
   - If provided as an `object`, it can have the following properties:
     - `encoding` (`string`): The type of encoding. Default is `'binary'`.
     - `flag` (`string`): The file system flag. Default is `'w'`.
+    - `mode` (`number`): (Optional, default: `0o666`) - The permissions.
 
 - **callback**: (`function`)
   - The callback function executed once the file write operation concludes.

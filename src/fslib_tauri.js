@@ -285,8 +285,8 @@ function readdir(path, options, callback) {
  * Creates a directory with optional mode and recursion(create all intermediate directories if those don't exist).
  *
  * @param {string} path - The path where the directory should be created.
- * @param {(number|function)} [mode=0o777] - The directory permissions. Defaults to `0o777` if not provided.
- * @param {(boolean|function)} [recursive=false] - Whether to create directories recursively. Defaults to `false` if not provided.
+ * @param {(number)} [mode=0o666] - The directory permissions. Defaults to `0o666` if not provided.
+ * @param {(boolean)} [recursive=false] - Whether to create directories recursively. Defaults to `false` if not provided.
  * @param {function} [callback] - Callback to execute once directory creation is done. Called with an error as the first argument on failure, and null on success.
  *
  * @example
@@ -309,7 +309,7 @@ function mkdirs(path, mode, recursive, callback) {
     if (typeof mode !== 'number') {
         callback = recursive;
         recursive = mode;
-        mode = 0o777; // Default mode (or any other default you'd like to set)
+        mode = 0o666; // Default mode (or any other default you'd like to set)
     }
 
     // Determine if 'recursive' is provided
@@ -323,6 +323,11 @@ function mkdirs(path, mode, recursive, callback) {
         callback = function () {
             // Do Nothing
         };
+    }
+
+    if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
+        NodeTauriFS.mkdirs(path, mode, recursive, callback);
+        return;
     }
 
     let platformPath = Utils.getTauriPlatformPath(path);
@@ -527,6 +532,7 @@ function readFile(path, options, callback) {
  *   - If provided as an `object`, it can have the following keys:
  *     - `encoding` (string): The type of encoding. Default is `'binary'`.
  *     - `flag` (string): The file system flag. Default is `'w'`.
+ *     - `mode`- The permissions. Defaults to `0o666` if not provided.
  * @param {function} callback - The callback function to execute once the file write operation concludes.
  *   - The callback receives one argument:
  *     1. An error object (or null if there were no errors).
@@ -564,7 +570,7 @@ function writeFile (path, data, options, callback) {
             arrayBuffer = Utils.getEncodedArrayBuffer(data, options.encoding);
         }
         if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
-            NodeTauriFS.writeBinaryFile(path, arrayBuffer)
+            NodeTauriFS.writeBinaryFile(path, options.mode || 0o666, options.flag, arrayBuffer)
                 .then(() => {
                     callback(null);
                 })
@@ -626,15 +632,15 @@ const TauriFS = {
     getTauriVirtualPath: Utils.getTauriVirtualPath,
     openTauriFilePickerAsync,
     openTauriFileSaveDialogueAsync,
+    forceUseNodeWSEndpoint,
+    preferNodeWSEndpoint,
     stat,
     readdir,
     mkdirs,
     rename,
     unlink,
     readFile,
-    writeFile,
-    forceUseNodeWSEndpoint,
-    preferNodeWSEndpoint
+    writeFile
 };
 
 module.exports ={

@@ -65,7 +65,7 @@ function _setupTests(testType) {
         console.log(`mkdirs: `, testPath);
         let mkdirResolve;
         const mkdirPromise = new Promise((resolve) => {mkdirResolve = resolve;});
-        fs.mkdirs(testPath, 777 ,true, ()=>{
+        fs.mkdirs(testPath, 0o777 ,true, ()=>{
             mkdirResolve();
         });
         await mkdirPromise;
@@ -172,7 +172,7 @@ function _setupTests(testType) {
     it(`Should phoenix ${testType} mkdir(path,mode, cb) in browser if it doesnt exist`, async function () {
         let createSuccess = false;
         const dirPathToCreate = `${testPath}/testDir1`;
-        fs.mkdir(dirPathToCreate, 777, (err)=>{
+        fs.mkdir(dirPathToCreate, 0o777, (err)=>{
             if(!err){
                 createSuccess = true;
             }
@@ -198,7 +198,7 @@ function _setupTests(testType) {
     it(`Should phoenix fail ${testType} mkdir(path,mode, cb) if already exists`, async function () {
         let dirPathCreated = await _writeTestDir();
         let error;
-        fs.mkdir(dirPathCreated, 777, (err)=>{
+        fs.mkdir(dirPathCreated, 0o777, (err)=>{
             error = err;
         });
         await waitForTrue(()=>{return !!error;},1000);
@@ -208,7 +208,7 @@ function _setupTests(testType) {
     it(`Should phoenix ${testType} mkdirs(path,mode, recursive, cb) even if exists`, async function () {
         let dirPathCreated = await _writeTestDir();
         let success, error;
-        fs.mkdirs(dirPathCreated, 777, true, (err)=>{
+        fs.mkdirs(dirPathCreated, 0o777, true, (err)=>{
             error = err;
             success = true;
         });
@@ -221,7 +221,7 @@ function _setupTests(testType) {
         let dirPathCreated = await _writeTestDir();
         let pathToCreate = `${dirPathCreated}/path/that/doesnt/exist`;
         let success, error;
-        fs.mkdirs(pathToCreate, 777, true, (err)=>{
+        fs.mkdirs(pathToCreate, 0o777, true, (err)=>{
             error = err;
             success = true;
         });
@@ -247,7 +247,7 @@ function _setupTests(testType) {
         let dirPathCreated = await _writeTestDir();
         let pathToCreate = `${dirPathCreated}/path/that/doesnt/exist`;
         let error;
-        fs.mkdirs(pathToCreate, 777, (err)=>{
+        fs.mkdirs(pathToCreate, 0o777, (err)=>{
             error = err;
         });
         await waitForTrue(()=>{return !!error;},1000);
