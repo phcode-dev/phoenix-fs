@@ -60,11 +60,15 @@ function checkDeleteInPath(path) {
 function checkStatInPath(path) {
     console.log('worker: checkStatInPath');
     fs.stat(path,  (err, stat)=>{
-        if(!err && stat.dev.startsWith("tauriWS")){
+        if(!err){
+            if(path.startsWith("/tauri/") && !stat.dev.startsWith("tauriWS")){
+                console.error(`Stats device not as expected, expected "tauriWS_<number>" but got "${stat.dev}":`, err, stat);
+                return;
+            }
             postMessage('checkStatInPath.ok');
             return;
         }
-        console.error('Stats error/not as expected:', err, stat);
+        console.error('Stats error:', err, stat);
     });
 }
 
