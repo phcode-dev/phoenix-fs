@@ -1,4 +1,4 @@
-/* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI*/
+/* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI, TEST_TYPE_TAURI_WS*/
 
 function _setupTests(testType) {
     let testPath;
@@ -54,6 +54,12 @@ function _setupTests(testType) {
         switch (testType) {
         case TEST_TYPE_FS_ACCESS: testPath = window.mountTestPath;break;
         case TEST_TYPE_FILER: testPath = window.virtualTestPath;break;
+        case TEST_TYPE_TAURI_WS:
+            await window.waitForTrue(()=>{return window.isNodeSetup;},1000);
+            fs.forceUseNodeWSEndpoint(true);
+            testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}test-phoenix-fs`);
+            consoleLogToShell("using tauri websocket test path: "+ testPath);
+            break;
         case TEST_TYPE_TAURI:
             testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}test-phoenix-fs`);
             consoleLogToShell("using tauri test path: "+ testPath);
@@ -76,6 +82,12 @@ function _setupTests(testType) {
     afterEach(async function () {
         this.timeout(30000);
         await _clean();
+    });
+
+    after(function () {
+        if(window.__TAURI__) {
+            fs.forceUseNodeWSEndpoint(false);
+        }
     });
 
     it(`Should load Filer in browser`, function () {
@@ -187,7 +199,10 @@ function _setupTests(testType) {
             expect(stats.dev).to.eql("local");
             break;
         case TEST_TYPE_TAURI:
-            expect(stats.dev.startsWith("tauri")).to.be.true;
+            expect(stats.dev.split("_")[0]).to.eql("tauri");
+            break;
+        case TEST_TYPE_TAURI_WS:
+            expect(stats.dev.split("_")[0]).to.eql("tauriWS");
             break;
         default: throw new Error("unknown file system impl");
         }
@@ -487,6 +502,10 @@ describe(`File: Browser virtual fs tests: filer paths`, function () {
 if(window.__TAURI__){
     describe(`File: Browser virtual fs tests: tauri paths`, function () {
         _setupTests(TEST_TYPE_TAURI);
+    });
+
+    describe(`File: Browser virtual fs tests: tauri websocket paths`, function () {
+        _setupTests(TEST_TYPE_TAURI_WS);
     });
 }
 
