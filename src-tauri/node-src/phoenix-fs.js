@@ -5,6 +5,7 @@ const os = require('os');
 const { exec } = require('child_process');
 
 const IS_MACOS = os.platform() === 'darwin';
+let debugMode = false;
 
 /**
  * Converts a buffer to an `ArrayBuffer`.
@@ -350,7 +351,7 @@ function CreatePhoenixFsServer(server, wssPath = "/phoenixFS") {
 
         // Listen for messages from the client
         ws.on('message', (message) => {
-            console.log(`Received message ${message} of size: ${message.byteLength}, type: ${typeof message}, isArrayBuffer: ${message instanceof ArrayBuffer}, isBuffer: ${Buffer.isBuffer(message)}`);
+            debugMode && console.log(`Received message ${message} of size: ${message.byteLength}, type: ${typeof message}, isArrayBuffer: ${message instanceof ArrayBuffer}, isBuffer: ${Buffer.isBuffer(message)}`);
             processWebSocketMessage(ws, message);
         });
 
@@ -366,4 +367,9 @@ function CreatePhoenixFsServer(server, wssPath = "/phoenixFS") {
     });
 }
 
+function setDebugMode(isDebug) {
+    debugMode = isDebug;
+}
+
+exports.setDebugMode = setDebugMode;
 exports.CreatePhoenixFsServer = CreatePhoenixFsServer;
