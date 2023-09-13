@@ -25,6 +25,9 @@ import {Errors} from "./errno";
 const {Constants} = require('./constants');
 import * as iconv from 'iconv-lite';
 
+const TAURI_PATH_PREFIX = Constants.TAURI_ROOT+ '/';
+const IS_WINDOWS = navigator.userAgent.includes('Windows');
+
 function _dateFromMs(ms) {
     if(ms === null || ms === undefined){
         return null;
@@ -38,6 +41,7 @@ function Stats(path, fileNode, devName) {
     this.type = fileNode.type;
     this.size = fileNode.size;
     this.nlinks = fileNode.nlinks;
+    this.nlink = fileNode.nlinks;
     // Date objects
     this.atime = _dateFromMs(fileNode.atime);
     this.mtime = _dateFromMs(fileNode.mtime);
@@ -114,10 +118,7 @@ const createDummyStatObject = function (path, isDir, deviceName) {
     return new Stats(path, fileDetails, deviceName);
 };
 
-const getTauriStat = async function (vfsPath) {
-    let stats = await window.__TAURI__.invoke("plugin:fs-extra|metadata", {
-        path: globalObject.fs.getTauriPlatformPath(vfsPath)
-    });
+const createFromTauriStat = function (vfsPath, stats) {
     let type = Constants.NODE_TYPE_DIRECTORY;
     if(stats.isFile){
         type = Constants.NODE_TYPE_FILE;
@@ -136,6 +137,27 @@ const getTauriStat = async function (vfsPath) {
         nlinks: stats.nlink
     };
     return new Stats(vfsPath, fileDetails, `${Constants.TAURI_DEVICE_NAME}_${stats.dev}`);
+};
+
+const createFromNodeStat = function (vfsPath, stats) {
+    let type = Constants.NODE_TYPE_DIRECTORY;
+    if(stats.isFile){
+        type = Constants.NODE_TYPE_FILE;
+    } else if(stats.isSymbolicLink){
+        type = Constants.NODE_TYPE_SYMBOLIC_LINK;
+    }
+    stats.permissions = stats.permissions || {};
+    let fileDetails = {
+        type: type,
+        size: stats.size,
+        mode: stats.mode,
+        readonly: stats.readonly,
+        ctime: stats.ctimeMs,
+        atime: stats.atimeMs,
+        mtime: stats.mtimeMs,
+        nlinks: stats.nlink
+    };
+    return new Stats(vfsPath, fileDetails, `${Constants.TAURI_WS_DEVICE_NAME}_${stats.dev}`);
 };
 
 function validateFileOptions(options, enc, fileMode){
@@ -313,12 +335,85 @@ function splitMetadataAndBuffer(concatenatedBuffer) {
     };
 }
 
+/**
+ * Convert Phoenix virtual file system path to platform-specific paths.
+ * For Windows, `/tauri/c/d/a.txt` will correspond to `c:\d\a.txt`.
+ * For *nix systems (Linux/Mac/Unix), `/tauri/x/y/a.txt` will correspond to `/x/y/a.txt`.
+ *
+ * @param {string} phoenixFSPath - The Phoenix virtual file system path to be converted.
+ * @returns {string} The platform-specific path.
+ *
+ * @throws {Errors.EINVAL} If the provided path doesn't start with `/tauri/` or cannot resolve to system path.
+ *
+ * @example
+ * // On a Windows system
+ * getTauriPlatformPath('/tauri/c/users/user/a.txt');  // Returns: 'c:\users\user\a.txt'
+ *
+ * // On a *nix system
+ * getTauriPlatformPath('/tauri/home/user/a.txt');  // Returns: '/home/user/a.txt'
+ */
+function getTauriPlatformPath(phoenixFSPath) {
+    if(phoenixFSPath === Constants.TAURI_ROOT){
+        phoenixFSPath = TAURI_PATH_PREFIX;
+    }
+    if (!phoenixFSPath.startsWith(TAURI_PATH_PREFIX)) {
+        console.error("noop", phoenixFSPath);
+        throw new Errors.EINVAL('Invalid Phoenix FS path- tauri path prefix expected: ' + phoenixFSPath);
+    }
 
+    if (IS_WINDOWS) {
+        let parts = phoenixFSPath.split('/').slice(2);
+        if(!parts[0].length){
+            // maps to just ":\", no drive prefix available
+            throw new Errors.EINVAL('Invalid Phoenix FS path for windows: ' + phoenixFSPath);
+        }
+        return `${parts[0]}:\\${parts.slice(1).join('\\')}`;
+    } else {
+        return phoenixFSPath.slice(Constants.TAURI_ROOT.length);
+    }
+}
+
+/**
+ * Convert platform-specific Tauri paths to Phoenix virtual file system path.
+ * For Windows, `c:\d\a.txt` will correspond to `/tauri/c/d/a.txt`.
+ * For *nix systems (Linux/Mac/Unix), `/x/y/a.txt` will correspond to `/tauri/x/y/a.txt`.
+ *
+ * @param {string} platformPath - The platform-specific path to be converted.
+ * @returns {string} The Phoenix virtual file system path.
+ *
+ * @throws {Errors.EINVAL} If the provided path cannot be converted to Phoenix FS path.
+ *
+ * @example
+ * // On a Windows system
+ * getTauriVirtualPath('c:\users\user\a.txt');  // Returns: '/tauri/c/users/user/a.txt'
+ *
+ * // On a *nix system
+ * getTauriVirtualPath('/home/user/a.txt');  // Returns: '/tauri/home/user/a.txt'
+ */
+function getTauriVirtualPath(platformPath) {
+    if (IS_WINDOWS) {
+        // For Windows, we split using both forward and backward slashes because users might use either
+        let parts = platformPath.split(/[\\/]/);
+        if (!parts[0].endsWith(':') || parts[0].length !== 2) {
+            throw new Errors.EINVAL('Invalid Windows path format: ' + platformPath);
+        }
+        let driveLetter = parts[0].slice(0, -1);  // Remove the ':' from 'c:'
+        return `/tauri/${driveLetter}/${parts.slice(1).join('/')}`;
+    } else {
+        if (!platformPath.startsWith('/')) {
+            throw new Errors.EINVAL('Invalid Unix path format: ' + platformPath);
+        }
+        return Constants.TAURI_ROOT + platformPath;
+    }
+}
 
 const Utils = {
     createStatObject,
     createDummyStatObject,
-    getTauriStat,
+    createFromTauriStat,
+    createFromNodeStat,
+    getTauriPlatformPath,
+    getTauriVirtualPath,
     validateFileOptions,
     toArrayBuffer,
     getDecodedString,

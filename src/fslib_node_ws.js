@@ -32,7 +32,8 @@ const WS_COMMAND = {
     RESPONSE: "response",
     LARGE_DATA_SOCKET_ANNOUNCE: "largeDataSock",
     CONTROL_SOCKET_ANNOUNCE: "controlSock",
-    GET_WINDOWS_DRIVES: "getWinDrives"
+    GET_WINDOWS_DRIVES: "getWinDrives",
+    READ_DIR: "readDir"
 };
 
 // each browser context belongs to a single socket group. So multiple websocket connections can be pooled
@@ -46,22 +47,20 @@ const SOCKET_TYPE_DATA = "data",
 const LARGE_DATA_THRESHOLD = 2*1024*1024; // 2MB
 const MAX_RECONNECT_BACKOFF_TIME_MS = 1000;
 
-function mapNodeTauriErrorMessage(nodeErrorMessage, path, userMessage= '') {
-    switch (nodeErrorMessage) {
-    case '2': return new Errors.ENOENT(userMessage + ` No such File or Directory: ` + path + nodeErrorMessage, path);
-    case '3': return new Errors.ENOENT(userMessage + ` System cannot find the path specified: ` + path + nodeErrorMessage, path); // windows
-    case '17': return new Errors.EEXIST(userMessage + ` File exists: ` + path + nodeErrorMessage, path);
-    case '183': return new Errors.EEXIST(userMessage + ` File exists: ` + path + nodeErrorMessage, path); // windows
-    case '39': return new Errors.ENOTEMPTY(userMessage + ` Directory not empty: ` + path + nodeErrorMessage, path);
-    case '20': return new Errors.ENOTDIR(userMessage + ` Not a Directory: ` + path + nodeErrorMessage, path);
-    case '13': return new Errors.EACCES(userMessage + ` Permission denied: ` + path + nodeErrorMessage, path);
-    case '21': return new Errors.EISDIR(userMessage + ` Is a directory: ` + path + nodeErrorMessage, path);
-    case '9': return new Errors.EBADF(userMessage + ` Bad file number: ` + path + nodeErrorMessage, path);
-    case '30': return new Errors.EROFS(userMessage + ` Read-only file system: ` + path + nodeErrorMessage, path);
-    case '28': return new Errors.ENOSPC(userMessage + ` No space left on device: ` + path + nodeErrorMessage, path);
-    case '16': return new Errors.EBUSY(userMessage + ` Device or resource busy: ` + path + nodeErrorMessage, path);
-    case '22': return new Errors.EINVAL(userMessage + ` Invalid argument: ` + path + nodeErrorMessage, path);
-    default: return new Errors.EIO(userMessage + ` IO error on path: ` + path + nodeErrorMessage, path);
+function mapNodeTauriErrorMessage(nodeError, path, userMessage= '') {
+    switch (nodeError.code) {
+    case 'ENOENT': return new Errors.ENOENT(userMessage + ` No such File or Directory: ` + path + nodeError.message, path);
+    case 'EEXIST': return new Errors.EEXIST(userMessage + ` File exists: ` + path + nodeError.message, path);
+    case '39': return new Errors.ENOTEMPTY(userMessage + ` Directory not empty: ` + path + nodeError.message, path);
+    case '20': return new Errors.ENOTDIR(userMessage + ` Not a Directory: ` + path + nodeError.message, path);
+    case '13': return new Errors.EACCES(userMessage + ` Permission denied: ` + path + nodeError.message, path);
+    case '21': return new Errors.EISDIR(userMessage + ` Is a directory: ` + path + nodeError.message, path);
+    case '9': return new Errors.EBADF(userMessage + ` Bad file number: ` + path + nodeError.message, path);
+    case '30': return new Errors.EROFS(userMessage + ` Read-only file system: ` + path + nodeError.message, path);
+    case '28': return new Errors.ENOSPC(userMessage + ` No space left on device: ` + path + nodeError.message, path);
+    case '16': return new Errors.EBUSY(userMessage + ` Device or resource busy: ` + path + nodeError.message, path);
+    case '22': return new Errors.EINVAL(userMessage + ` Invalid argument: ` + path + nodeError.message, path);
+    default: return new Errors.EIO(userMessage + ` IO error on path: ` + path + nodeError.message + "\nNode Error stack: " + nodeError.stack, path);
     }
 }
 
@@ -111,7 +110,7 @@ function _execCommandInternal(command, commandData, binaryData, resolve, reject)
  * @param binaryData {ArrayBuffer}
  * @returns {Promise<{metadata: Object, bufferData: ArrayBuffer}>} A promise that resolves with an object containing `metadata` and `bufferData` or rejects with error.
  */
-function _execCommand(command, commandData, binaryData) {
+function _execCommand(command, commandData = null, binaryData = undefined) {
     return new Promise((resolve, reject)=>{
         if(!_isSocketOpen(controlSocket) && !_isSocketOpen(dataSocket)) {
             _pendingCommandQueue.push({command, commandData, binaryData, resolve, reject});
@@ -290,23 +289,48 @@ function testNodeWsEndpoint(wsEndPoint, echoData, echoBuffer) {
     });
 }
 
+function _readDirWindowsDrives(path, options, callback) {
+    _execCommand(WS_COMMAND.GET_WINDOWS_DRIVES)
+        .then(({metadata})=>{
+            const drives = metadata.data.drives;
+            if(!options.withFileTypes) {
+                callback(null, drives);
+                return;
+            }
+            let entries = [];
+            for(let drive of drives) {
+                entries.push(Utils.createDummyStatObject(`${path}/${drive}`, true, Constants.TAURI_WS_DEVICE_NAME));
+            }
+            callback(null, entries);
+        })
+        .catch((err)=>{
+            callback(mapNodeTauriErrorMessage(err, path, 'Failed to get drives: '));
+        });
+}
+
 function readdir(path, options, callback) {
     if(IS_WINDOWS && path === Constants.TAURI_ROOT){
-        _execCommand(WS_COMMAND.GET_WINDOWS_DRIVES)
-            .then(drives=>{
-                console.log(drives);
-                // let entries = [];
-                // for(let drive of drives) {
-                //     entries.push({name: drive});
-                // }
-                //_readDirHelper(entries, path, options, callback, true);
-                // console.log(entries);
-            })
-            .catch((err)=>{
-                callback(mapNodeTauriErrorMessage(err, path, 'Failed to get drives: '));
-            });
+        _readDirWindowsDrives(path, options, callback);
         return;
     }
+    let platformPath = Utils.getTauriPlatformPath(path);
+    _execCommand(WS_COMMAND.READ_DIR, {path: platformPath, options})
+        .then(({metadata})=>{
+            if(metadata.data.contents){
+                callback(null, metadata.data.contents);
+            } else if(metadata.data.contentStats){
+                let stats = [];
+                for(let contentStat of metadata.data.contentStats) {
+                    stats.push(Utils.createFromNodeStat(`${path}/${contentStat.name}`,contentStat));
+                }
+                callback(null, stats);
+            } else {
+                callback(new Errors.EIO("Failed readdir as node ws connector returned empty", path));
+            }
+        })
+        .catch((err)=>{
+            callback(mapNodeTauriErrorMessage(err, path, 'Failed to read directory: '));
+        });
 }
 
 const NodeTauriFS = {

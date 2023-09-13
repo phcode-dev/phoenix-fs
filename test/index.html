@@ -17,6 +17,7 @@
         const TEST_TYPE_FS_ACCESS = "fs access";
         const TEST_TYPE_FILER = "filer";
         const TEST_TYPE_TAURI = "tauri";
+        const TEST_TYPE_TAURI_WS = "tauriWs";
         window.IS_WINDOWS = navigator.userAgent.includes('Windows');
     </script>
     <script>
@@ -59,7 +60,11 @@
                     pendingCommands[newCommandID]= {resolve:resolveP, reject:rejectP};
                     return promise;
                 }
-                window.isNodeSetup = true;
+                execNode(NODE_COMMANDS.GET_PORT)
+                    .then(message=>{
+                        fs.setNodeWSEndpoint(`ws://localhost:${message.port}/phoenixFS`);
+                        window.isNodeSetup = true;
+                    });
                 setInterval(()=>{
                     if(!window.isNodeTerminated) {
                         execNode(NODE_COMMANDS.HEART_BEAT);

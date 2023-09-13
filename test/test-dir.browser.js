@@ -1,4 +1,4 @@
-/* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI, path, iconv*/
+/* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI, TEST_TYPE_TAURI_WS, path, iconv*/
 
 function _setupTests(testType) {
     let testPath;
@@ -39,11 +39,23 @@ function _setupTests(testType) {
         switch (testType) {
         case TEST_TYPE_FS_ACCESS: testPath = window.mountTestPath;break;
         case TEST_TYPE_FILER: testPath = window.virtualTestPath;break;
+        case TEST_TYPE_TAURI_WS:
+            await window.waitForTrue(()=>{return window.isNodeSetup;},1000);
+            fs.forceUseNodeWSEndpoint(true);
+            testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}test-phoenix-fs`);
+            consoleLogToShell("using tauri websocket test path: "+ testPath);
+            break;
         case TEST_TYPE_TAURI:
             testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}test-phoenix-fs`);
             consoleLogToShell("using tauri test path: "+ testPath);
             break;
         default: throw new Error("unknown file system impl");
+        }
+    });
+
+    after(function () {
+        if(window.__TAURI__) {
+            fs.forceUseNodeWSEndpoint(false);
         }
     });
 
@@ -316,7 +328,12 @@ function _setupTests(testType) {
             expect(stats.mtime > 0).to.be.true;
             break;
         case TEST_TYPE_TAURI:
-            expect(stats.dev.startsWith("tauri")).to.be.true;
+            expect(stats.dev.split("_")[0]).to.eql("tauri");
+            expect(stats.mtime).to.be.an.instanceof(Date);
+            expect(stats.mtime > 0).to.be.true;
+            break;
+        case TEST_TYPE_TAURI_WS:
+            expect(stats.dev.split("_")[0]).to.eql("tauriWS");
             expect(stats.mtime).to.be.an.instanceof(Date);
             expect(stats.mtime > 0).to.be.true;
             break;
@@ -414,6 +431,10 @@ if(window.__TAURI__){
     describe(`Dir: Browser virtual fs tests: Tauri paths`, function () {
         _setupTests(TEST_TYPE_TAURI);
     });
+
+    describe(`Dir: Browser virtual fs tests: Tauri WebSocket paths`, function () {
+        _setupTests(TEST_TYPE_TAURI_WS);
+    });
 }
 
 if(window.supportsFsAccessAPIs){
@@ -455,32 +476,47 @@ describe(`Should phoenix be able to read root dir`, async function () {
             expect(contentsRead[0].dev).to.equal('nativeFsAccess');
         });
     }
+
+    async function _testTauriDir(expectedStatDeviceName) {
+        let readSuccess, contentsRead;
+        fs.readdir(`/tauri`, {withFileTypes: !!expectedStatDeviceName}, (err, contents)=>{
+            if(!err){
+                readSuccess = true;
+            }
+            contentsRead = contents;
+        });
+        await waitForTrue(()=>{return readSuccess;},1000);
+        expect(readSuccess).to.be.true;
+        expect(contentsRead.length>=1).to.be.true;
+        if(expectedStatDeviceName) {
+            expect(contentsRead[0].dev.split("_")[0]).to.eql(expectedStatDeviceName);
+        }
+    }
+
     if(window.__TAURI__){
+
+        before(async ()=>{
+            await window.waitForTrue(()=>{return window.isNodeSetup;},1000);
+        });
+
         it(`Should read root /tauri dir`, async function () {
-            let readSuccess, contentsRead;
-            fs.readdir(`/tauri`, (err, contents)=>{
-                if(!err){
-                    readSuccess = true;
-                }
-                contentsRead = contents;
-            });
-            await waitForTrue(()=>{return readSuccess;},1000);
-            expect(readSuccess).to.be.true;
-            expect(contentsRead.length>=1).to.be.true;
+            fs.forceUseNodeWSEndpoint(false);
+            await _testTauriDir();
         });
 
         it(`Should read root /tauri dir with file types`, async function () {
-            let readSuccess, contentsRead;
-            fs.readdir(`/tauri`, {withFileTypes: true}, (err, contents)=>{
-                if(!err){
-                    readSuccess = true;
-                }
-                contentsRead = contents;
-            });
-            await waitForTrue(()=>{return readSuccess;},1000);
-            expect(readSuccess).to.be.true;
-            expect(contentsRead.length>=1).to.be.true;
-            expect(contentsRead[0].dev.startsWith('tauri')).to.be.true;
+            fs.forceUseNodeWSEndpoint(false);
+            await _testTauriDir('tauri');
+        });
+
+        it(`Should read root /tauri dir using tauriWS`, async function () {
+            fs.forceUseNodeWSEndpoint(true);
+            await _testTauriDir();
+        });
+
+        it(`Should read root /tauri dir with file types using tauriWS`, async function () {
+            fs.forceUseNodeWSEndpoint(true);
+            await _testTauriDir('tauriWS');
         });
     }
 });
