@@ -333,6 +333,9 @@ const fileSystemLib = {
     forceUseNodeWSEndpoint: function (use) {
         return TauriFS.forceUseNodeWSEndpoint(use);
     },
+    preferNodeWSEndpoint: function (use) {
+        return TauriFS.preferNodeWSEndpoint(use);
+    },
     BYTE_ARRAY_ENCODING: Constants.BYTE_ARRAY_ENCODING,
     MOUNT_POINT_ROOT: Constants.MOUNT_POINT_ROOT,
     TAURI_ROOT: Constants.TAURI_ROOT,

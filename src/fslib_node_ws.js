@@ -100,6 +100,20 @@ function _isSocketOpen(socket) {
     return socket && socket.readyState === WebSocket.OPEN;
 }
 
+let isNodeWsConnected = false;
+
+/**
+ * Returns true if the node websocket connection is established and ready to take requests.
+ * @returns {boolean}
+ */
+function isNodeWSReady() {
+    return isNodeWsConnected;
+}
+
+function updateConnectionState() {
+    isNodeWsConnected = _isSocketOpen(controlSocket) || _isSocketOpen(dataSocket);
+}
+
 const _pendingCommandQueue = [],
     commandIdMap = {};
 
@@ -188,6 +202,7 @@ async function _establishAndMaintainConnection(socketType, firstConnectCB) {
                     .catch(console.error);
             }
             _execPendingCommands();
+            updateConnectionState();
         });
 
         ws.addEventListener('message', function (event) {
@@ -200,6 +215,7 @@ async function _establishAndMaintainConnection(socketType, firstConnectCB) {
 
         ws.addEventListener('close', function () {
             wsClosePromiseResolve();
+            updateConnectionState();
         });
         await wsClosePromise;
         const backoffTime = Math.min(ws.backoffTime * 2, MAX_RECONNECT_BACKOFF_TIME_MS) || 1;
@@ -383,6 +399,7 @@ const NodeTauriFS = {
     setNodeWSEndpoint,
     stopNodeWSEndpoint,
     getNodeWSEndpoint,
+    isNodeWSReady,
     readdir,
     stat,
     readBinaryFile,

@@ -868,3 +868,34 @@ open across failures and automatically reconnects as necessary.
 - **Returns:**
   - Promise<void>
 
+
+### `fs.forceUseNodeWSEndpoint(use)`
+
+Forces the usage of the Node WebSocket endpoint.
+Throws an error if the Node WebSocket endpoint is not set.
+
+- **Parameters**
+  - `use`: Boolean
+    - If `true`, forces the use of the Node WebSocket endpoint.
+
+- **Throws**
+  - Throws an error if the Node WebSocket endpoint has not been set.
+  - Call `fs.setNodeWSEndpoint(websocketEndpoint)` before calling this API.
+
+---
+
+### `fs.preferNodeWSEndpoint(use)`
+
+Sets the preference to use the Node WebSocket endpoint if available.
+Throws an error if the Node WebSocket endpoint is not set.
+If a Node connection is not available, it falls back to Tauri.
+To always force the library to use the Node WebSocket endpoint for all FS APIs, use `fs.forceUseNodeWSEndpoint`.
+
+- **Parameters**
+  - `use`: Boolean
+    - If `true`, prefers the use of the Node WebSocket endpoint when available.
+
+- **Throws**
+  - Throws an error if the Node WebSocket endpoint has not been set.
+  - Call `fs.setNodeWSEndpoint(websocketEndpoint)` before calling this this API.
+
