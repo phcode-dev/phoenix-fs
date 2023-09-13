@@ -387,6 +387,11 @@ function stat(path, callback, options= {}) {
 
 function unlink(path, callback) {
     path = globalObject.path.normalize(path);
+
+    if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
+        return NodeTauriFS.unlink(path, callback);
+    }
+
     function errCallback(err) {
         callback(mapOSTauriErrorMessage(err, path, 'Failed to unlink'));
     }
