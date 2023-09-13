@@ -1,9 +1,13 @@
-/* global expect,fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER */
+/* global expect,fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI_WS */
 
 function _setupTests(testType) {
     let testPath;
     let worker;
     let messageFromWorker = null;
+
+    function consoleLogToShell(message) {
+        return window.__TAURI__.invoke("console_log", {message});
+    }
 
     async function _clean() {
         console.log(`cleaning: `, testPath);
@@ -17,7 +21,7 @@ function _setupTests(testType) {
     async function _init() {
         console.log(`mkdir: `, testPath);
         let cleanSuccess = false;
-        fs.mkdirs(testPath, 777 ,true, ()=>{
+        fs.mkdirs(testPath, 0o777 ,true, ()=>{
             cleanSuccess = true;
         });
         await waitForTrue(()=>{return cleanSuccess;},10000);
@@ -40,16 +44,22 @@ function _setupTests(testType) {
         });
     }
 
-    function _setupTestPath() {
+    async function _setupTestPath() {
         switch (testType) {
         case TEST_TYPE_FS_ACCESS: testPath = window.mountTestPath;break;
         case TEST_TYPE_FILER: testPath = window.virtualTestPath;break;
+        case TEST_TYPE_TAURI_WS:
+            await window.waitForTrue(()=>{return window.isNodeSetup;},1000);
+            fs.forceUseNodeWSEndpoint(true);
+            testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}test-phoenix-fs`);
+            consoleLogToShell("using tauri websocket test path: "+ testPath);
+            break;
         default: throw new Error("unknown file system impl");
         }
     }
 
     before(async function () {
-        _setupTestPath();
+        await _setupTestPath();
         await _clean();
         await _init();
         await _requestWritePerm();
@@ -59,6 +69,12 @@ function _setupTests(testType) {
             console.log(`From Worker:`, event);
             messageFromWorker = event.data;
         };
+        if(testType === TEST_TYPE_TAURI_WS){
+            await window.waitForTrue(()=>{return window.isNodeSetup;},1000);
+            worker.postMessage({command: `tauriWSInit`, wsEndpoint: window.nodeWSEndpoint});
+            let status = await waitForWorkerMessage(`tauriWSInit.ok`, 1000);
+            expect(status).to.be.true;
+        }
     });
 
     after(async function () {
@@ -138,11 +154,25 @@ function _setupTests(testType) {
         let status = await waitForWorkerMessage(`deleteCheck.ok`, 1000);
         expect(status).to.be.true;
     });
+
+    it(`Should phoenix ${testType} stat in worker`, async function () {
+        await _writeFile();
+        messageFromWorker = null;
+        worker.postMessage({command: `checkStatInPath`, path: `${testPath}/workerWrite.txt`});
+        let status = await waitForWorkerMessage(`checkStatInPath.ok`, 1000);
+        expect(status).to.be.true;
+    });
 }
 
 describe(`web worker filer tests`, function () {
     _setupTests(TEST_TYPE_FILER);
 });
+
+if(window.__TAURI__){
+    describe(`web worker Tauri WS tests`, function () {
+        _setupTests(TEST_TYPE_TAURI_WS);
+    });
+}
 
 if(window.supportsFsAccessAPIs) {
     describe(`web worker fs access tests`, function () {

@@ -186,7 +186,7 @@ function mapOSTauriErrorMessage(tauriErrorMessage, path, userMessage= '') {
 }
 
 async function _getTauriStat(vfsPath) {
-    let stats = await window.__TAURI__.invoke("plugin:fs-extra|metadata", {
+    let stats = await globalObject.__TAURI__.invoke("plugin:fs-extra|metadata", {
         path: globalObject.fs.getTauriPlatformPath(vfsPath)
     });
     return Utils.createFromTauriStat(vfsPath, stats);
@@ -252,7 +252,7 @@ function readdir(path, options, callback) {
         options = {};
     }
 
-    if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
+    if(!globalObject.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
         return NodeTauriFS.readdir(path, options, callback);
     }
 
@@ -325,7 +325,7 @@ function mkdirs(path, mode, recursive, callback) {
         };
     }
 
-    if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
+    if(!globalObject.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
         NodeTauriFS.mkdirs(path, mode, recursive, callback);
         return;
     }
@@ -373,7 +373,7 @@ function mkdirs(path, mode, recursive, callback) {
  */
 function stat(path, callback, options= {}) {
     path = globalObject.path.normalize(path);
-    if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
+    if(!globalObject.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
         return NodeTauriFS.stat(path, callback, options);
     }
     _getTauriStat(path)
@@ -388,7 +388,7 @@ function stat(path, callback, options= {}) {
 function unlink(path, callback) {
     path = globalObject.path.normalize(path);
 
-    if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
+    if(!globalObject.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
         return NodeTauriFS.unlink(path, callback);
     }
 
@@ -415,7 +415,7 @@ function rename(oldPath, newPath, callback) {
     oldPath = globalObject.path.normalize(oldPath);
     newPath = globalObject.path.normalize(newPath);
 
-    if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
+    if(!globalObject.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
         NodeTauriFS.rename(oldPath, newPath, callback);
         return;
     }
@@ -502,7 +502,7 @@ function readFile(path, options, callback) {
         callback = arguments[arguments.length - 1];
         options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'r');
 
-        if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
+        if(!globalObject.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
             NodeTauriFS.readBinaryFile(path)
                 .then(contents => {
                     // contents is Array buffer
@@ -580,7 +580,7 @@ function writeFile (path, data, options, callback) {
             }
             arrayBuffer = Utils.getEncodedArrayBuffer(data, options.encoding);
         }
-        if(!window.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
+        if(!globalObject.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
             NodeTauriFS.writeBinaryFile(path, options.mode || 0o666, options.flag, arrayBuffer)
                 .then(() => {
                     callback(null);

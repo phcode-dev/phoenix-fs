@@ -63,6 +63,7 @@
                 }
                 execNode(NODE_COMMANDS.GET_PORT)
                     .then(message=>{
+                        window.nodeWSEndpoint = `ws://localhost:${message.port}/phoenixFS`;
                         fs.setNodeWSEndpoint(`ws://localhost:${message.port}/phoenixFS`);
                         window.isNodeSetup = true;
                     });
@@ -79,7 +80,7 @@
 
     <script class="mocha-init">
         mocha.setup('bdd');
-        mocha.globals(['isNodeTerminated', 'isNodeSetup', 'execNode']);
+        mocha.globals(['isNodeTerminated', 'isNodeSetup', 'execNode', 'nodeWSEndpoint']);
         mocha.checkLeaks();
     </script>
 
