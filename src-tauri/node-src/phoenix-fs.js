@@ -108,7 +108,8 @@ const WS_COMMAND = {
     READ_BIN_FILE: "readBinFile",
     WRITE_BIN_FILE: "writeBinFile",
     MKDIR: "mkdir",
-    RENAME: "rename"
+    RENAME: "rename",
+    UNLINK: "unlink"
 };
 
 const LARGE_DATA_THRESHOLD = 2*1024*1024; // 2MB
@@ -247,7 +248,7 @@ function _mkdir(ws, metadata) {
     fs.mkdir(fullPath, {recursive, mode})
         .then( ()=> {
             _sendResponse(ws, metadata);
-        }).catch((err)=>_reportError(ws, metadata, err, `Failed to write file at path ${fullPath}`));
+        }).catch((err)=>_reportError(ws, metadata, err, `Failed to mkdir at path ${fullPath}`));
 }
 
 function _rename(ws, metadata) {
@@ -257,6 +258,14 @@ function _rename(ws, metadata) {
         .then( ()=> {
             _sendResponse(ws, metadata);
         }).catch((err)=>_reportError(ws, metadata, err, `Failed to rename file at path ${oldPath} to ${newPath}`));
+}
+
+function _unlink(ws, metadata) {
+    const fullPath = metadata.data.path;
+    fs.rm(fullPath, {recursive: true})
+        .then( ()=> {
+            _sendResponse(ws, metadata);
+        }).catch((err)=>_reportError(ws, metadata, err, `Failed to unlink path ${fullPath}`));
 }
 
 function processWSCommand(ws, metadata, dataBuffer) {
@@ -288,6 +297,9 @@ function processWSCommand(ws, metadata, dataBuffer) {
             return;
         case WS_COMMAND.RENAME:
             _rename(ws, metadata);
+            return;
+        case WS_COMMAND.UNLINK:
+            _unlink(ws, metadata);
             return;
         case WS_COMMAND.LARGE_DATA_SOCKET_ANNOUNCE:
             console.log("Large Data Transfer Socket established, socket Group: ", metadata.socketGroupID);

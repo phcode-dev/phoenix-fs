@@ -38,7 +38,8 @@ const WS_COMMAND = {
     READ_BIN_FILE: "readBinFile",
     WRITE_BIN_FILE: "writeBinFile",
     MKDIR: "mkdir",
-    RENAME: "rename"
+    RENAME: "rename",
+    UNLINK: "unlink"
 };
 
 // each browser context belongs to a single socket group. So multiple websocket connections can be pooled
@@ -419,6 +420,17 @@ function rename(oldPath, newPath, callback) {
         });
 }
 
+function unlink(path, callback) {
+    const platformPath = Utils.getTauriPlatformPath(path);
+    _execCommand(WS_COMMAND.UNLINK, {path: platformPath})
+        .then(()=>{
+            callback(null);
+        })
+        .catch((err)=>{
+            callback(mapNodeTauriErrorMessage(err, path, 'Failed to unlink: '));
+        });
+}
+
 const NodeTauriFS = {
     testNodeWsEndpoint,
     setNodeWSEndpoint,
@@ -430,7 +442,8 @@ const NodeTauriFS = {
     stat,
     readBinaryFile,
     writeBinaryFile,
-    rename
+    rename,
+    unlink
 };
 
 module.exports = {
