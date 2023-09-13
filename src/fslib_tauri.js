@@ -167,20 +167,20 @@ function extractErrorNumber(str) {
 function mapOSTauriErrorMessage(tauriErrorMessage, path, userMessage= '') {
     let errorNumber = extractErrorNumber(tauriErrorMessage);
     switch (errorNumber) {
-    case '2': return new Errors.ENOENT(userMessage + ` No such File or Directory: ` + path + tauriErrorMessage, path);
-    case '3': return new Errors.ENOENT(userMessage + ` System cannot find the path specified: ` + path + tauriErrorMessage, path); // windows
-    case '17': return new Errors.EEXIST(userMessage + ` File exists: ` + path + tauriErrorMessage, path);
-    case '183': return new Errors.EEXIST(userMessage + ` File exists: ` + path + tauriErrorMessage, path); // windows
-    case '39': return new Errors.ENOTEMPTY(userMessage + ` Directory not empty: ` + path + tauriErrorMessage, path);
-    case '20': return new Errors.ENOTDIR(userMessage + ` Not a Directory: ` + path + tauriErrorMessage, path);
-    case '13': return new Errors.EACCES(userMessage + ` Permission denied: ` + path + tauriErrorMessage, path);
-    case '21': return new Errors.EISDIR(userMessage + ` Is a directory: ` + path + tauriErrorMessage, path);
-    case '9': return new Errors.EBADF(userMessage + ` Bad file number: ` + path + tauriErrorMessage, path);
-    case '30': return new Errors.EROFS(userMessage + ` Read-only file system: ` + path + tauriErrorMessage, path);
-    case '28': return new Errors.ENOSPC(userMessage + ` No space left on device: ` + path + tauriErrorMessage, path);
-    case '16': return new Errors.EBUSY(userMessage + ` Device or resource busy: ` + path + tauriErrorMessage, path);
-    case '22': return new Errors.EINVAL(userMessage + ` Invalid argument: ` + path + tauriErrorMessage, path);
-    default: return new Errors.EIO(userMessage + ` IO error on path: ` + path + tauriErrorMessage, path);
+    case '2': return new Errors.ENOENT(userMessage + ` No such File or Directory: ${path} ` + tauriErrorMessage, path);
+    case '3': return new Errors.ENOENT(userMessage + ` System cannot find the path specified: ${path} ` + tauriErrorMessage, path); // windows
+    case '17': return new Errors.EEXIST(userMessage + ` File exists: ${path} ` + tauriErrorMessage, path);
+    case '183': return new Errors.EEXIST(userMessage + ` File exists: ${path} ` + tauriErrorMessage, path); // windows
+    case '39': return new Errors.ENOTEMPTY(userMessage + ` Directory not empty: ${path} ` + tauriErrorMessage, path);
+    case '20': return new Errors.ENOTDIR(userMessage + ` Not a Directory: ${path} ` + tauriErrorMessage, path);
+    case '13': return new Errors.EACCES(userMessage + ` Permission denied: ${path} ` + tauriErrorMessage, path);
+    case '21': return new Errors.EISDIR(userMessage + ` Is a directory: ${path} ` + tauriErrorMessage, path);
+    case '9': return new Errors.EBADF(userMessage + ` Bad file number: ${path} ` + tauriErrorMessage, path);
+    case '30': return new Errors.EROFS(userMessage + ` Read-only file system: ${path} ` + tauriErrorMessage, path);
+    case '28': return new Errors.ENOSPC(userMessage + ` No space left on device: ${path} ` + tauriErrorMessage, path);
+    case '16': return new Errors.EBUSY(userMessage + ` Device or resource busy: ${path} ` + tauriErrorMessage, path);
+    case '22': return new Errors.EINVAL(userMessage + ` Invalid argument: ${path} ` + tauriErrorMessage, path);
+    default: return new Errors.EIO(userMessage + ` IO error on path: ${path} ` + tauriErrorMessage, path);
     }
 }
 
@@ -251,7 +251,7 @@ function readdir(path, options, callback) {
         options = {};
     }
 
-    if(!window.__TAURI__ || preferNodeWs || options.useNodeWSEndpoint) {
+    if(!window.__TAURI__ || preferNodeWs) {
         return NodeTauriFS.readdir(path, options, callback);
     }
 
@@ -365,8 +365,11 @@ function mkdirs(path, mode, recursive, callback) {
  *
  * @returns {void}
  */
-function stat(path, callback) {
+function stat(path, callback, options= {}) {
     path = globalObject.path.normalize(path);
+    if(!window.__TAURI__ || preferNodeWs) {
+        return NodeTauriFS.stat(path, callback, options);
+    }
     _getTauriStat(path)
         .then(stat =>{
             callback(null, stat);

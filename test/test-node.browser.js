@@ -13,7 +13,6 @@ describe(`node ws fs tests`, function () {
         expect(message.port).to.be.a('number');
         wssPort = message.port;
         wssEndpoint = `ws://localhost:${wssPort}/phoenixFS`;
-        await fs.setNodeWSEndpoint(wssEndpoint);
     });
 
     it(`Node be present and ping pong`, async function () {
