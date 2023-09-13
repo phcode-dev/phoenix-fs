@@ -481,11 +481,21 @@ function _processContents(contents, encoding, callback, path) {
 function readFile(path, options, callback) {
     try {
         path = globalObject.path.normalize(path);
-        const platformPath = Utils.getTauriPlatformPath(path);
 
         callback = arguments[arguments.length - 1];
         options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'r');
 
+        if(!window.__TAURI__ || preferNodeWs) {
+            NodeTauriFS.readBinaryFile(path)
+                .then(contents => {
+                    // contents is Array buffer
+                    _processContents(contents, options.encoding, callback, path);
+                })
+                .catch(callback);
+            return;
+        }
+
+        const platformPath = Utils.getTauriPlatformPath(path);
         __TAURI__.fs.readBinaryFile(platformPath)
             .then(contents => {
                 // contents is Uint8Array

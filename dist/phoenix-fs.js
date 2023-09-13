@@ -6,6 +6,21 @@ const { exec } = require('child_process');
 
 const IS_MACOS = os.platform() === 'darwin';
 
+/**
+ * Converts a buffer to an `ArrayBuffer`.
+ *
+ * @param {Buffer} buf The buffer to convert
+ * @return {ArrayBuffer} Converted buffer
+ * @public
+ */
+function toArrayBuffer(buf) {
+    if (buf.length === buf.buffer.byteLength) {
+        return buf.buffer;
+    }
+
+    return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.length);
+}
+
 function getWindowsDrives(callback) {
     exec('wmic logicaldisk get name', (error, stdout) => {
         if (error) {
@@ -89,7 +104,8 @@ const WS_COMMAND = {
     CONTROL_SOCKET_ANNOUNCE: "controlSock",
     GET_WINDOWS_DRIVES: "getWinDrives",
     READ_DIR: "readDir",
-    STAT: "stat"
+    STAT: "stat",
+    READ_BIN_FILE: "readBinFile"
 };
 
 const LARGE_DATA_THRESHOLD = 2*1024*1024; // 2MB
@@ -196,6 +212,14 @@ function _stat(ws, metadata) {
         }).catch((err)=>_reportError(ws, metadata, err, `Failed to get stat for ${fullPath}`));
 }
 
+function _readBinaryFile(ws, metadata) {
+    const fullPath = metadata.data.path;
+    fs.readFile(fullPath)
+        .then(data => {
+            _sendResponse(ws, metadata, {}, toArrayBuffer(data));
+        }).catch((err)=>_reportError(ws, metadata, err, `Failed to read file at path ${fullPath}`));
+}
+
 function processWSCommand(ws, metadata, dataBuffer) {
     try{
         switch (metadata.commandCode) {
@@ -213,6 +237,9 @@ function processWSCommand(ws, metadata, dataBuffer) {
             return;
         case WS_COMMAND.STAT:
             _stat(ws, metadata);
+            return;
+        case WS_COMMAND.READ_BIN_FILE:
+            _readBinaryFile(ws, metadata);
             return;
         case WS_COMMAND.LARGE_DATA_SOCKET_ANNOUNCE:
             console.log("Large Data Transfer Socket established, socket Group: ", metadata.socketGroupID);
