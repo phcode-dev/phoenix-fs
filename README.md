@@ -189,7 +189,7 @@ Below is a quick guide to get your Phoenix-FS server up and running.
 
 ```javascript
 // If you're using CommonJS syntax:
-const { CreatePhoenixFsServer } = require('@phcode/fs/dist/phoenix-fs');
+const { CreatePhoenixFsServer , setDebugMode} = require('@phcode/fs/dist/phoenix-fs');
 
 // If you prefer ES6 module syntax, use the import statement instead:
 // import { CreatePhoenixFsServer } from '@phcode/fs/dist/phoenix-fs';
@@ -200,6 +200,8 @@ const server = http.createServer((req, res) => {
   res.end('WebSocket server is operational');
 });
 
+// set debug mode to true if you want to see more logs
+setDebugMode(true); // remove this in production!
 // Attach the Phoenix websocket server to the HTTP server. 
 // By default, the WebSocket server endpoint will be `ws://localhost:3000/phoenixFS`
 CreatePhoenixFsServer(server);

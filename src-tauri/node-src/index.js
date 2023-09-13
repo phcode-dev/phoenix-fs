@@ -61,6 +61,7 @@ getFreePort().then((port) => {
     serverPortResolve(port);
     console.log('Server Opened on port: ', port);
 
+    PhoenixFS.setDebugMode(true);
     PhoenixFS.CreatePhoenixFsServer(server);
     // Start the HTTP server on port 3000
     server.listen(port, () => {
