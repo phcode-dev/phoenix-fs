@@ -37,7 +37,8 @@ const WS_COMMAND = {
     STAT: "stat",
     READ_BIN_FILE: "readBinFile",
     WRITE_BIN_FILE: "writeBinFile",
-    MKDIR: "mkdir"
+    MKDIR: "mkdir",
+    RENAME: "rename"
 };
 
 // each browser context belongs to a single socket group. So multiple websocket connections can be pooled
@@ -399,11 +400,22 @@ function mkdirs(path, mode, recursive, callback) {
     const platformPath = Utils.getTauriPlatformPath(path);
     _execCommand(WS_COMMAND.MKDIR, {path: platformPath, mode, recursive})
         .then(()=>{
-            console.log("dir created: ", platformPath);
             callback(null);
         })
         .catch((err)=>{
             callback(mapNodeTauriErrorMessage(err, path, 'Failed to mkdir: '));
+        });
+}
+
+function rename(oldPath, newPath, callback) {
+    const oldPlatformPath = Utils.getTauriPlatformPath(oldPath);
+    const newPlatformPath = Utils.getTauriPlatformPath(newPath);
+    _execCommand(WS_COMMAND.RENAME, {oldPath: oldPlatformPath, newPath: newPlatformPath})
+        .then(()=>{
+            callback(null);
+        })
+        .catch((err)=>{
+            callback(mapNodeTauriErrorMessage(err, oldPath, `Failed to rename: ${oldPath} to ${newPath}`));
         });
 }
 
@@ -417,7 +429,8 @@ const NodeTauriFS = {
     mkdirs,
     stat,
     readBinaryFile,
-    writeBinaryFile
+    writeBinaryFile,
+    rename
 };
 
 module.exports = {
