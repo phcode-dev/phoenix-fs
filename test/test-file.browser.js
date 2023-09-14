@@ -518,7 +518,7 @@ function _setupTests(testType) {
 
     async function _testLargeFileRW(filePath, sizeBytes, isBinary) {
         console.log("creating random string of size", sizeBytes);
-        let timerLabel = "random data generated " + sizeBytes/1024/1024 +"MB";
+        let timerLabel = "random data generated " + sizeBytes/1024/1024 +"MB" + filePath;
         console.time(timerLabel);
         let contentWrittenToFile = createRandomString(sizeBytes);
         const binaryConversion = stringToArrayBuffer(contentWrittenToFile);
@@ -527,7 +527,7 @@ function _setupTests(testType) {
         }
         console.timeEnd(timerLabel);
 
-        timerLabel = "File write completed " + sizeBytes/1024/1024 +"MB";
+        timerLabel = "File write completed " + sizeBytes/1024/1024 +"MB"  + filePath;
         console.time(timerLabel);
         let resolveP, rejectP;
         const writePromise = new Promise((resolve, reject) => {resolveP = resolve; rejectP = reject;});
@@ -541,7 +541,7 @@ function _setupTests(testType) {
         await writePromise;
         console.timeEnd(timerLabel);
 
-        timerLabel = "File read completed " + sizeBytes/1024/1024 +"MB";
+        timerLabel = "File read completed " + sizeBytes/1024/1024 +"MB"  + filePath;
         console.time(timerLabel);
 
         const readPromise = new Promise((resolve, reject) => {resolveP = resolve; rejectP = reject;});
@@ -555,7 +555,7 @@ function _setupTests(testType) {
         const dataReadFromFile = await readPromise;
         console.timeEnd(timerLabel);
 
-        timerLabel = "File verify completed " + sizeBytes/1024/1024 +"MB";
+        timerLabel = "File verify completed " + sizeBytes/1024/1024 +"MB"  + filePath;
         console.time(timerLabel);
 
         expect(dataReadFromFile).to.eql(contentWrittenToFile);
@@ -580,6 +580,22 @@ function _setupTests(testType) {
             const filePath = `${testPath}/browserWrite.txt`;
             await _testLargeFileRW(filePath, sizeMB * 1024 * 1024, true); // Roughly 4MB considering 1 byte per char
         }).timeout(60000);
+
+        it(`Should phoenix ${testType} read and write 1000 Binary files of size ${sizeMB} KB serially`, async function () {
+            for(let j=0;j<1000;j++){
+                const filePath = `${testPath}/browserWrite.txt`;
+                await _testLargeFileRW(filePath, sizeMB * 1024, true); // Roughly 4MB considering 1 byte per char
+            }
+        }).timeout(120000);
+
+        it(`Should phoenix ${testType} read and write 1000 Binary files of size ${sizeMB} KB in parallel`, async function () {
+            let fileVerifyPromises = [];
+            for(let j=0;j<1000;j++){
+                const filePath = `${testPath}/browserWrite_${j}.txt`;
+                fileVerifyPromises.push(_testLargeFileRW(filePath, sizeMB * 1024, true)); // Roughly 4MB considering 1 byte per char
+            }
+            await Promise.all(fileVerifyPromises);
+        }).timeout(120000);
     }
 }
 
