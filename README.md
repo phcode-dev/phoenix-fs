@@ -25,11 +25,17 @@ Here's a closer look at the Phoenix VFS organization:
   - **Windows Example**: `/tauri/c/Program Files/` could represent the C drive's "Program Files" directory.
   - **Linux/macOS Example**: `/tauri/usr/bin/` might be an accessible directory, akin to native paths you'd expect on these platforms.
 
-By adopting Phoenix VFS, you're not just leveraging a file system; you're integrating a dynamic, adaptable layer that bridges the web and native worlds, making your web applications more powerful and efficient.
+- **Node Websocket Connector Integration**:
+  - The `/tauri/` paths can be accessed via websockets. This integration is much more
+    performant than tauri's fs rust APIs(generally 4x faster and 10x faster for large files).
+  - As we use websockets to connection to a node process that executes the actual fs operations,
+    the ws backed `/tauri/` apis are available in all web/shared/service workers.
+  - This is recommended to use in main browser window as well, as this will releive the main thread
+    of tauri fs access apis that typically leads to blocking/freezing js window on large file access.
+  - Supports filesystem watcher APIs. On all other endpoints, the virtual watchers are only capable of
+    emitting file change events on files that has been modified within its window/browser only.
 
----
-
-You can then continue with installation instructions, usage, and other sections relevant to your library in the README.
+By adopting Phoenix VFS, you're not just leveraging a file system; you're integrating a dynamic, adaptable layer that bridges the web and native worlds, making your web applications more powerful and reduces development time and costs.
 
 <!-- TOC -->
 * [Phoenix Browser Virtual File System](#phoenix-browser-virtual-file-system)
@@ -168,10 +174,6 @@ Then:
 1. Copy `src-tauri/src/platform.rs` to the same folder of your tauri main file.
 2. Copy all `#[tauri::command]` from `src-tauri/src/main.rs` to your tauri main file.
 3. Update your `tauri::Builder::default()` section in your tauri `main fn()`
-
-Certainly! Here's a polished presentation for a GitHub `README.md` for your project:
-
----
 
 ## Usage in Tauri with Node Websocket Connector
 
