@@ -580,19 +580,22 @@ function _setupTests(testType) {
             const filePath = `${testPath}/browserWrite.txt`;
             await _testLargeFileRW(filePath, sizeMB * 1024 * 1024, true); // Roughly 4MB considering 1 byte per char
         }).timeout(60000);
+    }
 
-        it(`Should phoenix ${testType} read and write 1000 Binary files of size ${sizeMB} KB serially`, async function () {
+    let sizeKBs = [1, 4];
+    for(let sizeKB of sizeKBs) {
+        it(`Should phoenix ${testType} read and write 1000 Binary files of size ${sizeKB} KB serially`, async function () {
             for(let j=0;j<1000;j++){
                 const filePath = `${testPath}/browserWrite.txt`;
-                await _testLargeFileRW(filePath, sizeMB * 1024, true); // Roughly 4MB considering 1 byte per char
+                await _testLargeFileRW(filePath, sizeKB * 1024, true); // Roughly 4MB considering 1 byte per char
             }
         }).timeout(120000);
 
-        it(`Should phoenix ${testType} read and write 1000 Binary files of size ${sizeMB} KB in parallel`, async function () {
+        it(`Should phoenix ${testType} read and write 1000 Binary files of size ${sizeKB} KB in parallel`, async function () {
             let fileVerifyPromises = [];
             for(let j=0;j<1000;j++){
                 const filePath = `${testPath}/browserWrite_${j}.txt`;
-                fileVerifyPromises.push(_testLargeFileRW(filePath, sizeMB * 1024, true)); // Roughly 4MB considering 1 byte per char
+                fileVerifyPromises.push(_testLargeFileRW(filePath, sizeKB * 1024, true)); // Roughly 4MB considering 1 byte per char
             }
             await Promise.all(fileVerifyPromises);
         }).timeout(120000);
