@@ -24,7 +24,7 @@
 
 let _channel = null;
 let _watchListeners = [];
-const globMatch = require('./thirdparty/globmatch');
+const anymatch = require('anymatch');
 
 const WATCH_EVENT_NOTIFICATION = 'PHOENIX_WATCH_EVENT_NOTIFICATION';
 const WATCH_EVENT_CREATED = 'created';
@@ -49,14 +49,7 @@ function _broadcastWatchEvent(event) {
 }
 
 function _isAnIgnoredPath(path, ignoreGlobList) {
-    if(ignoreGlobList && ignoreGlobList.length > 0){
-        for (const glob of ignoreGlobList){
-            if (globMatch(path, glob)) {
-                return true;
-            }
-        }
-    }
-    return false;
+    return anymatch(ignoreGlobList, path);
 }
 
 function _isSameOrSubDirectory(parent, child) {
