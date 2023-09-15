@@ -1,17 +1,17 @@
-## thirparty/buffer-min.js
-
-The buffer module from node.js, for the browser.
-
-
-Git: https://github.com/feross/buffer
-Copyright (C) Feross Aboukhadijeh, and other contributors.
-Originally forked from an MIT-licensed module by Romain Beauxis.
-MIT License
-
 ## thirparty/idb-min.js
 ISC License (ISC)
 Copyright (c) 2016, Jake Archibald <jaffathecake@gmail.com>
 
-## thirparty/globmatch.js
-modified version of https://www.npmjs.com/package/minimatch
+## https://www.npmjs.com/package/anymatch
 ISC License (ISC)
+Copyright (c) 2019 Elan Shanker, Paul Miller (https://paulmillr.com)
+
+## https://www.npmjs.com/package/ws
+MIT License
+Copyright (c) 2011 Einar Otto Stangvik <einaros@gmail.com>
+Copyright (c) 2013 Arnout Kazemier and contributors
+Copyright (c) 2016 Luigi Pinca and contributors
+
+## https://www.npmjs.com/package/iconv-lite
+MIT License
+Copyright (c) 2011 Alexander Shtuchkin

@@ -15,7 +15,9 @@
     "url": "https://github.com/phcode-dev/phoenix-fs"
   },
   "WARN!!!": "Dont forget to copy the deps here to the root package.json as that is the deps used by third partys who import this lib from npm",
+  "IMPORTANT!!": "Do not add big dependencies, keep it as minimal. Currently at 21 node modeule files and 148KB",
   "dependencies": {
-    "ws": "^8.13.0"
+    "ws": "^8.13.0",
+    "chokidar": "^3.5.3"
   }
 }
