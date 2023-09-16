@@ -46,6 +46,7 @@
     "browser-mime": "1.0.1",
     "buffer": "^6.0.3",
     "eslint": "8.19.0",
+    "events": "^3.3.0",
     "filer": "1.4.1",
     "http-server": "14.1.0",
     "iconv-lite": "^0.6.3",
@@ -59,6 +60,8 @@
     "workbox-window": "4.2.0"
   },
   "dependencies": {
+    "chokidar": "^3.5.3",
+    "ignore": "^5.2.4",
     "ws": "^8.13.0"
   }
 }

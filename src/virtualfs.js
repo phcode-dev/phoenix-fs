@@ -1,6 +1,7 @@
 /*global globalObject, virtualfs*/
 
 const Filer = require('filer');
+const EventEmitter = require('events');
 
 let virtualGlobalObject = {};
 let env = 'browser';
@@ -27,7 +28,12 @@ setupGlobalObject();
 
 const urlParams = new URLSearchParams(location.search);
 globalObject.Filer = Filer;
-globalObject.Buffer = Buffer;
+if(!globalObject.Buffer){
+    globalObject.Buffer = Buffer;
+}
+if(!globalObject.EventEmitter){
+    globalObject.EventEmitter = EventEmitter;
+}
 globalObject.virtualfs = {
     urlParams : urlParams,
     debugMode : globalObject.debugMode || urlParams.get('debug') === 'true',

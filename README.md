@@ -58,6 +58,7 @@ By adopting Phoenix VFS, you're not just leveraging a file system; you're integr
     * [Use `fs.BYTE_ARRAY_ENCODING` for binary files](#use-fsbytearrayencoding-for-binary-files)
   * [`fs.Buffer`](#fsbuffer)
     * [Buffer Encodings support](#buffer-encodings-support)
+  * [`EventEmitter`](#eventemitter)
   * [`fs.mountNativeFolder(optionalDirHandle?, callback)` Function](#fsmountnativefolderoptionaldirhandle-callback-function)
     * [Parameters:](#parameters)
     * [Example Usage:](#example-usage)
@@ -313,19 +314,25 @@ any of the below APIs if there are some errors.
 ## Supported file encodings
 When using file read and write apis, use `fs.SUPPORTED_ENCODINGS.*` to get a supported encoding.
 
-The [iconv](https://www.npmjs.com/package/iconv-lite) library can also be directly accessed under `fs.iconv` variable for advanced uses.
+The [iconv](https://www.npmjs.com/package/iconv-lite) library can also be directly accessed under `fs.utils.iconv` variable for advanced uses.
 
 ```js
 // Examples:
 // Convert from an encoded buffer to a js string.
-str = fs.iconv.decode(Buffer.from([0x68, 0x65, 0x6c, 0x6c, 0x6f]), 'win1251');
+str = fs.utils.iconv.decode(Buffer.from([0x68, 0x65, 0x6c, 0x6c, 0x6f]), 'win1251');
 
 // Convert from a js string to an encoded buffer.
-buf = fs.iconv.encode("Sample input string", 'win1251');
+buf = fs.utils.iconv.encode("Sample input string", 'win1251');
 
 // Check if encoding is supported
-fs.iconv.encodingExists("us-ascii")
+fs.utils.iconv.encodingExists("us-ascii")
 ```
+
+## `fs.utils`
+`fs.utils` houses several file related utilities. 
+1. [`fs.utils.iconv`](https://www.npmjs.com/package/iconv-lite) - iconv-lite: Pure JS character encoding conversion library. See API docs here: https://www.npmjs.com/package/iconv-lite
+2. [`fs.utils.anymatch`](https://github.com/micromatch/anymatch) - Javascript module to match a string against a regular expression, glob, string, or function that takes the string as an argument and returns a truthy or falsy value. The matcher can also be an array of any or all of these. Useful for allowing a very flexible user-defined config to define things like file paths. Docs: https://github.com/micromatch/anymatch
+3. [`fs.utils.ignore`](https://www.npmjs.com/package/ignore) - To filter filenames according to a .gitignore file. https://www.npmjs.com/package/ignore
 
 ### Usage of encoding in `fs.readFile` API
 
@@ -366,13 +373,20 @@ to use iconv to work with custom file encodings and then use the buffer.
 ```js
 // to get a buffer from string, instead of doing Buffer.from, use iconv.encode 
 buf = Buffer.from("Sample input string", 'win1251'); // not supported/recommended and wont work even if it works for some cases
-buf = fs.iconv.encode("Sample input string", 'win1251'); // recommended way to create buffer for encoding
+buf = fs.utils.iconv.encode("Sample input string", 'win1251'); // recommended way to create buffer for encoding
 
 // to convert buffer to string, use iconv as well
 str = buf.toString('win1251'); // not supported/recommended and wont work even if it works for some cases
-str = fs.iconv.decode(buf, 'win1251'); // recommended way
+str = fs.utils.iconv.decode(buf, 'win1251'); // recommended way
 ```
 
+## `EventEmitter`
+This library provides a global utility, `EventEmitter`, which is accessible via `window.EventEmitter`,
+`self.EventEmitter`, or simply `EventEmitter`, depending on the context. This utility replicates the
+functionality of the Node.js event emitter API, offering a handy tool for incorporating familiar
+Node.js-style event handling in your browser environment.
+
+For a quick introduction on using the event emitter, refer to: [Node.js EventEmitter Guide](https://nodejs.dev/en/learn/the-nodejs-event-emitter/).
 
 ## `fs.mountNativeFolder(optionalDirHandle?, callback)` Function
 

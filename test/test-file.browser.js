@@ -306,7 +306,7 @@ function _setupTests(testType) {
         let {content, encoding} = await promise;
         expect(Buffer.isBuffer(content)).to.be.true;
         expect(encoding).to.eql('binary');
-        expect(fs.iconv.decode(content, 'utf8')).to.eql(_fileContent());
+        expect(fs.utils.iconv.decode(content, 'utf8')).to.eql(_fileContent());
     });
 
     function _readFile(path, encoding) {
@@ -337,7 +337,7 @@ function _setupTests(testType) {
             expect("content should be array buffer").to.be.true;
         }
         expect(encoding).to.eql(fs.BYTE_ARRAY_ENCODING);
-        expect(fs.iconv.decode(Buffer.from(content), 'utf8')).to.eql(_fileContent());
+        expect(fs.utils.iconv.decode(Buffer.from(content), 'utf8')).to.eql(_fileContent());
     });
 
     it(`Should phoenix ${testType} read file as utf8 string`, async function () {
@@ -388,7 +388,7 @@ function _setupTests(testType) {
         let {content, encoding} = await _readFile(filePath);
         expect(Buffer.isBuffer(content)).to.be.true;
         expect(encoding).to.eql('binary');
-        expect(fs.iconv.decode(content, 'utf8')).to.eql(contentStr);
+        expect(fs.utils.iconv.decode(content, 'utf8')).to.eql(contentStr);
     }
 
     it(`Should phoenix ${testType} write file without options`, async function () {
@@ -416,7 +416,7 @@ function _setupTests(testType) {
         let {content, encoding} = await _readFile(filePath);
         expect(Buffer.isBuffer(content)).to.be.true;
         expect(encoding).to.eql('binary');
-        expect(fs.iconv.decode(content, 'utf16')).to.eql(contentStr);
+        expect(fs.utils.iconv.decode(content, 'utf16')).to.eql(contentStr);
     });
 
     function _writeFile(filePath, contents, encoding) {

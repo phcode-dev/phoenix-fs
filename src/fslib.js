@@ -30,6 +30,8 @@ const {Constants} = require('./constants');
 const {Mounts} = require('./fslib_mounts');
 const {FsWatch} = require('./fslib_watch');
 const {globalCopy} = require('./filerlib_copy.js');
+const anymatch = require('anymatch');
+const ignore = require('ignore');
 import * as iconv from 'iconv-lite';
 
 let filerLib = null;
@@ -277,6 +279,20 @@ const fileSystemLib = {
         }
         throw new Errors.ENOSYS('Phoenix fs showSaveDialog function not yet supported.');
     },
+    watchAsync: function (path, ignoredPaths=[], gitIgnorePaths="") {
+        if(TauriFS.isTauriPath(path)) {
+            throw new Errors.EPERM('Cannot watch root directory!', path);
+        } else if(TauriFS.isTauriSubPath(path)) {
+            return NodeTauriFS.watchAsync(path, ignoredPaths, gitIgnorePaths);
+        }
+        return FsWatch.watchAsync(path, ignoredPaths, gitIgnorePaths);
+    },
+    unwatchAsync: function (eventEmitter) {
+        if(eventEmitter.eventEmitterID) {
+            return NodeTauriFS.unwatchAsync(eventEmitter);
+        }
+        return FsWatch.unwatchAsync(eventEmitter);
+    },
     watch: function (...args) {
         return FsWatch.watch(...args);
     },
@@ -340,12 +356,16 @@ const fileSystemLib = {
     MOUNT_POINT_ROOT: Constants.MOUNT_POINT_ROOT,
     TAURI_ROOT: Constants.TAURI_ROOT,
     ERR_CODES: {},
-    iconv,
     isEncodingSupported: function (encoding) {
         if(encoding.toLowerCase() === Constants.BYTE_ARRAY_ENCODING){
             return true;
         }
         return iconv.encodingExists(encoding);
+    },
+    utils: {
+        iconv,
+        anymatch,
+        ignore
     }
 };
 
