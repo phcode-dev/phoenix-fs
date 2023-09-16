@@ -88,7 +88,9 @@ function _setupTests(testType) {
         expect(path).to.exist;
         expect(iconv).to.exist;
         expect(fs.Buffer).to.exist;
-        expect(fs.iconv).to.exist;
+        expect(fs.utils.iconv).to.exist;
+        expect(fs.utils.ignore).to.exist;
+        expect(fs.utils.anymatch).to.exist;
         expect(fs.path).to.exist;
         expect(fs.name).to.equal(`phoenixFS`);
         expect(fs.MOUNT_POINT_ROOT).to.equal(`/mnt`);

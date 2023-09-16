@@ -3,6 +3,10 @@ const fs = require("fs/promises");
 const path = require("path");
 const os = require('os');
 const { exec } = require('child_process');
+const chokidar = require('chokidar');
+const anymatch = require('anymatch');
+const ignore = require('ignore');
+const crypto = require('crypto');
 
 const IS_MACOS = os.platform() === 'darwin';
 let debugMode = false;
@@ -20,6 +24,10 @@ function toArrayBuffer(buf) {
     }
 
     return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.length);
+}
+
+function generateRandomId(length = 20) {
+    return crypto.randomBytes(Math.ceil(length / 2)).toString('hex').slice(0, length);
 }
 
 function getWindowsDrives(callback) {
@@ -101,6 +109,7 @@ function splitMetadataAndBuffer(concatenatedBuffer) {
 const WS_COMMAND = {
     PING: "ping",
     RESPONSE: "response",
+    EVENT: "event",
     LARGE_DATA_SOCKET_ANNOUNCE: "largeDataSock",
     CONTROL_SOCKET_ANNOUNCE: "controlSock",
     GET_WINDOWS_DRIVES: "getWinDrives",
@@ -110,15 +119,18 @@ const WS_COMMAND = {
     WRITE_BIN_FILE: "writeBinFile",
     MKDIR: "mkdir",
     RENAME: "rename",
-    UNLINK: "unlink"
+    UNLINK: "unlink",
+    WATCH: "watch",
+    UNWATCH: "unwatch"
 };
 
 const LARGE_DATA_THRESHOLD = 2*1024*1024; // 2MB
-// A map from dataSocketID to the actual data socket that is used for transporting large data only.
+// A map from socketGroupID to the actual data socket that is used for transporting large data only.
 // binary data larger than 2MB is considered large data and we will try to send it through a large data web socket if present.
 // a client typically makes 2 websockets, one for small data and another for large data transport.
 // so large file transfers wont put pressure on the websocket.
-const largeDataSocketMap = {};
+const largeDataSocketMap = {},
+    controlSocketMap = {};
 
 function _getResponse(originalMetadata, data = null) {
     return {
@@ -148,6 +160,24 @@ function _sendResponse(ws, metadata, dataObjectToSend = null, dataBuffer = new A
     socketToUse.send(mergeMetadataAndArrayBuffer(response, dataBuffer));
 }
 
+function _sendEvent(defaultWS, socketGroupID, eventEmitterID, eventName, dataObjectToSend = null, dataBuffer = new ArrayBuffer(0)) {
+    const response = {
+        eventEmitterID,
+        eventName,
+        commandCode: WS_COMMAND.EVENT,
+        socketGroupID,
+        data: dataObjectToSend
+    };
+    let socketToUse = controlSocketMap[socketGroupID], largeDataSocket = largeDataSocketMap[socketGroupID];
+    if(dataBuffer && dataBuffer.byteLength > LARGE_DATA_THRESHOLD && largeDataSocket) {
+        socketToUse = largeDataSocket;
+    }
+    if(!socketToUse){
+        socketToUse = defaultWS;
+    }
+    socketToUse.send(mergeMetadataAndArrayBuffer(response, dataBuffer));
+}
+
 function _getStat(fullPath) {
     return new Promise((resolve, reject) => {
         fs.stat(fullPath)
@@ -173,7 +203,7 @@ function _getStat(fullPath) {
     });
 }
 
-function _reportError(ws, metadata, err, defaultMessage = "Operation failed! ") {
+function _reportError(ws, metadata, err= { }, defaultMessage = "Operation failed! ") {
     metadata.error = {
         message: err.message || defaultMessage,
         code: err.code || "EIO",
@@ -269,6 +299,86 @@ function _unlink(ws, metadata) {
         }).catch((err)=>_reportError(ws, metadata, err, `Failed to unlink path ${fullPath}`));
 }
 
+// eventEmitterID to watcher
+const watchersMap = {};
+function _watch(ws, metadata) {
+    const fullPath = metadata.data.path,
+        // array of anymatch compatible path definition. Eg. ["**/{node_modules,bower_components}/**"]. full path is checked
+        ignoredPaths = metadata.data.ignoredPaths,
+        // contents of a gitIgnore file as text. The given path is used as the base path for gitIgnore
+        gitIgnorePaths = metadata.data.gitIgnorePaths,
+        persistent = metadata.data.persistent || true,
+        ignoreInitial = metadata.data.ignoreInitial || true,
+        socketGroupID = ws.socketGroupID;
+    try{
+        const gitignore = ignore().add(gitIgnorePaths);
+
+        // Filter function to integrate with chokidar
+        function isIgnored(pathToFilter) {
+            if(anymatch(ignoredPaths, pathToFilter)){
+                debugMode && console.log("ignored watch path: ", pathToFilter, "rel: ",relativePath);
+                return true;
+            }
+            const relativePath = path.relative(fullPath, pathToFilter);
+            if(relativePath && gitignore.ignores(relativePath)){
+                debugMode && console.log("ignored watch gitIgnore path: ", pathToFilter, "rel: ",relativePath);
+                return true;
+            } else {
+                return false;
+            }
+        }
+
+        let readySent = false;
+        const watcher = chokidar.watch(fullPath, {
+            persistent,
+            ignoreInitial,
+            ignored: path => isIgnored(path)
+        });
+        const eventEmitterID = generateRandomId();
+        watcher.eventEmitterID = eventEmitterID;
+        watchersMap[watcher.eventEmitterID] = watcher;
+        watcher.on('ready', () => {
+            if(readySent){
+                return;
+            }
+            readySent = true;
+            _sendResponse(ws, metadata, {eventEmitterID});
+        });
+        watcher.on('error', (err) => {
+            if(readySent){
+                console.error(err);
+                return;
+            }
+            readySent = true;
+            _reportError(ws, metadata, err, `Error while watching path ${fullPath}`);
+        });
+        let watchEvents = ['add', 'change', 'unlink', 'addDir', 'unlinkDir'];
+        for(let watchEvent of watchEvents){
+            watcher.on(watchEvent, (path) => {
+                _sendEvent(ws, socketGroupID, eventEmitterID,watchEvent, {path});
+            });
+        }
+    } catch (err) {
+        _reportError(ws, metadata, err, `Failed to watch path ${fullPath}`);
+    }
+}
+
+function _unwatch(ws, metadata) {
+    const eventEmitterID = metadata.data.eventEmitterID;
+    const watcher = watchersMap[eventEmitterID];
+    if(!watcher) {
+        _reportError(ws, metadata, new Error("Couldnt unwatch, no such watcher for eventEmitterID: "+ eventEmitterID));
+        return;
+    }
+    delete watchersMap[eventEmitterID];
+    watcher.close()
+        .then(() => {
+            _sendResponse(ws, metadata, {eventEmitterID});
+        }).catch(err=>{
+            _reportError(ws, metadata, err, `Failed to unwatch watcher for eventEmitterID ${eventEmitterID}`);
+        });
+}
+
 function processWSCommand(ws, metadata, dataBuffer) {
     try{
         switch (metadata.commandCode) {
@@ -302,15 +412,24 @@ function processWSCommand(ws, metadata, dataBuffer) {
         case WS_COMMAND.UNLINK:
             _unlink(ws, metadata);
             return;
+        case WS_COMMAND.WATCH:
+            _watch(ws, metadata);
+            return;
+        case WS_COMMAND.UNWATCH:
+            _unwatch(ws, metadata);
+            return;
         case WS_COMMAND.LARGE_DATA_SOCKET_ANNOUNCE:
             console.log("Large Data Transfer Socket established, socket Group: ", metadata.socketGroupID);
             ws.isLargeData = true;
-            ws.LargeDataSocketGroupID = metadata.socketGroupID;
+            ws.socketGroupID = metadata.socketGroupID;
             largeDataSocketMap[metadata.socketGroupID] = ws;
             _sendResponse(ws, metadata, {}, dataBuffer);
             return;
         case WS_COMMAND.CONTROL_SOCKET_ANNOUNCE:
             console.log("Control Socket established, socket Group:", metadata.socketGroupID);
+            ws.isLargeData = false;
+            ws.socketGroupID = metadata.socketGroupID;
+            controlSocketMap[metadata.socketGroupID] = ws;
             _sendResponse(ws, metadata, {}, dataBuffer);
             return;
         default: console.error("unknown command: "+ metadata);
@@ -361,8 +480,11 @@ function CreatePhoenixFsServer(server, wssPath = "/phoenixFS") {
         ws.on('close', () => {
             if(ws.isLargeData && ws.socketGroupID && largeDataSocketMap[ws.socketGroupID] === ws){
                 delete largeDataSocketMap[ws.socketGroupID];
+                console.log('Websocket Client disconnected: Large data Socket');
+            } else if(!ws.isLargeData && ws.socketGroupID && controlSocketMap[ws.socketGroupID] === ws){
+                delete controlSocketMap[ws.socketGroupID];
+                console.log('Websocket Client disconnected: control Socket');
             }
-            console.log('Websocket Client disconnected');
         });
     });
 }

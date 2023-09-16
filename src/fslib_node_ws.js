@@ -21,6 +21,7 @@
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
+const EventEmitter = require('events');
 const {Errors} = require("./errno");
 const {Utils} = require("./utils");
 const {Constants} = require("./constants");
@@ -30,6 +31,7 @@ const IS_WINDOWS = navigator.userAgent.includes('Windows');
 const WS_COMMAND = {
     PING: "ping",
     RESPONSE: "response",
+    EVENT: "event",
     LARGE_DATA_SOCKET_ANNOUNCE: "largeDataSock",
     CONTROL_SOCKET_ANNOUNCE: "controlSock",
     GET_WINDOWS_DRIVES: "getWinDrives",
@@ -39,7 +41,9 @@ const WS_COMMAND = {
     WRITE_BIN_FILE: "writeBinFile",
     MKDIR: "mkdir",
     RENAME: "rename",
-    UNLINK: "unlink"
+    UNLINK: "unlink",
+    WATCH: "watch",
+    UNWATCH: "unwatch"
 };
 
 // each browser context belongs to a single socket group. So multiple websocket connections can be pooled
@@ -158,8 +162,61 @@ function _execPendingCommands() {
     }
 }
 
+const _eventEmitter = {};
+
+/**
+ * you can only use this to listen to events emitter from node. Calling the emit function on the returned emitter
+ * will not dispatch any events to node, but only within the browser context.
+ * @param eventEmitterID - this is supplied in from node, typically from an exec metadata containing the id.
+ * @returns {EventEmitter}
+ * @private
+ */
+function getNodeEventListener(eventEmitterID) {
+    if(!eventEmitterID){
+        throw new Errors.EIO(`No such node event emitter, ${eventEmitterID}`);
+    }
+    if(_eventEmitter[eventEmitterID]){
+        return _eventEmitter[eventEmitterID];
+    }
+    _eventEmitter[eventEmitterID] = new EventEmitter();
+    _eventEmitter[eventEmitterID].eventEmitterID = eventEmitterID;
+    return _eventEmitter[eventEmitterID];
+}
+
+function removeNodeEventListener(eventEmitter) {
+    if(eventEmitter.allreadyClosed) {
+        return ;
+    }
+    eventEmitter.removeAllListeners();
+    eventEmitter.on = function () {
+        throw new Errors.EIO("The File watcher is closed. Please use `fs.watchAsync` if you want to watch again.");
+    };
+    eventEmitter.allreadyClosed = true;
+
+    const eventEmitterID = eventEmitter.eventEmitterID;
+    if(!eventEmitterID){
+        throw new Errors.EIO(`No such node event emitter, ${eventEmitterID}`);
+    }
+    if(_eventEmitter[eventEmitterID]){
+        delete _eventEmitter[eventEmitterID];
+    }
+}
+
+function _processEvent(metadata, bufferData) {
+    const eventEmitter = _eventEmitter[metadata.eventEmitterID];
+    if(eventEmitter){
+        eventEmitter.emit(metadata.eventName, metadata.data, bufferData);
+    } else {
+        console.error("FS: Received stray event: ", metadata);
+    }
+}
+
 function _processMessage(data) {
     const {metadata, bufferData} = Utils.splitMetadataAndBuffer(data);
+    if(metadata.eventEmitterID) {
+        _processEvent(metadata, bufferData);
+        return;
+    }
     if(!metadata.commandId || !commandIdMap[metadata.commandId]){
         throw new Error("CommandID not found in ws response! " + metadata);
     }
@@ -390,7 +447,7 @@ function writeBinaryFile(path, mode, flag, dataArrayBuffer) {
     return new Promise((resolve, reject)=>{
         const platformPath = Utils.getTauriPlatformPath(path);
         _execCommand(WS_COMMAND.WRITE_BIN_FILE, {path: platformPath, mode, flag}, dataArrayBuffer)
-            .then(resolve)
+            .then(()=>{resolve();})
             .catch((err)=>{
                 reject(mapNodeTauriErrorMessage(err, path, 'Failed to write file: '));
             });
@@ -431,6 +488,46 @@ function unlink(path, callback) {
         });
 }
 
+/**
+ *
+ * @param {string} path
+ * @param {Array<string>} ignoredPaths - array of anymatch compatible path definition. Eg. ["/home/user/{node_modules,bower_components}/**"]. full path is checked
+ * @param {string} gitIgnorePaths The contents of the gitIgnore file as text. The watcher will ignore all files matching git ignore.
+ * @returns {Promise<EventEmitter>} That will be resolved with a watcher once the watcher is ready.
+ */
+async function watchAsync(path, ignoredPaths=[], gitIgnorePaths="") {
+    return new Promise((resolve, reject)=>{
+        const platformPath = Utils.getTauriPlatformPath(path);
+        _execCommand(WS_COMMAND.WATCH, {path: platformPath, ignoredPaths, gitIgnorePaths})
+            .then(({metadata})=>{
+                const eventEmitter = getNodeEventListener(metadata.data.eventEmitterID);
+                eventEmitter.watchPath = path;
+                resolve(eventEmitter);
+            })
+            .catch((err)=>{
+                reject(mapNodeTauriErrorMessage(err, path, `Failed to watch path: ${path}`));
+            });
+    });
+}
+
+/**
+ * Stops the fs watcher given the EventEmitter returned by watchAsync API.
+ * @param eventEmitter
+ * @returns {Promise<void>} That will be resolved with a watcher stops. The event emitter will no longer work after this call.
+ */
+function unwatchAsync(eventEmitter) {
+    return new Promise((resolve, reject)=>{
+        _execCommand(WS_COMMAND.UNWATCH, {eventEmitterID: eventEmitter.eventEmitterID})
+            .then(()=>{
+                removeNodeEventListener(eventEmitter);
+                resolve();
+            })
+            .catch((err)=>{
+                reject(mapNodeTauriErrorMessage(err, eventEmitter.watchPath, `Failed to unwatch path: ${eventEmitter.watchPath}`));
+            });
+    });
+}
+
 const NodeTauriFS = {
     testNodeWsEndpoint,
     setNodeWSEndpoint,
@@ -443,7 +540,9 @@ const NodeTauriFS = {
     readBinaryFile,
     writeBinaryFile,
     rename,
-    unlink
+    unlink,
+    watchAsync,
+    unwatchAsync
 };
 
 module.exports = {

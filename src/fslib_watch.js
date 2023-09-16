@@ -25,6 +25,7 @@
 let _channel = null;
 let _watchListeners = [];
 const anymatch = require('anymatch');
+const {Errors} = require("./errno");
 
 const WATCH_EVENT_NOTIFICATION = 'PHOENIX_WATCH_EVENT_NOTIFICATION';
 const WATCH_EVENT_CREATED = 'created';
@@ -127,11 +128,21 @@ function unwatchAll(callback) {
     callback();
 }
 
+function watchAsync(path/*, _ignoredPaths=[], _gitIgnorePaths=""*/) {
+    throw new Errors.EPERM('Watch async not yet supported at path!', path);
+}
+
+function unwatchAsync(eventEmitter) {
+    throw new Errors.EPERM('unWatch async not yet supported at path!', eventEmitter);
+}
+
 _listenToExternalFsWatchEvents();
 
 const FsWatch = {
     watch,
+    watchAsync,
     unwatch,
+    unwatchAsync,
     unwatchAll,
     reportUnlinkEvent,
     reportChangeEvent,
