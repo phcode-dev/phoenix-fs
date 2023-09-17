@@ -128,7 +128,7 @@ function unwatchAll(callback) {
     callback();
 }
 
-function watchAsync(path/*, _ignoredPaths=[], _gitIgnorePaths=""*/) {
+function watchAsync(path/* _gitIgnorePaths=""*/) {
     throw new Errors.EPERM('Watch async not yet supported at path!', path);
 }
 

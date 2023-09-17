@@ -493,14 +493,13 @@ function unlink(path, callback) {
 /**
  *
  * @param {string} path
- * @param {Array<string>} ignoredPaths - array of anymatch compatible path definition. Eg. ["/home/user/{node_modules,bower_components}/**"]. full path is checked
  * @param {string} gitIgnorePaths The contents of the gitIgnore file as text. The watcher will ignore all files matching git ignore.
  * @returns {Promise<EventEmitter>} That will be resolved with a watcher once the watcher is ready.
  */
-async function watchAsync(path, ignoredPaths=[], gitIgnorePaths="") {
+async function watchAsync(path, gitIgnorePaths="") {
     return new Promise((resolve, reject)=>{
         const platformPath = Utils.getTauriPlatformPath(path);
-        _execCommand(WS_COMMAND.WATCH, {path: platformPath, ignoredPaths, gitIgnorePaths})
+        _execCommand(WS_COMMAND.WATCH, {path: platformPath, gitIgnorePaths})
             .then(({metadata})=>{
                 const eventEmitter = getNodeEventListener(metadata.data.eventEmitterID);
                 eventEmitter.watchPath = path;

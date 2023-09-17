@@ -23,7 +23,7 @@
                     {
                         "name": "node",
                         "cmd": "node",
-                        "args": [{ "validator": "\\S+" }]
+                        "args": ["--inspect", { "validator": "\\S+" }]
                     }
                 ]
             },

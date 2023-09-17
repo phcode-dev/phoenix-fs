@@ -309,8 +309,6 @@ function _unlink(ws, metadata) {
 const watchersMap = {};
 function _watch(ws, metadata) {
     const fullPathToWatch = metadata.data.path,
-        // array of anymatch compatible path definition. Eg. ["**/{node_modules,bower_components}/**"]. full path is checked
-        ignoredPaths = metadata.data.ignoredPaths,
         // contents of a gitIgnore file as text. The given path is used as the base path for gitIgnore
         gitIgnorePaths = metadata.data.gitIgnorePaths,
         persistent = metadata.data.persistent || true,
@@ -335,10 +333,6 @@ function _watch(ws, metadata) {
                 return true;
             }
             const relativePath = path.relative(fullPathToWatch, pathToFilter);
-            if(anymatch(ignoredPaths, pathToFilter)){
-                debugMode && console.log("PhoenixFS: anymatch ignored watch path: ", pathToFilter, "rel: ", relativePath);
-                return true;
-            }
             if(relativePath && gitignore.ignores(relativePath)){
                 debugMode && console.log("PhoenixFS: gitignore ignored watch gitIgnore path: ", pathToFilter, "rel: ",relativePath);
                 return true;
@@ -351,6 +345,7 @@ function _watch(ws, metadata) {
         const watcher = chokidar.watch(fullPathToWatch, {
             persistent,
             ignoreInitial,
+            depth: 99,
             ignorePermissionErrors: true,
             ignored: path => isIgnored(path)
         });
