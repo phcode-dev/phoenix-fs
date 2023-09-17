@@ -26,45 +26,9 @@ const {Errors, ERR_CODES} = require("./errno");
 const {Utils} = require("./utils");
 const {NodeTauriFS} = require("./fslib_node_ws");
 
-const TAURI_PATH_PREFIX = Constants.TAURI_ROOT+ '/';
 const IS_WINDOWS = navigator.userAgent.includes('Windows');
 let preferNodeWs = false,
     forceNodeWs = false;
-
-/**
- * Check if the given path is a subpath of the '/tauri' folder.
- * @param path
- */
-function isTauriSubPath(path) {
-    if (typeof path !== 'string') {
-        return false;
-    }
-    if (path) {
-        path = globalObject.path.normalize(path);
-        if (path.startsWith(TAURI_PATH_PREFIX) && path.length > TAURI_PATH_PREFIX.length) {
-            return true;
-        }
-    }
-    return false;
-}
-
-/**
- * Check if the given path is '/tauri' folder.
- * @param path
- */
-function isTauriPath(path) {
-    if (typeof path !== 'string') {
-        return false;
-    }
-    if (path) {
-        path = globalObject.path.normalize(path);
-        if (path === Constants.TAURI_ROOT) {
-            return true;
-        }
-    }
-    return false;
-}
-
 
 /**
  * Opens the Tauri file picker asynchronously with given options. If options aren't provided, defaults to picking a single file.
@@ -637,8 +601,8 @@ function preferNodeWSEndpoint(use) {
 }
 
 const TauriFS = {
-    isTauriPath,
-    isTauriSubPath,
+    isTauriPath: Utils.isTauriPath,
+    isTauriSubPath: Utils.isTauriSubPath,
     getTauriPlatformPath: Utils.getTauriPlatformPath,
     getTauriVirtualPath: Utils.getTauriVirtualPath,
     openTauriFilePickerAsync,

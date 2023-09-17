@@ -140,10 +140,15 @@ const fileSystemLib = {
     },
     writeFile: function (...args) { // (path, data, options, callback)
         let path = args[0];
+        let newFileCreated = false;
         function callbackInterceptor(...interceptedArgs) {
             let err = interceptedArgs.length >= 1 ? interceptedArgs[0] : null;
             if(!err){
-                FsWatch.reportChangeEvent(path);
+                if(newFileCreated){
+                    FsWatch.reportCreateEvent(path, false);
+                } else {
+                    FsWatch.reportChangeEvent(path);
+                }
             }
             if(args.originalCallback){
                 args.originalCallback(...interceptedArgs);
@@ -157,17 +162,23 @@ const fileSystemLib = {
 
         if(TauriFS.isTauriSubPath(path)) {
             return TauriFS.writeFile(...args);
-        } else if(Mounts.isMountSubPath(path)) {
-            return NativeFS.writeFile(...args);
         }
-        return FilerFSModified.writeFile(...args);
+        fileSystemLib.stat(path, (err)=>{
+            if(err && err.code === ERR_CODES.ERROR_CODES.ENOENT){
+                newFileCreated = true;
+            }
+            if(Mounts.isMountSubPath(path)) {
+                return NativeFS.writeFile(...args);
+            }
+            return FilerFSModified.writeFile(...args);
+        });
     },
     mkdir: function (...args) { // (path, mode, callback)
         let path = args[0];
         function callbackInterceptor(...interceptedArgs) {
             let err = interceptedArgs.length >= 1 ? interceptedArgs[0] : null;
             if(!err){
-                FsWatch.reportCreateEvent(path);
+                FsWatch.reportCreateEvent(path, true);
             }
             if(args.originalCallback){
                 args.originalCallback(...interceptedArgs);
@@ -191,8 +202,18 @@ const fileSystemLib = {
         function callbackInterceptor(...args) {
             let err = args.length >= 1 ? args[0] : null;
             if(!err){
-                FsWatch.reportUnlinkEvent(oldPath);
-                FsWatch.reportCreateEvent(newPath);
+                if(!TauriFS.isTauriSubPath(oldPath) || !TauriFS.isTauriSubPath(newPath)) {
+                    // we only need to manually handle watch events for non tauri paths as tauri watch is done at node
+                    fileSystemLib.stat(newPath, (err, stat)=>{
+                        const isDir = !err && stat.isDirectory();
+                        if(!TauriFS.isTauriSubPath(oldPath)) {
+                            FsWatch.reportUnlinkEvent(oldPath, isDir);
+                        }
+                        if(!TauriFS.isTauriSubPath(newPath)) {
+                            FsWatch.reportCreateEvent(newPath, isDir);
+                        }
+                    });
+                }
             }
             if(cb){
                 cb(...args);
@@ -224,10 +245,11 @@ const fileSystemLib = {
         });
     },
     unlink: function (path, cb) {
+        let isDir;
         function callbackInterceptor(...args) {
             let err = args.length >= 1 ? args[0] : null;
             if(!err){
-                FsWatch.reportUnlinkEvent(path);
+                FsWatch.reportUnlinkEvent(path, isDir);
             }
             if(cb){
                 cb(...args);
@@ -239,20 +261,30 @@ const fileSystemLib = {
             return ;
         } else if(TauriFS.isTauriSubPath(path)) {
             return TauriFS.unlink(path, callbackInterceptor);
-        } else if(Mounts.isMountSubPath(path)) {
-            return NativeFS.unlink(path, callbackInterceptor);
         }
-        if (typeof path !== 'string') {
-            callbackInterceptor(new Errors.EINVAL('Invalid arguments.'));
-            return;
-        }
-        return filerShell.rm(path, { recursive: true }, callbackInterceptor);
+
+        fileSystemLib.stat(path, (err, stat)=>{
+            isDir = !err && stat.isDirectory();
+            // we do this to emit fs watch events for non-tauri path unlinks.
+            // We only need to manually handle watch events for non tauri paths as tauri watch is done at node
+            if(Mounts.isMountSubPath(path)) {
+                return NativeFS.unlink(path, callbackInterceptor);
+            }
+            if (typeof path !== 'string') {
+                callbackInterceptor(new Errors.EINVAL('Invalid arguments.'));
+                return;
+            }
+            return filerShell.rm(path, { recursive: true }, callbackInterceptor);
+        });
     },
     copy: function (src, dst, cb) {
         function callbackInterceptor(...args) {
             let err = args.length >= 1 ? args[0] : null;
             if(!err){
-                FsWatch.reportCreateEvent(dst);
+                fileSystemLib.stat(dst, (err, stat)=>{
+                    const isDir = !err && stat.isDirectory();
+                    FsWatch.reportCreateEvent(dst, isDir);
+                });
             }
             if(cb){
                 cb(...args);
@@ -292,15 +324,6 @@ const fileSystemLib = {
             return NodeTauriFS.unwatchAsync(eventEmitter);
         }
         return FsWatch.unwatchAsync(eventEmitter);
-    },
-    watch: function (...args) {
-        return FsWatch.watch(...args);
-    },
-    unwatch: function (...args) {
-        return FsWatch.unwatch(...args);
-    },
-    unwatchAll: function (...args) {
-        return FsWatch.unwatchAll(...args);
     },
     moveToTrash: function () {
         throw new Errors.ENOSYS('Phoenix fs moveToTrash function not yet supported.');
@@ -356,13 +379,7 @@ const fileSystemLib = {
     MOUNT_POINT_ROOT: Constants.MOUNT_POINT_ROOT,
     TAURI_ROOT: Constants.TAURI_ROOT,
     ERR_CODES: {},
-    WATCH_EVENTS: {
-        ADD_FILE: "add",
-        ADD_DIR: "addDir",
-        CHANGE: "change",
-        UNLINK_FILE: "unlink",
-        UNLINK_DIR: "unlinkDir"
-    },
+    WATCH_EVENTS: Constants.WATCH_EVENTS,
     isEncodingSupported: function (encoding) {
         if(encoding.toLowerCase() === Constants.BYTE_ARRAY_ENCODING){
             return true;

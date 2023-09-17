@@ -74,7 +74,8 @@ async function _mkdir(parentDirHandle, dirName, callback) {
         return childDirHandle;
     } catch (e) {
         if(callback){
-            callback(new Errors.EIO('Filer native fs function not yet supported.', e));
+            callback(new Errors.EIO('Filer native fs.mkdir failed.', e));
+            return ;
         }
         throw new Errors.EIO('Filer native fs function not yet supported.', e);
     }

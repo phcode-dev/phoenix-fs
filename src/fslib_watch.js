@@ -23,14 +23,14 @@
 
 
 let _channel = null;
-let _watchListeners = [];
-const anymatch = require('anymatch');
+const _eventEmitters = [];
 const {Errors} = require("./errno");
+const EventEmitter = require('events');
+const ignore = require('ignore');
+const {Utils} = require("./utils");
+const {Constants} = require("./constants");
 
 const WATCH_EVENT_NOTIFICATION = 'PHOENIX_WATCH_EVENT_NOTIFICATION';
-const WATCH_EVENT_CREATED = 'created';
-const WATCH_EVENT_DELETED = 'deleted';
-const WATCH_EVENT_CHANGED = 'changed';
 
 function _setupBroadcastChannel() {
     if(_channel){
@@ -49,8 +49,9 @@ function _broadcastWatchEvent(event) {
     _channel.postMessage(event);
 }
 
-function _isAnIgnoredPath(path, ignoreGlobList) {
-    return anymatch(ignoreGlobList, path);
+function _isAnIgnoredPath(watchedPath, changedPath, gitignore) {
+    const relativePath = globalObject.path.relative(watchedPath, changedPath);
+    return relativePath && gitignore.ignores(relativePath);
 }
 
 function _isSameOrSubDirectory(parent, child) {
@@ -62,11 +63,10 @@ function _processFsWatchEvent(event, broadcast=true) {
     if(broadcast){
         _broadcastWatchEvent(event);
     }
-    for (const listener of _watchListeners){
-        if(listener.callback
-            && _isSameOrSubDirectory(listener.path, event.path)
-            && !_isAnIgnoredPath(event.path, listener.ignoreGlobList)){
-            listener.callback(event.event, event.parentDirPath, event.entryName, event.path);
+    for (const eventEmitter of _eventEmitters){
+        if(_isSameOrSubDirectory(eventEmitter.watchedPath, event.path)
+            && !_isAnIgnoredPath(eventEmitter.watchedPath, event.path, eventEmitter.gitignore)) {
+            eventEmitter.emit(event.event, {path: event.path});
         }
     }
 }
@@ -81,69 +81,83 @@ function _listenToExternalFsWatchEvents() {
     };
 }
 
-function watch(path, ignoreGlobList, changeCallback, callback) {
-    if(changeCallback){
-        _watchListeners.push({
-            path: path,
-            ignoreGlobList: ignoreGlobList,
-            callback: changeCallback
-        });
-    }
-    callback();
-}
-
 function _triggerEvent(path, eventType) {
     let pathLib = globalObject.path;
     path = pathLib.normalize(path);
     let event = {
         event: eventType,
-        parentDirPath: pathLib.normalize(`${pathLib.dirname(path)}/`),
-        entryName: pathLib.basename(path),
         path: path
     };
     _processFsWatchEvent(event);
 }
 
-function reportUnlinkEvent(path) {
-    _triggerEvent(path, WATCH_EVENT_DELETED);
+function reportUnlinkEvent(path, isDir) {
+    if(Utils.isTauriSubPath(path)) {
+        // tauri watches native paths with node, so no virtual events needs to be handled
+        return;
+    }
+    if(isDir){
+        _triggerEvent(path, Constants.WATCH_EVENTS.UNLINK_DIR);
+    } else {
+        _triggerEvent(path, Constants.WATCH_EVENTS.UNLINK_FILE);
+    }
 }
 
 function reportChangeEvent(path) {
-    _triggerEvent(path, WATCH_EVENT_CHANGED);
+    if(Utils.isTauriSubPath(path)) {
+        // tauri watches native paths with node, so no virtual events needs to be handled
+        return;
+    }
+    _triggerEvent(path, Constants.WATCH_EVENTS.CHANGE);
 }
 
-function reportCreateEvent(path) {
-    _triggerEvent(path, WATCH_EVENT_CREATED);
+function reportCreateEvent(path, isDir) {
+    if(Utils.isTauriSubPath(path)) {
+        // tauri watches native paths with node, so no virtual events needs to be handled
+        return;
+    }
+    if(isDir){
+        _triggerEvent(path, Constants.WATCH_EVENTS.ADD_DIR);
+    } else {
+        _triggerEvent(path, Constants.WATCH_EVENTS.ADD_FILE);
+    }
 }
 
-function unwatch(path, callback) {
-    _watchListeners = _watchListeners.filter(function (item) {
-        return item.path !== path;
-    });
-    callback();
-}
-
-function unwatchAll(callback) {
-    _watchListeners =[];
-    callback();
-}
-
-function watchAsync(path/* _gitIgnorePaths=""*/) {
-    throw new Errors.EPERM('Watch async not yet supported at path!', path);
+/**
+ * @returns {EventEmitter}
+ * @param {string} path The watched root
+ * @param {string|Array<string>} gitIgnorePaths The contents of the gitIgnore file as text. The watcher will ignore all files matching git ignore.
+ */
+async function watchAsync(path, gitIgnorePaths="") {
+    const eventEmitter = new EventEmitter();
+    eventEmitter.gitignore = ignore().add(gitIgnorePaths);
+    eventEmitter.watchedPath = path;
+    _eventEmitters.push(eventEmitter);
+    return eventEmitter;
 }
 
 function unwatchAsync(eventEmitter) {
-    throw new Errors.EPERM('unWatch async not yet supported at path!', eventEmitter);
+    if(eventEmitter.allreadyClosed) {
+        return ;
+    }
+    eventEmitter.removeAllListeners();
+    eventEmitter.on = function () {
+        throw new Errors.EIO("The File watcher is closed. Please use `fs.watchAsync` if you want to watch again.");
+    };
+    eventEmitter.allreadyClosed = true;
+
+    let index = _eventEmitters.findIndex(e => e === eventEmitter);
+    if (index !== -1) {
+        _eventEmitters.splice(index, 1);
+    }
 }
+
 
 _listenToExternalFsWatchEvents();
 
 const FsWatch = {
-    watch,
     watchAsync,
-    unwatch,
     unwatchAsync,
-    unwatchAll,
     reportUnlinkEvent,
     reportChangeEvent,
     reportCreateEvent
