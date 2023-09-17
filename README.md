@@ -840,11 +840,11 @@ fs.readFile("/path/to/file", 'utf8', function(err, data) {
 **Returns**:  
 `void` (This function does not return anything)
 
-### `fs.writeFile(path, data, options?, callback)` Function
+## `fs.writeFile(path, data, options?, callback)` Function
 
 Writes data to a file, replacing the file if it already exists.
 
-#### Parameters:
+### Parameters:
 
 - **path**: (`string`)
   - The path of the file where data should be written.
@@ -865,7 +865,7 @@ Writes data to a file, replacing the file if it already exists.
   - The callback function executed once the file write operation concludes.
     - Receives one argument: An error object (or `null` if there were no errors).
 
-#### Example:
+### Example:
 
 ```javascript
 fs.writeFile("/path/to/file", "Hello World", { encoding: 'utf8' }, function(err) {
@@ -880,7 +880,7 @@ fs.writeFile("/path/to/file", "Hello World", 'utf8', function(err) {
 ```
 
 
-### `fs.setNodeWSEndpoint(websocketEndpoint)`
+## `fs.setNodeWSEndpoint(websocketEndpoint)`
 
 Sets the websocket endpoint and returns a promise that resolves
 when the tauri node fs connection is open. It ensures the socket remains
@@ -893,7 +893,7 @@ open across failures and automatically reconnects as necessary.
   - Promise<void>
 
 
-### `fs.forceUseNodeWSEndpoint(use)`
+## `fs.forceUseNodeWSEndpoint(use)`
 
 Forces the usage of the Node WebSocket endpoint.
 Throws an error if the Node WebSocket endpoint is not set.
@@ -908,7 +908,7 @@ Throws an error if the Node WebSocket endpoint is not set.
 
 ---
 
-### `fs.preferNodeWSEndpoint(use)`
+## `fs.preferNodeWSEndpoint(use)`
 
 Sets the preference to use the Node WebSocket endpoint if available.
 Throws an error if the Node WebSocket endpoint is not set.
@@ -923,3 +923,88 @@ To always force the library to use the Node WebSocket endpoint for all FS APIs, 
   - Throws an error if the Node WebSocket endpoint has not been set.
   - Call `fs.setNodeWSEndpoint(websocketEndpoint)` before calling this this API.
 
+## `fs.watchAsync(pathToWatch, gitIgnorePaths)`
+
+Watch a specific path asynchronously for filesystem changes.
+
+This function returns a promise that resolves an `EventEmitter` that will emit the following events:
+
+- `fs.WATCH_EVENTS.ADD_FILE`: When a file is created.
+- `fs.WATCH_EVENTS.ADD_DIR`: When a directory is created.
+- `fs.WATCH_EVENTS.UNLINK_FILE`: When a file is deleted.
+- `fs.WATCH_EVENTS.UNLINK_DIR`: When a directory is deleted.
+- `fs.WATCH_EVENTS.CHANGE`: When a file is changed.
+
+The watcher will ignore all files matching patterns in the provided gitignore.
+
+
+> **NOTE:** Behavior differs between paths within `/tauri/` and other paths. Within Tauri, every file and folder modification is emitted as a distinct event. However, for other paths, the events are aggregated to the nearest discernible parent directory.
+> **Examples:**
+>
+> 1. **Within Tauri Paths:**
+>   If you rename a parent directory named `parentDir` to `newDir` containing two files (`file1.txt` and `file2.txt`), you will receive six separate events:
+>   - 2 Events for `UNLINK_DIR` `parentDir` and `ADD_DIR` `newDir`
+>   - 2 Event for the `UNLINK_FILE` `parentDir/file1.txt` and `parentDir/file2.txt` due to its parent's renaming.
+>   - 2 Event for the `ADD_FILE` `newDir/file1.txt` and `newDir/file2.txt` due to its parent's renaming.
+> 2. **Other Paths:**
+>   Using the same scenario as above (renaming `parentDir` with two files inside), you will receive just two event(`UNLINK_DIR` and `ADD_DIR`) indicating the change in the `parentDir`. The individual changes to `file1.txt` and `file2.txt` are aggregated under the parent directory's event.
+>
+> This means developers working with Tauri paths should design their event handlers to accommodate individual events for each file and directory change.
+
+
+### Parameters
+
+- **pathToWatch** (string): The path to watch for filesystem changes.
+
+- **gitIgnorePaths** (string or Array<string>, optional, default=""): The patterns to ignore, either provided as a string (representing the content of a `.gitignore` file) or an array of individual patterns. The watcher will adhere to the standard `.gitignore` specification as detailed at [git-scm](https://git-scm.com/docs/gitignore). It's important to note that if a parent directory is excluded from watching, its child directories will also be excluded, regardless of any `un-ignore` patterns in git ignore file (e.g., `!node_modules/dont_ignore_dir`).
+
+### Returns
+
+- **EventEmitter**: The event emitter that will notify of filesystem changes.
+
+### Example
+
+```javascript
+// In the below watcher, we provide a gitignore formatted text to ignore 'node_modules' folder
+// See https://git-scm.com/docs/gitignore for details.
+const watcher = await fs.watchAsync('/path/to/watch', 'node_modules');
+
+watcher.on(Constants.WATCH_EVENTS.ADD_FILE, (event) => {
+  console.log(`File created: ${event.path}`);
+});
+
+watcher.on(Constants.WATCH_EVENTS.UNLINK_DIR, (event) => {
+  console.log(`Directory deleted: ${event.path}`);
+});
+```
+
+
+## `fs.unwatchAsync(eventEmitter)`
+
+Stops watching for filesystem changes on a previously set path.
+
+Once you've stopped watching using `unwatchAsync`, any further operations on the event emitter will throw an error. If you wish to start watching again, you will need to call `fs.watchAsync`.
+
+- **Parameters**
+  - `eventEmitter` - The event emitter returned by `fs.watchAsync` that you wish to stop watching.
+- **Throws**
+  - Throws an error (`Errors.EINVAL`) if the watcher is already closed or if operations are attempted after closing.
+
+**Example**:
+
+```javascript
+const watcher = await fs.watchAsync('/path/to/watch', 'node_modules');
+
+// Listen to an event.
+watcher.on(fs.WATCH_EVENTS.ADD_FILE, (event) => {
+  console.log(`File created: ${event.path}`);
+});
+
+// ... After some time, stop watching.
+await unwatchAsync(watcher);
+
+// Throws error since the watcher is closed.
+watcher.on(fs.WATCH_EVENTS.ADD_FILE, (event) => {
+  console.log(`File created: ${event.path}`);
+});
+```
