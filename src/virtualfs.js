@@ -40,7 +40,7 @@ globalObject.virtualfs = {
     env: env
 };
 
-console.log(`virtual fs started in debugMode:${virtualfs.debugMode} on environment: ${virtualfs.env}`);
+console.log(`PhoenixFS: virtual fs started in debugMode:${virtualfs.debugMode} on environment: ${virtualfs.env}`);
 
 const {initFsLib} = require('./fslib');
 initFsLib(Filer);

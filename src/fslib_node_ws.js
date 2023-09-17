@@ -99,7 +99,7 @@ function _silentlyCloseSocket(socket) {
         socket.autoReconnect = false;
         socket.close();
     } catch (e) {
-        console.error(e);
+        console.error("PhoenixFS: ", e);
     }
 }
 
@@ -210,7 +210,7 @@ function _processEvent(metadata, bufferData) {
         }
         eventEmitter.emit(metadata.eventName, metadata.data, bufferData);
     } else {
-        console.error("FS: Received stray event: ", metadata);
+        console.error("PhoenixFS: Received stray event: ", metadata);
     }
 }
 
@@ -259,10 +259,10 @@ async function _establishAndMaintainConnection(socketType, firstConnectCB) {
             }
             if(ws.isLargeDataWS){
                 _execCommand(WS_COMMAND.LARGE_DATA_SOCKET_ANNOUNCE)
-                    .catch(console.error);
+                    .catch(err=> console.error("PhoenixFS: ", err));
             } else {
                 _execCommand(WS_COMMAND.CONTROL_SOCKET_ANNOUNCE)
-                    .catch(console.error);
+                    .catch(err=> console.error("PhoenixFS: ", err));
             }
             _execPendingCommands();
             updateConnectionState();
@@ -273,7 +273,7 @@ async function _establishAndMaintainConnection(socketType, firstConnectCB) {
         });
 
         ws.addEventListener('error', function (event) {
-            console.error(event);
+            console.error("PhoenixFS websocket error event: ", event);
         });
 
         ws.addEventListener('close', function () {
@@ -285,7 +285,6 @@ async function _establishAndMaintainConnection(socketType, firstConnectCB) {
         ws.backoffTime = backoffTime;
         await _wait(backoffTime);
         if(ws.autoReconnect) {
-            console.log(wssEndpoint);
             ws = new WebSocket(wssEndpoint);
             ws.backoffTime = backoffTime;
             ws.binaryType = 'arraybuffer';
@@ -364,13 +363,13 @@ function testNodeWsEndpoint(wsEndPoint, echoData, echoBuffer) {
         });
 
         ws.addEventListener('error', function (event) {
-            console.error(event);
+            console.error("testNodeWsPort: ", event);
             reject(new Errors.EIO("Websocket error", wsEndPoint));
             ws.close();
         });
 
         ws.addEventListener('close', function(event) {
-            console.log('WebSocket connection closed:', event.code, event.reason);
+            console.log('PhoenixFS: WebSocket connection closed:', event.code, event.reason);
             if(!opened){
                 reject(new Errors.EIO("Socket not opened: "+ event.reason, wsEndPoint));
             }

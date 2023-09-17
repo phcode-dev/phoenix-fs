@@ -357,7 +357,6 @@ function getTauriPlatformPath(phoenixFSPath) {
         phoenixFSPath = TAURI_PATH_PREFIX;
     }
     if (!phoenixFSPath.startsWith(TAURI_PATH_PREFIX)) {
-        console.error("noop", phoenixFSPath);
         throw new Errors.EINVAL('Invalid Phoenix FS path- tauri path prefix expected: ' + phoenixFSPath);
     }
 
