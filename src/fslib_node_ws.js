@@ -205,6 +205,9 @@ function removeNodeEventListener(eventEmitter) {
 function _processEvent(metadata, bufferData) {
     const eventEmitter = _eventEmitter[metadata.eventEmitterID];
     if(eventEmitter){
+        if(metadata.data.path){
+            metadata.data.path = Utils.getTauriVirtualPath(metadata.data.path);
+        }
         eventEmitter.emit(metadata.eventName, metadata.data, bufferData);
     } else {
         console.error("FS: Received stray event: ", metadata);

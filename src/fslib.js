@@ -356,6 +356,13 @@ const fileSystemLib = {
     MOUNT_POINT_ROOT: Constants.MOUNT_POINT_ROOT,
     TAURI_ROOT: Constants.TAURI_ROOT,
     ERR_CODES: {},
+    WATCH_EVENTS: {
+        ADD_FILE: "add",
+        ADD_DIR: "addDir",
+        CHANGE: "change",
+        UNLINK_FILE: "unlink",
+        UNLINK_DIR: "unlinkDir"
+    },
     isEncodingSupported: function (encoding) {
         if(encoding.toLowerCase() === Constants.BYTE_ARRAY_ENCODING){
             return true;

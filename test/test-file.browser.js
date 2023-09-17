@@ -1,4 +1,4 @@
-/* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI, TEST_TYPE_TAURI_WS*/
+/* global expect , Filer, fs, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI, TEST_TYPE_TAURI_WS*/
 
 function _setupTests(testType) {
     let testPath;
@@ -7,13 +7,23 @@ function _setupTests(testType) {
         return window.__TAURI__.invoke("console_log", {message});
     }
 
-    async function _validate_not_exists(path) {
-        let done, err;
+    async function _validate_exists(path) {
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
         fs.stat(path, (error)=>{
-            err = error;
-            done = true;
+            resolveP(error);
         });
-        await waitForTrue(()=>{return done;},1000);
+        const err = await promise;
+        expect(err).to.be.null;
+    }
+
+    async function _validate_not_exists(path) {
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
+        fs.stat(path, (error)=>{
+            resolveP(error);
+        });
+        const err = await promise;
         expect(err.code).to.equal(fs.ERR_CODES.ENOENT);
     }
 
@@ -31,23 +41,14 @@ function _setupTests(testType) {
         });
     }
 
-    async function _validate_exists(path) {
-        let done, err;
-        fs.stat(path, (error)=>{
-            err = error;
-            done = true;
-        });
-        await waitForTrue(()=>{return done;},1000);
-        expect(err).to.be.null;
-    }
-
     async function _clean() {
         console.log(`cleaning: `, testPath);
-        let cleanSuccess = false;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
         fs.unlink(testPath, ()=>{
-            cleanSuccess = true;
+            resolveP();
         });
-        await waitForTrue(()=>{return cleanSuccess;},10000);
+        await promise;
     }
 
     before(async function () {
@@ -72,15 +73,16 @@ function _setupTests(testType) {
         // setup test folders
         await _clean();
         console.log(`mkdir: `, testPath);
-        let cleanSuccess = false;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
         fs.mkdirs(testPath, 0o777 ,true, ()=>{
-            cleanSuccess = true;
+            resolveP();
         });
-        await waitForTrue(()=>{return cleanSuccess;},10000);
+        await promise;
     });
 
     afterEach(async function () {
-        this.timeout(30000);
+        this.timeout(30000); // set max time to wait for a test to pass or fail
         await _clean();
     });
 
@@ -109,15 +111,17 @@ function _setupTests(testType) {
     }
 
     async function _writeTestFile() {
-        let writeSuccess = false;
         let filePath = `${testPath}/browserWrite.txt`;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.writeFile(filePath, _fileContent(), `utf8`, (err)=>{
-            if(!err){
-                writeSuccess = true;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP();
             }
         });
-        await waitForTrue(()=>{return writeSuccess;},10000);
-        expect(writeSuccess).to.be.true;
+        await promise;
         return filePath;
     }
 
@@ -127,66 +131,75 @@ function _setupTests(testType) {
 
     it(`Should phoenix ${testType} read in browser`, async function () {
         await _writeTestFile();
-        let readSuccess = false;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.readFile(`${testPath}/browserWrite.txt`, `utf8`, (err)=>{
-            if(!err){
-                readSuccess = true;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP();
             }
         });
-        await waitForTrue(()=>{return readSuccess;},1000);
-        expect(readSuccess).to.be.true;
+        await promise;
     });
 
 
     it(`Should phoenix ${testType} delete file in browser`, async function () {
         await _writeTestFile();
-        let delSuccess = false;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.unlink(`${testPath}/browserWrite.txt`, (err)=>{
-            if(!err){
-                delSuccess = true;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP();
             }
         });
-        await waitForTrue(()=>{return delSuccess;},1000);
-        expect(delSuccess).to.be.true;
+        await promise;
     });
 
     it(`Should phoenix ${testType} read dir`, async function () {
         await _writeTestFile();
-        let readSuccess = false, contentsRead;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.readdir(`${testPath}`, (err, contents)=>{
-            if(!err){
-                readSuccess = true;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP(contents);
             }
-            contentsRead = contents;
         });
-        await waitForTrue(()=>{return readSuccess;},1000);
-        expect(readSuccess).to.be.true;
+        const contentsRead = await promise;
         expect(contentsRead.length).to.equal(1);
     });
 
     it(`Should phoenix ${testType} read dir with withFileTypes`, async function () {
         await _writeTestFile();
-        let readSuccess = false, contentsRead;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.readdir(`${testPath}`, {withFileTypes: true} , (err, contents)=>{
-            if(!err){
-                readSuccess = true;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP(contents);
             }
-            contentsRead = contents;
         });
-        await waitForTrue(()=>{return readSuccess;},1000);
-        expect(readSuccess).to.be.true;
+        const contentsRead = await promise;
         expect(contentsRead[0].type).to.exist;
     });
 
     it(`Should phoenix ${testType} get stat of file`, async function () {
         let filePathCreated = await _writeTestFile();
-        let stats, error;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.stat(filePathCreated, (err, stat)=>{
-            stats = stat;
-            error = err;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP(stat);
+            }
         });
-        await waitForTrue(()=>{return !!stats;},1000);
-        expect(error).to.be.null;
+        const stats = await promise;
         expect(stats.isFile()).to.be.true;
         expect(stats.name).to.equal(Filer.path.basename(filePathCreated));
         expect(stats.mtime > 0).to.be.true;
@@ -210,34 +223,38 @@ function _setupTests(testType) {
 
     it(`Should phoenix ${testType} throw enoent if file doesnt exist`, async function () {
         let fileNotExistsPath = `${testPath}/notExistsFile.txt`;
-        let error;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
         fs.stat(fileNotExistsPath, (err)=>{
-            error = err;
+            resolveP(err);
         });
-        await waitForTrue(()=>{return !!error;},1000);
+        const error = await promise;
         expect(error.code).to.equal(fs.ERR_CODES.ENOENT);
     });
 
     it(`Should phoenix ${testType} unlink(path, cb) work for files`, async function () {
         let filePathCreated = await _writeTestFile();
-        let done, error;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.unlink(filePathCreated, (err)=>{
-            error = err;
-            done = true;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP();
+            }
         });
-        await waitForTrue(()=>{return done;},1000);
-        expect(error).to.be.null;
+        await promise;
         await _validate_not_exists(filePathCreated);
     });
 
     it(`Should phoenix ${testType} unlink(path, cb) non existent file enoent`, async function () {
         let fileNotExistsPath = `${testPath}/notExistsFile.txt`;
-        let done, error;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
         fs.unlink(fileNotExistsPath, (err)=>{
-            error = err;
-            done = true;
+            resolveP(err);
         });
-        await waitForTrue(()=>{return done;},1000);
+        const error = await promise;
         expect(error.code).to.equal(fs.ERR_CODES.ENOENT);
         await _validate_not_exists(fileNotExistsPath);
     });

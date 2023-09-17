@@ -336,7 +336,7 @@ function _watch(ws, metadata) {
         });
         const eventEmitterID = generateRandomId();
         watcher.eventEmitterID = eventEmitterID;
-        watchersMap[watcher.eventEmitterID] = watcher;
+        watchersMap[eventEmitterID] = watcher;
         watcher.on('ready', () => {
             if(readySent){
                 return;
