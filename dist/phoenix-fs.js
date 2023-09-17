@@ -46,6 +46,12 @@ function getWindowsDrives(callback) {
     });
 }
 
+function isSubpath(parent, subPathToCheck) {
+    const relative = path.relative(parent, subPathToCheck);
+    const isSubdir = !!relative && !relative.startsWith('..') && !path.isAbsolute(relative);
+    return isSubdir;
+}
+
 /**
  *
  * @param metadata {Object} Max size can be 4GB
@@ -302,7 +308,7 @@ function _unlink(ws, metadata) {
 // eventEmitterID to watcher
 const watchersMap = {};
 function _watch(ws, metadata) {
-    const fullPath = metadata.data.path,
+    const fullPathToWatch = metadata.data.path,
         // array of anymatch compatible path definition. Eg. ["**/{node_modules,bower_components}/**"]. full path is checked
         ignoredPaths = metadata.data.ignoredPaths,
         // contents of a gitIgnore file as text. The given path is used as the base path for gitIgnore
@@ -315,11 +321,23 @@ function _watch(ws, metadata) {
 
         // Filter function to integrate with chokidar
         function isIgnored(pathToFilter) {
+            console.log(`Watching: ${fullPathToWatch} Filtering: ${pathToFilter}`);
+            if(fullPathToWatch === pathToFilter) {
+                // if we are watching a file directly given file name, we don't run it though gitignore.
+                // also we cant get relative path of gitignore with respect to a file as root.
+                return false;
+            }
+            if(!isSubpath(fullPathToWatch, pathToFilter)) {
+                // Do not watch if the path given is not a subpath of our watched path.
+                // if we are watching a file directly given file name, Then we get an isignored call for the parent
+                // dir from chokidar.
+                return true;
+            }
+            const relativePath = path.relative(fullPathToWatch, pathToFilter);
             if(anymatch(ignoredPaths, pathToFilter)){
                 debugMode && console.log("ignored watch path: ", pathToFilter, "rel: ",relativePath);
                 return true;
             }
-            const relativePath = path.relative(fullPath, pathToFilter);
             if(relativePath && gitignore.ignores(relativePath)){
                 debugMode && console.log("ignored watch gitIgnore path: ", pathToFilter, "rel: ",relativePath);
                 return true;
@@ -329,9 +347,10 @@ function _watch(ws, metadata) {
         }
 
         let readySent = false;
-        const watcher = chokidar.watch(fullPath, {
+        const watcher = chokidar.watch(fullPathToWatch, {
             persistent,
             ignoreInitial,
+            ignorePermissionErrors: true,
             ignored: path => isIgnored(path)
         });
         const eventEmitterID = generateRandomId();
@@ -350,7 +369,7 @@ function _watch(ws, metadata) {
                 return;
             }
             readySent = true;
-            _reportError(ws, metadata, err, `Error while watching path ${fullPath}`);
+            _reportError(ws, metadata, err, `Error while watching path ${fullPathToWatch}`);
         });
         let watchEvents = ['add', 'change', 'unlink', 'addDir', 'unlinkDir'];
         for(let watchEvent of watchEvents){
@@ -359,7 +378,7 @@ function _watch(ws, metadata) {
             });
         }
     } catch (err) {
-        _reportError(ws, metadata, err, `Failed to watch path ${fullPath}`);
+        _reportError(ws, metadata, err, `Failed to watch path ${fullPathToWatch}`);
     }
 }
 

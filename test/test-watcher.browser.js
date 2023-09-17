@@ -1,10 +1,16 @@
 /* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI, TEST_TYPE_TAURI_WS*/
 
 function _setupTests(testType) {
-    let testPath, watcher;
+    let testPath, watcher, watcher2;
 
     function consoleLogToShell(message) {
         return window.__TAURI__.invoke("console_log", {message});
+    }
+
+    async function _waitForSomeTime(timeMS) {
+        return new Promise(resolve=>{
+            setTimeout(resolve, timeMS);
+        });
     }
 
     async function _validate_exists(path) {
@@ -82,6 +88,44 @@ function _setupTests(testType) {
         await promise;
     }
 
+    const ADD_DIR = fs.WATCH_EVENTS.ADD_DIR,
+        UNLINK_DIR = fs.WATCH_EVENTS.UNLINK_DIR,
+        ADD_FILE = fs.WATCH_EVENTS.ADD_FILE,
+        UNLINK_FILE = fs.WATCH_EVENTS.UNLINK_FILE,
+        CHANGE = fs.WATCH_EVENTS.CHANGE;
+
+    async function _createNewWatcher(watchPath, pathChangeArray) {
+        const newWatcher = await fs.watchAsync(watchPath);
+        const watchEvents = [ADD_DIR, UNLINK_DIR, ADD_FILE, UNLINK_FILE, CHANGE];
+        for(let watchEvent of watchEvents) {
+            newWatcher.on(watchEvent, function ({path}) {
+                console.log(`Watcher: ${newWatcher.eventEmitterID}: path ${watchEvent}`, path);
+                pathChangeArray.push({path, watchEvent});
+            });
+        }
+        return newWatcher;
+    }
+
+    async function initWatcher(watchPath, pathChangeArray) {
+        if(watcher) {
+            await fs.unwatchAsync(watcher);
+            watcher = null;
+        }
+        watcher = await _createNewWatcher(watchPath, pathChangeArray);
+        console.log("watcher init done: ", watcher.eventEmitterID);
+        return watcher;
+    }
+
+    async function initWatcher2(watchPath, pathChangeArray) {
+        if(watcher2) {
+            await fs.unwatchAsync(watcher2);
+            watcher2 = null;
+        }
+        watcher2 = await _createNewWatcher(watchPath, pathChangeArray);
+        console.log("watcher 2 init done: ", watcher2.eventEmitterID);
+        return watcher2;
+    }
+
     before(async function () {
         switch (testType) {
         case TEST_TYPE_FS_ACCESS: testPath = window.mountTestPath;break;
@@ -117,6 +161,10 @@ function _setupTests(testType) {
         if(watcher){
             await fs.unwatchAsync(watcher);
             watcher = null;
+        }
+        if(watcher2){
+            await fs.unwatchAsync(watcher2);
+            watcher2 = null;
         }
         await _clean();
     });
@@ -190,6 +238,24 @@ function _setupTests(testType) {
         expect(addedPaths[0]).to.eql(pathCreated);
     });
 
+    it(`Should phoenix ${testType} watch a file`, async function () {
+        const watchPath = `${testPath}/a.txt`,
+            fileInSameDirNotWatched = `${testPath}/b.txt`;
+        await _writeTestFile(watchPath);
+
+        const pathChangeArray = [];
+
+        await initWatcher(watchPath, pathChangeArray);
+
+        await _writeTestFile(watchPath);
+        await _writeTestFile(fileInSameDirNotWatched);
+
+        await waitForTrue(()=>{return pathChangeArray.length === 1;},10000);
+        await _waitForSomeTime(100); // maybe some more events might come in so wait for some time to be sure?
+        expect(pathChangeArray).to.deep.include({ path: watchPath, watchEvent: CHANGE});
+        expect(pathChangeArray.length).to.eql(1);
+    });
+
     it(`Should phoenix ${testType} watch for file rename`, async function () {
         const watchPath = `${testPath}/watch`;
         await _creatDirAndValidate(watchPath);
@@ -218,25 +284,46 @@ function _setupTests(testType) {
         expect(addedPaths[0]).to.eql(pathRenamed);
     });
 
-    const ADD_DIR = fs.WATCH_EVENTS.ADD_DIR,
-        UNLINK_DIR = fs.WATCH_EVENTS.UNLINK_DIR,
-        ADD_FILE = fs.WATCH_EVENTS.ADD_FILE,
-        UNLINK_FILE = fs.WATCH_EVENTS.UNLINK_FILE,
-        CHANGE = fs.WATCH_EVENTS.CHANGE;
-    async function initWatchers(watchPath, pathChangeArray) {
-        if(watcher) {
-            await fs.unwatchAsync(watcher);
-            watcher = null;
-        }
-        watcher = await fs.watchAsync(watchPath);
-        const watchEvents = [ADD_DIR, UNLINK_DIR, ADD_FILE, UNLINK_FILE, CHANGE];
-        for(let watchEvent of watchEvents) {
-            watcher.on(watchEvent, function ({path}) {
-                console.log(`path ${watchEvent}`, path);
-                pathChangeArray.push({path, watchEvent});
-            });
-        }
-    }
+    it(`Should phoenix ${testType} watch support multiple watchers concurrently on same dir`, async function () {
+        const watchPath = `${testPath}/watch`;
+        await _creatDirAndValidate(watchPath);
+
+        const pathChangeArray = [], watcher2PathChangeArray = [];
+        let pathCreated = `${watchPath}/x`;
+        const nestedFile = `${watchPath}/x/a.txt`;
+
+        await initWatcher(watchPath, pathChangeArray);
+        await initWatcher2(watchPath, watcher2PathChangeArray);
+
+        await _creatDirAndValidate(pathCreated);
+        await _writeTestFile(nestedFile);
+
+        await waitForTrue(()=>{return pathChangeArray.length === 2;},10000);
+        await waitForTrue(()=>{return watcher2PathChangeArray.length === 2;},10000);
+        expect(pathChangeArray).to.deep.include({ path: pathCreated, watchEvent: ADD_DIR});
+        expect(pathChangeArray).to.deep.include({ path: nestedFile, watchEvent: ADD_FILE});
+        expect(watcher2PathChangeArray).to.deep.include({ path: pathCreated, watchEvent: ADD_DIR});
+        expect(watcher2PathChangeArray).to.deep.include({ path: nestedFile, watchEvent: ADD_FILE});
+    });
+
+    it(`Should phoenix ${testType} watch support multiple watchers concurrently on same file`, async function () {
+        const watchPath = `${testPath}/a.txt`;
+        await _writeTestFile(watchPath);
+
+        const pathChangeArray = [], watcher2PathChangeArray = [];
+
+        await initWatcher(watchPath, pathChangeArray);
+        await initWatcher2(watchPath, watcher2PathChangeArray);
+
+        await _writeTestFile(watchPath);
+        await _writeTestFile(watchPath);
+
+        await waitForTrue(()=>{return pathChangeArray.length === 1;},10000);
+        await waitForTrue(()=>{return watcher2PathChangeArray.length === 1;},10000);
+        await _waitForSomeTime(100); // maybe some more events might come in so wait for some time to be sure?
+        expect(pathChangeArray).to.deep.include({ path: watchPath, watchEvent: CHANGE});
+        expect(watcher2PathChangeArray).to.deep.include({ path: watchPath, watchEvent: CHANGE});
+    });
 
     it(`Should phoenix ${testType} watch for folder rename with nested contents`, async function () {
         const watchPath = `${testPath}/watch`;
@@ -248,7 +335,7 @@ function _setupTests(testType) {
         await _creatDirAndValidate(pathCreated);
         await _writeTestFile(nestedFile);
 
-        await initWatchers(watchPath, pathChangeArray);
+        await initWatcher(watchPath, pathChangeArray);
 
         const pathRenamed = `${watchPath}/y`;
         await _rename(pathCreated, pathRenamed);
