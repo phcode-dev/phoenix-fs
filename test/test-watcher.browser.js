@@ -94,8 +94,8 @@ function _setupTests(testType) {
         UNLINK_FILE = fs.WATCH_EVENTS.UNLINK_FILE,
         CHANGE = fs.WATCH_EVENTS.CHANGE;
 
-    async function _createNewWatcher(watchPath, pathChangeArray) {
-        const newWatcher = await fs.watchAsync(watchPath);
+    async function _createNewWatcher(watchPath, pathChangeArray,  gitIgnorePaths="") {
+        const newWatcher = await fs.watchAsync(watchPath,  gitIgnorePaths);
         const watchEvents = [ADD_DIR, UNLINK_DIR, ADD_FILE, UNLINK_FILE, CHANGE];
         for(let watchEvent of watchEvents) {
             newWatcher.on(watchEvent, function ({path}) {
@@ -106,12 +106,12 @@ function _setupTests(testType) {
         return newWatcher;
     }
 
-    async function initWatcher(watchPath, pathChangeArray) {
+    async function initWatcher(watchPath, pathChangeArray,  gitIgnorePaths="") {
         if(watcher) {
             await fs.unwatchAsync(watcher);
             watcher = null;
         }
-        watcher = await _createNewWatcher(watchPath, pathChangeArray);
+        watcher = await _createNewWatcher(watchPath, pathChangeArray, gitIgnorePaths);
         console.log("watcher init done: ", watcher.eventEmitterID);
         return watcher;
     }
@@ -260,6 +260,39 @@ function _setupTests(testType) {
         expect(pathChangeArray.length).to.eql(1);
     });
 
+    it(`Should phoenix ${testType} watch honor git ignoree list`, async function () {
+        const watchPath = `${testPath}/watch`;
+        await _creatDirAndValidate(watchPath);
+        await _creatDirAndValidate(`${watchPath}/anotherPath`);
+        await _creatDirAndValidate(`${watchPath}/exact`);
+        await _waitForSomeTime(500); // wait for some watcher events to trickle out maybe due to os delays
+
+        const pathChangeArray = [];
+
+        await initWatcher(watchPath, pathChangeArray, ['ignored_path', '/exact/path', '/exact/file.txt']);
+
+        // ignored
+        await _creatDirAndValidate(`${watchPath}/ignored_path`);
+        await _writeTestFile(`${watchPath}/ignored_path/a.txt`);
+        await _creatDirAndValidate(`${watchPath}/anotherPath/ignored_path`);
+        await _creatDirAndValidate(`${watchPath}/exact/path`);
+        await _writeTestFile(`${watchPath}/exact/file.txt`);
+        // not ignored
+        await _writeTestFile(`${watchPath}/b.txt`);
+        await _creatDirAndValidate(`${watchPath}/anotherPath/exact`);
+        await _writeTestFile(`${watchPath}/anotherPath/file.txt`);
+        await _creatDirAndValidate(`${watchPath}/newPath`);
+        await _writeTestFile(`${watchPath}/newPath/b.txt`);
+
+        const expectedChanges = 5;
+        await waitForTrue(()=>{return pathChangeArray.length === expectedChanges;},10000);
+        await _waitForSomeTime(100); // maybe some more events might come in so wait for some time to be sure?
+        expect(pathChangeArray).to.deep.include({ path: `${watchPath}/b.txt`, watchEvent: ADD_FILE});
+        expect(pathChangeArray).to.deep.include({ path: `${watchPath}/newPath`, watchEvent: ADD_DIR});
+        expect(pathChangeArray).to.deep.include({ path: `${watchPath}/newPath/b.txt`, watchEvent: ADD_FILE});
+        expect(pathChangeArray.length).to.eql(expectedChanges);
+    }).timeout(10000);
+
     it(`Should phoenix ${testType} watch for file rename`, async function () {
         const watchPath = `${testPath}/watch`;
         await _creatDirAndValidate(watchPath);
@@ -355,7 +388,7 @@ function _setupTests(testType) {
         expect(pathChangeArray).to.deep.include({ path: `${pathRenamed}/a.txt`, watchEvent: ADD_FILE});
     });
 
-    it(`Should phoenix ${testType} watch and unwatch file events`, async function () {
+    it(`Should phoenix ${testType} watch and unwatch using watcher.on and watcher.off`, async function () {
         const watchPath = `${testPath}/watch`;
         await _validate_not_exists(watchPath);
         await _creatDirAndValidate(watchPath);

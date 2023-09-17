@@ -279,13 +279,13 @@ const fileSystemLib = {
         }
         throw new Errors.ENOSYS('Phoenix fs showSaveDialog function not yet supported.');
     },
-    watchAsync: function (path, ignoredPaths=[], gitIgnorePaths="") {
+    watchAsync: function (path, gitIgnorePaths="") {
         if(TauriFS.isTauriPath(path)) {
             throw new Errors.EPERM('Cannot watch root directory!', path);
         } else if(TauriFS.isTauriSubPath(path)) {
-            return NodeTauriFS.watchAsync(path, ignoredPaths, gitIgnorePaths);
+            return NodeTauriFS.watchAsync(path, gitIgnorePaths);
         }
-        return FsWatch.watchAsync(path, ignoredPaths, gitIgnorePaths);
+        return FsWatch.watchAsync(path, gitIgnorePaths);
     },
     unwatchAsync: function (eventEmitter) {
         if(eventEmitter.eventEmitterID) {
