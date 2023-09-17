@@ -366,6 +366,16 @@ function _setupTests(testType) {
         expect(watcher2PathChangeArray).to.deep.include({ path: watchPath, watchEvent: CHANGE});
     });
 
+    it(`Should phoenix ${testType} watch throw error if trying to watch root dir`, async function () {
+        let err;
+        try{
+            await fs.watchAsync("/tauri/");
+        } catch (e) {
+            err = e;
+        }
+        expect(err.code).to.eql(fs.ERR_CODES.EPERM);
+    });
+
     it(`Should phoenix ${testType} watch for folder rename with nested contents`, async function () {
         const watchPath = `${testPath}/watch`;
         await _creatDirAndValidate(watchPath);
