@@ -27,13 +27,12 @@ Here's a closer look at the Phoenix VFS organization:
 
 - **Node Websocket Connector Integration**:
   - The `/tauri/` paths can be accessed via websockets. This integration is much more
-    performant than tauri's fs rust APIs(generally 4x faster and 10x faster for large files).
+    performant than Tauri's fs rust APIs(generally 4x faster and 10x faster for large files).
   - As we use websockets to connection to a node process that executes the actual fs operations,
     the ws backed `/tauri/` apis are available in all web/shared/service workers.
-  - This is recommended to use in main browser window as well, as this will releive the main thread
+  - This is recommended to use in main browser window as well, as this will relieve the main thread
     of tauri fs access apis that typically leads to blocking/freezing js window on large file access.
-  - Supports filesystem watcher APIs. On all other endpoints, the virtual watchers are only capable of
-    emitting file change events on files that has been modified within its window/browser only.
+  - Supports filesystem watcher APIs that behaves consistently across all platforms.
 
 By adopting Phoenix VFS, you're not just leveraging a file system; you're integrating a dynamic, adaptable layer that bridges the web and native worlds, making your web applications more powerful and reduces development time and costs.
 
@@ -54,6 +53,7 @@ By adopting Phoenix VFS, you're not just leveraging a file system; you're integr
 * [API Docs](#api-docs)
   * [Error Codes](#error-codes)
   * [Supported file encodings](#supported-file-encodings)
+  * [`fs.utils`](#fsutils)
     * [Usage of encoding in `fs.readFile` API](#usage-of-encoding-in-fsreadfile-api)
     * [Use `fs.BYTE_ARRAY_ENCODING` for binary files](#use-fsbytearrayencoding-for-binary-files)
   * [`fs.Buffer`](#fsbuffer)
@@ -97,12 +97,17 @@ By adopting Phoenix VFS, you're not just leveraging a file system; you're integr
     * [Stat Object](#stat-object)
     * [Example](#example-1)
   * [`fs.readFile(path, options?, callback)` Function](#fsreadfilepath-options-callback-function)
-    * [`fs.writeFile(path, data, options?, callback)` Function](#fswritefilepath-data-options-callback-function)
-      * [Parameters:](#parameters-7)
-      * [Example:](#example-2)
-    * [`fs.setNodeWSEndpoint(websocketEndpoint)`](#fssetnodewsendpointwebsocketendpoint)
-    * [`fs.forceUseNodeWSEndpoint(use)`](#fsforceusenodewsendpointuse)
-    * [`fs.preferNodeWSEndpoint(use)`](#fsprefernodewsendpointuse)
+  * [`fs.writeFile(path, data, options?, callback)` Function](#fswritefilepath-data-options-callback-function)
+    * [Parameters:](#parameters-7)
+    * [Example:](#example-2)
+  * [`fs.setNodeWSEndpoint(websocketEndpoint)`](#fssetnodewsendpointwebsocketendpoint)
+  * [`fs.forceUseNodeWSEndpoint(use)`](#fsforceusenodewsendpointuse)
+  * [`fs.preferNodeWSEndpoint(use)`](#fsprefernodewsendpointuse)
+  * [`fs.watchAsync(pathToWatch, gitIgnorePaths)`](#fswatchasyncpathtowatch-gitignorepaths)
+    * [Parameters](#parameters-8)
+    * [Returns](#returns-4)
+    * [Example](#example-3)
+  * [`fs.unwatchAsync(eventEmitter)`](#fsunwatchasynceventemitter)
 <!-- TOC -->
 
 ## Installation
