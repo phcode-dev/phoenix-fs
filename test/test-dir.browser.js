@@ -7,32 +7,34 @@ function _setupTests(testType) {
         return window.__TAURI__.invoke("console_log", {message});
     }
     async function _validate_exists(path) {
-        let done, err;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
         fs.stat(path, (error)=>{
-            err = error;
-            done = true;
+            resolveP(error);
         });
-        await waitForTrue(()=>{return done;},1000);
+        const err = await promise;
         expect(err).to.be.null;
     }
 
     async function _validate_not_exists(path) {
-        let done, err;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
         fs.stat(path, (error)=>{
-            err = error;
-            done = true;
+            resolveP(error);
         });
-        await waitForTrue(()=>{return done;},1000);
+        const err = await promise;
         expect(err.code).to.equal(fs.ERR_CODES.ENOENT);
     }
 
+
     async function _clean() {
         console.log(`cleaning: `, testPath);
-        let cleanSuccess = false;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
         fs.unlink(testPath, ()=>{
-            cleanSuccess = true;
+            resolveP();
         });
-        await waitForTrue(()=>{return cleanSuccess;},10000);
+        await promise;
     }
 
     before(async function () {
@@ -118,52 +120,53 @@ function _setupTests(testType) {
     }
 
     async function _writeTestFile() {
-        let writeSuccess = false;
         let filePath = `${testPath}/browserWrite.txt`;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
         fs.writeFile(filePath, `hello World`, `utf8`, (err)=>{
             if(!err){
-                writeSuccess = true;
+                resolveP();
             }
         });
-        await waitForTrue(()=>{return writeSuccess;},10000);
-        expect(writeSuccess).to.be.true;
+        await promise;
         return filePath;
     }
 
     it(`Should phoenix ${testType} read dir`, async function () {
         await _writeTestDir();
-        let readSuccess = false, contentsRead;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
         fs.readdir(`${testPath}`, (err, contents)=>{
             if(!err){
-                readSuccess = true;
+                resolveP(contents);
             }
-            contentsRead = contents;
         });
-        await waitForTrue(()=>{return readSuccess;},1000);
-        expect(readSuccess).to.be.true;
+        const contentsRead = await promise;
         expect(contentsRead.length).to.equal(1);
     });
 
     it(`Should phoenix ${testType} read dir raise enoent if not exists`, async function () {
-        let error;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
         fs.readdir(`${testPath}/x`, (err)=>{
-            error = err;
+            resolveP(err);
         });
-        await waitForTrue(()=>{return !!error;},1000);
+        const error = await promise;
         expect(error.code).to.equal(fs.ERR_CODES.ENOENT);
     });
 
     it(`Should phoenix ${testType} read dir with withFileTypes`, async function () {
         await _writeTestDir();
-        let readSuccess = false, contentsRead;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.readdir(`${testPath}`, {withFileTypes: true} , (err, contents)=>{
-            if(!err){
-                readSuccess = true;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP(contents);
             }
-            contentsRead = contents;
         });
-        await waitForTrue(()=>{return readSuccess;},1000);
-        expect(readSuccess).to.be.true;
+        const contentsRead = await promise;
         expect(contentsRead[0].type).to.exist;
     });
 
@@ -172,87 +175,102 @@ function _setupTests(testType) {
     });
 
     it(`Should phoenix ${testType} mkdir(path,mode, cb) in browser if it doesnt exist`, async function () {
-        let createSuccess = false;
         const dirPathToCreate = `${testPath}/testDir1`;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.mkdir(dirPathToCreate, 0o777, (err)=>{
-            if(!err){
-                createSuccess = true;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP();
             }
         });
-        await waitForTrue(()=>{return createSuccess;},1000);
-        expect(createSuccess).to.be.true;
+        await promise;
         await _validate_exists(dirPathToCreate);
     });
 
     it(`Should phoenix ${testType} mkdir(path, cb) in browser if it doesnt exist`, async function () {
-        let createSuccess = false;
         const dirPathToCreate = `${testPath}/testDir1`;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.mkdir(dirPathToCreate, (err)=>{
-            if(!err){
-                createSuccess = true;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP();
             }
         });
-        await waitForTrue(()=>{return createSuccess;},1000);
-        expect(createSuccess).to.be.true;
+        await promise;
         await _validate_exists(dirPathToCreate);
     });
 
     it(`Should phoenix fail ${testType} mkdir(path,mode, cb) if already exists`, async function () {
         let dirPathCreated = await _writeTestDir();
-        let error;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
         fs.mkdir(dirPathCreated, 0o777, (err)=>{
-            error = err;
+            resolveP(err);
         });
-        await waitForTrue(()=>{return !!error;},1000);
+        const error = await promise;
         expect(error.code).to.equal(fs.ERR_CODES.EEXIST);
     });
 
     it(`Should phoenix ${testType} mkdirs(path,mode, recursive, cb) even if exists`, async function () {
         let dirPathCreated = await _writeTestDir();
-        let success, error;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.mkdirs(dirPathCreated, 0o777, true, (err)=>{
-            error = err;
-            success = true;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP();
+            }
         });
-        await waitForTrue(()=>{return success;},1000);
-        expect(error).to.be.null;
+        await promise;
         await _validate_exists(dirPathCreated);
     });
 
     it(`Should phoenix ${testType} mkdirs(path,mode, recursive, cb) if any node in between doesnt exists`, async function () {
         let dirPathCreated = await _writeTestDir();
         let pathToCreate = `${dirPathCreated}/path/that/doesnt/exist`;
-        let success, error;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.mkdirs(pathToCreate, 0o777, true, (err)=>{
-            error = err;
-            success = true;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP();
+            }
         });
-        await waitForTrue(()=>{return success;},1000);
-        expect(error).to.be.null;
+        await promise;
         await _validate_exists(pathToCreate);
     });
 
     it(`Should phoenix ${testType} mkdirs(path, recursive, cb)  work if any node in between doesnt exists`, async function () {
         let dirPathCreated = await _writeTestDir();
         let pathToCreate = `${dirPathCreated}/path/that/doesnt/exist`;
-        let success, error;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.mkdirs(pathToCreate, true, (err)=>{
-            error = err;
-            success = true;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP();
+            }
         });
-        await waitForTrue(()=>{return success;},1000);
-        expect(error).to.be.null;
+        await promise;
         await _validate_exists(pathToCreate);
     });
 
     it(`Should phoenix ${testType} mkdirs(path,mode, cb) fail if not recursive and any node in between doesnt exists`, async function () {
         let dirPathCreated = await _writeTestDir();
         let pathToCreate = `${dirPathCreated}/path/that/doesnt/exist`;
-        let error;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
         fs.mkdirs(pathToCreate, 0o777, (err)=>{
-            error = err;
+            resolveP(err);
         });
-        await waitForTrue(()=>{return !!error;},1000);
+        const error = await promise;
         expect(error.code).to.eql(fs.ERR_CODES.ENOENT);
         await _validate_not_exists(pathToCreate);
     });
@@ -260,25 +278,28 @@ function _setupTests(testType) {
     it(`Should phoenix ${testType} mkdirs(path, cb) work if mode not specified`, async function () {
         let dirPathCreated = await _writeTestDir();
         let pathToCreate = `${dirPathCreated}/newDir`;
-        let success, error;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
         fs.mkdirs(pathToCreate, (err)=>{
-            error = err;
-            success = true;
+            resolveP(err);
         });
-        await waitForTrue(()=>{return success;},1000);
+        const error = await promise;
         expect(error).to.be.null;
         await _validate_exists(pathToCreate);
     });
 
     it(`Should phoenix ${testType} unlink(path, cb) work for empty dirs`, async function () {
         let dirPathCreated = await _writeTestDir();
-        let success, error;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.unlink(dirPathCreated, (err)=>{
-            error = err;
-            success = true;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP();
+            }
         });
-        await waitForTrue(()=>{return success;},1000);
-        expect(error).to.be.null;
+        await promise;
         await _validate_not_exists(dirPathCreated);
     });
 
@@ -286,37 +307,43 @@ function _setupTests(testType) {
         let dirPathCreated = await _writeTestDir();
         await _creatDirAndValidate(`${dirPathCreated}/sub1`);
         await _creatDirAndValidate(`${dirPathCreated}/sub2`);
-        let success, error;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.unlink(dirPathCreated, (err)=>{
-            error = err;
-            success = true;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP();
+            }
         });
-        await waitForTrue(()=>{return success;},1000);
-        expect(error).to.be.null;
+        await promise;
         await _validate_not_exists(dirPathCreated);
     });
 
     it(`Should phoenix ${testType} unlink(path, cb) non existent dir enoent`, async function () {
         let fileNotExistsPath = `${testPath}/dirNotExists`;
-        let done, error;
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve; });
         fs.unlink(fileNotExistsPath, (err)=>{
-            error = err;
-            done = true;
+            resolveP(err);
         });
-        await waitForTrue(()=>{return done;},1000);
+        const error = await promise;
         expect(error.code).to.equal(fs.ERR_CODES.ENOENT);
         await _validate_not_exists(fileNotExistsPath);
     });
 
     it(`Should phoenix ${testType} get stat of dir`, async function () {
         let dirPathCreated = await _writeTestDir();
-        let stats, error;
+        let resolveP,rejectP;
+        const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.stat(dirPathCreated, (err, stat)=>{
-            stats = stat;
-            error = err;
+            if(err){
+                rejectP(err);
+            } else {
+                resolveP(stat);
+            }
         });
-        await waitForTrue(()=>{return !!stats;},1000);
-        expect(error).to.be.null;
+        const stats = await promise;
         expect(stats.isDirectory()).to.be.true;
         expect(stats.name).to.equal(Filer.path.basename(dirPathCreated));
         switch (testType) {
