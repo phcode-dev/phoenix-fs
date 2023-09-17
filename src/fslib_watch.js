@@ -75,7 +75,7 @@ function _listenToExternalFsWatchEvents() {
     _setupBroadcastChannel();
     _channel.onmessage = async function(event) {
         if(virtualfs.debugMode){
-            console.log('External fs watch event: ', event.data);
+            console.log('PhoenixFS: External fs watch event: ', event.data);
         }
         _processFsWatchEvent(event.data, false);
     };

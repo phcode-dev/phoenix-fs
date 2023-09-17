@@ -321,7 +321,6 @@ function _watch(ws, metadata) {
 
         // Filter function to integrate with chokidar
         function isIgnored(pathToFilter) {
-            console.log(`Watching: ${fullPathToWatch} Filtering: ${pathToFilter}`);
             if(fullPathToWatch === pathToFilter) {
                 // if we are watching a file directly given file name, we don't run it though gitignore.
                 // also we cant get relative path of gitignore with respect to a file as root.
@@ -331,15 +330,16 @@ function _watch(ws, metadata) {
                 // Do not watch if the path given is not a subpath of our watched path.
                 // if we are watching a file directly given file name, Then we get an isignored call for the parent
                 // dir from chokidar.
+                console.log(`PhoenixFS: Watching: ${fullPathToWatch} Filtered path: ${pathToFilter}`);
                 return true;
             }
             const relativePath = path.relative(fullPathToWatch, pathToFilter);
             if(anymatch(ignoredPaths, pathToFilter)){
-                debugMode && console.log("ignored watch path: ", pathToFilter, "rel: ",relativePath);
+                debugMode && console.log("PhoenixFS: anymatch ignored watch path: ", pathToFilter, "rel: ", relativePath);
                 return true;
             }
             if(relativePath && gitignore.ignores(relativePath)){
-                debugMode && console.log("ignored watch gitIgnore path: ", pathToFilter, "rel: ",relativePath);
+                debugMode && console.log("PhoenixFS: gitignore ignored watch gitIgnore path: ", pathToFilter, "rel: ",relativePath);
                 return true;
             } else {
                 return false;
@@ -438,14 +438,14 @@ function processWSCommand(ws, metadata, dataBuffer) {
             _unwatch(ws, metadata);
             return;
         case WS_COMMAND.LARGE_DATA_SOCKET_ANNOUNCE:
-            console.log("Large Data Transfer Socket established, socket Group: ", metadata.socketGroupID);
+            console.log("PhoenixFS: Large Data Transfer Socket established, socket Group: ", metadata.socketGroupID);
             ws.isLargeData = true;
             ws.socketGroupID = metadata.socketGroupID;
             largeDataSocketMap[metadata.socketGroupID] = ws;
             _sendResponse(ws, metadata, {}, dataBuffer);
             return;
         case WS_COMMAND.CONTROL_SOCKET_ANNOUNCE:
-            console.log("Control Socket established, socket Group:", metadata.socketGroupID);
+            console.log("PhoenixFS: Control Socket established, socket Group:", metadata.socketGroupID);
             ws.isLargeData = false;
             ws.socketGroupID = metadata.socketGroupID;
             controlSocketMap[metadata.socketGroupID] = ws;
@@ -484,12 +484,12 @@ function CreatePhoenixFsServer(server, wssPath = "/phoenixFS") {
 
     // Set up a connection listener
     wss.on('connection', (ws) => {
-        console.log('Websocket Client connected');
+        console.log('PhoenixFS: Websocket Client connected');
         ws.binaryType = 'arraybuffer';
 
         // Listen for messages from the client
         ws.on('message', (message) => {
-            debugMode && console.log(`Received message ${message} of size: ${message.byteLength}, type: ${typeof message}, isArrayBuffer: ${message instanceof ArrayBuffer}, isBuffer: ${Buffer.isBuffer(message)}`);
+            debugMode && console.log(`PhoenixFS: Received message ${message} of size: ${message.byteLength}, type: ${typeof message}, isArrayBuffer: ${message instanceof ArrayBuffer}, isBuffer: ${Buffer.isBuffer(message)}`);
             processWebSocketMessage(ws, message);
         });
 
@@ -499,10 +499,10 @@ function CreatePhoenixFsServer(server, wssPath = "/phoenixFS") {
         ws.on('close', () => {
             if(ws.isLargeData && ws.socketGroupID && largeDataSocketMap[ws.socketGroupID] === ws){
                 delete largeDataSocketMap[ws.socketGroupID];
-                console.log('Websocket Client disconnected: Large data Socket');
+                console.log('PhoenixFS: Websocket Client disconnected: Large data Socket');
             } else if(!ws.isLargeData && ws.socketGroupID && controlSocketMap[ws.socketGroupID] === ws){
                 delete controlSocketMap[ws.socketGroupID];
-                console.log('Websocket Client disconnected: control Socket');
+                console.log('PhoenixFS: Websocket Client disconnected: control Socket');
             }
         });
     });

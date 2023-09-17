@@ -167,6 +167,7 @@ function _setupTests(testType) {
             watcher2 = null;
         }
         await _clean();
+        await _waitForSomeTime(1000); // wait for 1 second to purge all delete watch events in node
     });
 
     after(function () {
@@ -196,6 +197,8 @@ function _setupTests(testType) {
     it(`Should phoenix ${testType} watch for file and folder creation/deletion and change`, async function () {
         const watchPath = `${testPath}/watch`;
         await _creatDirAndValidate(watchPath);
+        await _waitForSomeTime(500); // wait for some watcher events to trickle out maybe due to os delays
+
         watcher = await fs.watchAsync(watchPath);
 
         let addedPaths = [];
@@ -242,6 +245,7 @@ function _setupTests(testType) {
         const watchPath = `${testPath}/a.txt`,
             fileInSameDirNotWatched = `${testPath}/b.txt`;
         await _writeTestFile(watchPath);
+        await _waitForSomeTime(500); // wait for some watcher events to trickle out maybe due to os delays
 
         const pathChangeArray = [];
 
@@ -273,6 +277,8 @@ function _setupTests(testType) {
         pathCreated = `${watchPath}/browserWrite.txt`;
         await _writeTestFile(pathCreated);
 
+        await _waitForSomeTime(500); // wait for some watcher events to trickle out maybe due to os delays
+
         watcher = await fs.watchAsync(watchPath);
         watcher.on(fs.WATCH_EVENTS.ADD_FILE, addToPath);
         watcher.on(fs.WATCH_EVENTS.UNLINK_FILE, removeFromPath);
@@ -287,6 +293,7 @@ function _setupTests(testType) {
     it(`Should phoenix ${testType} watch support multiple watchers concurrently on same dir`, async function () {
         const watchPath = `${testPath}/watch`;
         await _creatDirAndValidate(watchPath);
+        await _waitForSomeTime(500); // wait for some watcher events to trickle out maybe due to os delays
 
         const pathChangeArray = [], watcher2PathChangeArray = [];
         let pathCreated = `${watchPath}/x`;
@@ -309,6 +316,7 @@ function _setupTests(testType) {
     it(`Should phoenix ${testType} watch support multiple watchers concurrently on same file`, async function () {
         const watchPath = `${testPath}/a.txt`;
         await _writeTestFile(watchPath);
+        await _waitForSomeTime(500); // wait for some watcher events to trickle out maybe due to os delays
 
         const pathChangeArray = [], watcher2PathChangeArray = [];
 
@@ -328,6 +336,7 @@ function _setupTests(testType) {
     it(`Should phoenix ${testType} watch for folder rename with nested contents`, async function () {
         const watchPath = `${testPath}/watch`;
         await _creatDirAndValidate(watchPath);
+        await _waitForSomeTime(500); // wait for some watcher events to trickle out maybe due to os delays
 
         const pathChangeArray = [];
         let pathCreated = `${watchPath}/x`;
@@ -350,10 +359,13 @@ function _setupTests(testType) {
         const watchPath = `${testPath}/watch`;
         await _validate_not_exists(watchPath);
         await _creatDirAndValidate(watchPath);
+        await _waitForSomeTime(500); // wait for some watcher events to trickle out maybe due to os delays
+
         watcher = await fs.watchAsync(watchPath);
 
         let addedPaths = [];
         function addToPath({path}) {
+            console.log("received add event: ", path);
             addedPaths.push(path);
         }
         watcher.on(fs.WATCH_EVENTS.ADD_DIR, addToPath);
@@ -367,9 +379,7 @@ function _setupTests(testType) {
         addedPaths = [];
         pathCreated = `${watchPath}/y`;
         await _creatDirAndValidate(pathCreated);
-        let waitForSomeEventsDone = false;
-        setTimeout(()=>{waitForSomeEventsDone = true;}, 500);
-        await waitForTrue(()=>{return waitForSomeEventsDone;},1000);
+        await _waitForSomeTime(300);
         expect(addedPaths.length).to.eql(0);
     });
 }

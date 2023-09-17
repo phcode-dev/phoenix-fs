@@ -341,7 +341,7 @@ async function _copyFileFromHandles(srcFileHandle, dstHandle, optionalName) {
         const writable = await dstHandle.createWritable();
         await srcStream.pipeTo(writable);
     } catch (e) {
-        console.error(`Error while copying ${dstHandle.name}/${optionalName} : ${e}`);
+        console.error(`PhoenixFS: Error while copying ${dstHandle.name}/${optionalName} : ${e}`);
         throw e;
     }
 }
