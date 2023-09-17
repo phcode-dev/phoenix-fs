@@ -321,6 +321,7 @@ function _watch(ws, metadata) {
 
         // Filter function to integrate with chokidar
         function isIgnored(pathToFilter) {
+            pathToFilter = path.normalize(pathToFilter);
             if(fullPathToWatch === pathToFilter) {
                 // if we are watching a file directly given file name, we don't run it though gitignore.
                 // also we cant get relative path of gitignore with respect to a file as root.
