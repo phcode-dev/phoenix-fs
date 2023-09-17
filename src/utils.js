@@ -406,11 +406,48 @@ function getTauriVirtualPath(platformPath) {
     }
 }
 
+/**
+ * Check if the given path is a subpath of the '/tauri' folder.
+ * @param path
+ */
+function isTauriSubPath(path) {
+    if (typeof path !== 'string') {
+        return false;
+    }
+    if (path) {
+        path = globalObject.path.normalize(path);
+        if (path.startsWith(TAURI_PATH_PREFIX) && path.length > TAURI_PATH_PREFIX.length) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/**
+ * Check if the given path is '/tauri' folder.
+ * @param path
+ */
+function isTauriPath(path) {
+    if (typeof path !== 'string') {
+        return false;
+    }
+    if (path) {
+        path = globalObject.path.normalize(path);
+        if (path === Constants.TAURI_ROOT) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 const Utils = {
     createStatObject,
     createDummyStatObject,
     createFromTauriStat,
     createFromNodeStat,
+    isTauriSubPath,
+    isTauriPath,
     getTauriPlatformPath,
     getTauriVirtualPath,
     validateFileOptions,

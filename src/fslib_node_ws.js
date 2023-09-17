@@ -493,7 +493,7 @@ function unlink(path, callback) {
 /**
  *
  * @param {string} path
- * @param {string} gitIgnorePaths The contents of the gitIgnore file as text. The watcher will ignore all files matching git ignore.
+ * @param {string|Array<string>} gitIgnorePaths The contents of the gitIgnore file as text. The watcher will ignore all files matching git ignore.
  * @returns {Promise<EventEmitter>} That will be resolved with a watcher once the watcher is ready.
  */
 async function watchAsync(path, gitIgnorePaths="") {

@@ -33,7 +33,14 @@ const Constants = {
     MOUNT_POINT_ROOT: '/mnt',
     TAURI_ROOT: "/tauri",
     BINARY_ENCODING: "binary",
-    BYTE_ARRAY_ENCODING: "byte_array"
+    BYTE_ARRAY_ENCODING: "byte_array",
+    WATCH_EVENTS: {
+        ADD_FILE: "add",
+        ADD_DIR: "addDir",
+        CHANGE: "change",
+        UNLINK_FILE: "unlink",
+        UNLINK_DIR: "unlinkDir"
+    }
 };
 
 module.exports ={

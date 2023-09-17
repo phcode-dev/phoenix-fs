@@ -357,7 +357,6 @@ function _setupTests(testType) {
         await initWatcher2(watchPath, watcher2PathChangeArray);
 
         await _writeTestFile(watchPath);
-        await _writeTestFile(watchPath);
 
         await waitForTrue(()=>{return pathChangeArray.length === 1;},10000);
         await waitForTrue(()=>{return watcher2PathChangeArray.length === 1;},10000);
@@ -376,27 +375,49 @@ function _setupTests(testType) {
         expect(err.code).to.eql(fs.ERR_CODES.EPERM);
     });
 
-    it(`Should phoenix ${testType} watch for folder rename with nested contents`, async function () {
-        const watchPath = `${testPath}/watch`;
-        await _creatDirAndValidate(watchPath);
-        await _waitForSomeTime(500); // wait for some watcher events to trickle out maybe due to os delays
+    if(testType === TEST_TYPE_TAURI_WS || testType === TEST_TYPE_TAURI){
+        it(`Should phoenix ${testType} watch for folder rename with nested contents [tauri chokidar only emits nested events]`, async function () {
+            const watchPath = `${testPath}/watch`;
+            await _creatDirAndValidate(watchPath);
+            await _waitForSomeTime(500); // wait for some watcher events to trickle out maybe due to os delays
 
-        const pathChangeArray = [];
-        let pathCreated = `${watchPath}/x`;
-        const nestedFile = `${watchPath}/x/a.txt`;
-        await _creatDirAndValidate(pathCreated);
-        await _writeTestFile(nestedFile);
+            const pathChangeArray = [];
+            let pathCreated = `${watchPath}/x`;
+            const nestedFile = `${watchPath}/x/a.txt`;
+            await _creatDirAndValidate(pathCreated);
+            await _writeTestFile(nestedFile);
 
-        await initWatcher(watchPath, pathChangeArray);
+            await initWatcher(watchPath, pathChangeArray);
 
-        const pathRenamed = `${watchPath}/y`;
-        await _rename(pathCreated, pathRenamed);
-        await waitForTrue(()=>{return pathChangeArray.length === 4;},10000);
-        expect(pathChangeArray).to.deep.include({ path: pathCreated, watchEvent: UNLINK_DIR});
-        expect(pathChangeArray).to.deep.include({ path: pathRenamed, watchEvent: ADD_DIR});
-        expect(pathChangeArray).to.deep.include({ path: nestedFile, watchEvent: UNLINK_FILE});
-        expect(pathChangeArray).to.deep.include({ path: `${pathRenamed}/a.txt`, watchEvent: ADD_FILE});
-    });
+            const pathRenamed = `${watchPath}/y`;
+            await _rename(pathCreated, pathRenamed);
+            await waitForTrue(()=>{return pathChangeArray.length === 4;},10000);
+            expect(pathChangeArray).to.deep.include({ path: pathCreated, watchEvent: UNLINK_DIR});
+            expect(pathChangeArray).to.deep.include({ path: pathRenamed, watchEvent: ADD_DIR});
+            expect(pathChangeArray).to.deep.include({ path: nestedFile, watchEvent: UNLINK_FILE});
+            expect(pathChangeArray).to.deep.include({ path: `${pathRenamed}/a.txt`, watchEvent: ADD_FILE});
+        });
+    } else {
+        it(`Should phoenix ${testType} watch for folder rename with nested contents [our fs impl doesnt emit nested events]`, async function () {
+            const watchPath = `${testPath}/watch`;
+            await _creatDirAndValidate(watchPath);
+            await _waitForSomeTime(500); // wait for some watcher events to trickle out maybe due to os delays
+
+            const pathChangeArray = [];
+            let pathCreated = `${watchPath}/x`;
+            const nestedFile = `${watchPath}/x/a.txt`;
+            await _creatDirAndValidate(pathCreated);
+            await _writeTestFile(nestedFile);
+
+            await initWatcher(watchPath, pathChangeArray);
+
+            const pathRenamed = `${watchPath}/y`;
+            await _rename(pathCreated, pathRenamed);
+            await waitForTrue(()=>{return pathChangeArray.length === 2;},10000);
+            expect(pathChangeArray).to.deep.include({ path: pathCreated, watchEvent: UNLINK_DIR});
+            expect(pathChangeArray).to.deep.include({ path: pathRenamed, watchEvent: ADD_DIR});
+        });
+    }
 
     it(`Should phoenix ${testType} watch and unwatch using watcher.on and watcher.off`, async function () {
         const watchPath = `${testPath}/watch`;
@@ -427,10 +448,10 @@ function _setupTests(testType) {
     });
 }
 
-// todo enable
-// describe(`Watcher: Browser virtual fs tests: filer paths`, function () {
-//     _setupTests(TEST_TYPE_FILER);
-// });
+
+describe(`Watcher: Browser virtual fs tests: filer paths`, function () {
+    _setupTests(TEST_TYPE_FILER);
+});
 
 if(window.__TAURI__){
     describe(`Watcher: Browser virtual fs tests: tauri paths`, function () {
@@ -442,13 +463,12 @@ if(window.__TAURI__){
     });
 }
 
-// todo enable
-// if(window.supportsFsAccessAPIs){
-//     describe(`Watcher: Browser virtual fs tests: fs access mount point paths`, function () {
-//         if(window.__TAURI__){
-//             it('fs access Watcher tests are disabled in tauri', function () {});
-//             return;
-//         }
-//         _setupTests(TEST_TYPE_FS_ACCESS);
-//     });
-// }
+if(window.supportsFsAccessAPIs){
+    describe(`Watcher: Browser virtual fs tests: fs access mount point paths`, function () {
+        if(window.__TAURI__){
+            it('fs access Watcher tests are disabled in tauri', function () {});
+            return;
+        }
+        _setupTests(TEST_TYPE_FS_ACCESS);
+    });
+}
