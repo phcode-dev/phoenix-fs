@@ -18,6 +18,7 @@ jobs:
       - name: building package
         run: |
           npm run build
+          npm run remove-postinstall
       - name: Publishing package to npm repository
         run: |
           npm publish --access public
