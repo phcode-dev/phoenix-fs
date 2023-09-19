@@ -121,6 +121,10 @@ const fileSystemLib = {
     },
     stat: function (...args) { // (path, callback)
         let path = args[0];
+        if(typeof path !== 'string') {
+            let callback = args[_getFirstFunctionIndex(args)];
+            return callback(new Errors.EINVAL(`Error Invalid path for stat: ${path}`));
+        }
         if(TauriFS.isTauriSubPath(path)) {
             return TauriFS.stat(...args);
         }
