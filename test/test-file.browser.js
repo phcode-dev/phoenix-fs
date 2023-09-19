@@ -129,6 +129,30 @@ function _setupTests(testType) {
         await _writeTestFile();
     });
 
+    it(`should phoenix ${testType} writeFile return an error if called with invalid parameters`, async function () {
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
+        fs.writeFile(42, _fileContent(), `utf8`, (err)=>{
+            resolveP(err);
+        });
+        const error = await promise;
+
+        expect(error.code).to.equal(fs.ERR_CODES.EINVAL);
+    });
+
+    it(`should phoenix ${testType} unlink return an error if called with invalid parameters`, async function () {
+        let resolveP;
+        const promise = new Promise((resolve) => {resolveP = resolve;});
+
+        fs.unlink(42, (err)=>{
+            resolveP(err);
+        });
+
+        const error = await promise;
+
+        expect(error.code).to.equal(fs.ERR_CODES.EINVAL);
+    });
+
     it(`Should phoenix ${testType} read in browser`, async function () {
         await _writeTestFile();
         let resolveP,rejectP;

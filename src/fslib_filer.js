@@ -59,6 +59,10 @@ function _processContents(contentsBuffer, encoding, callback, path) {
 
 function readFile(path, options, callback) {
     try{
+        if(typeof path !== 'string') {
+            return callback(new Errors.EINVAL(`Error Invalid path for readFile: ${path}`));
+        }
+
         path = globalObject.path.normalize(path);
 
         callback = arguments[arguments.length - 1];
@@ -87,6 +91,9 @@ function writeFile (path, data, options, callback) {
     try{
         callback = arguments[arguments.length - 1];
         options = Utils.validateFileOptions(options, Constants.BINARY_ENCODING, 'w');
+        if(typeof path !== 'string') {
+            return callback(new Errors.EINVAL(`Error Invalid path for writeFile: ${path}`));
+        }
 
         let bufferData;
         if(data instanceof ArrayBuffer){
