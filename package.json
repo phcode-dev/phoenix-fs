@@ -1,7 +1,7 @@
 {
   "name": "@phcode/fs",
   "description": "Phoenix virtual file system over filer/ browser fs access/ tauri / phoenix web socket APIs",
-  "version": "2.0.2",
+  "version": "2.0.3",
   "keywords": [
     "phoenix",
     "browser",
@@ -22,11 +22,11 @@
     "test-browser": "npm run serve & open-cli http://127.0.0.1:8080/test/index.html",
     "test-tauri": "tauri dev",
     "_copy-node-src-dist": "node src-build/copy-node-src-dist.js",
-    "_copy-test-dist": "node src-build/copy-dist-to-test.js",
-    "_build-optimized": "parcel build src/virtualfs.js --detailed-report && npm run _copy-node-src-dist",
-    "_build-nonopt": "parcel build src/virtualfs.js --detailed-report --no-optimize && npm run _copy-node-src-dist",
-    "build": "npm run eslint && npm run _build-optimized && echo '\\\\\\\\e[34m!!!please run build:dev if you are trying to debug!!!\\\\\\\\033[0m' && npm run _copy-test-dist",
-    "build:dev": "npm run eslint && npm run _build-nonopt && npm run _copy-test-dist",
+    "_copy-dist-to-test": "node src-build/copy-dist-to-test.js",
+    "_make-debug-dist": "node src-build/copy-debug-dist.js",
+    "_build-optimized": "parcel build src/virtualfs.js --detailed-report",
+    "_build-nonopt": "parcel build src/virtualfs.js --detailed-report --no-optimize",
+    "build": "npm run eslint  && npm run _copy-node-src-dist && npm run _build-nonopt && npm run _make-debug-dist && npm run _build-optimized && npm run _copy-dist-to-test",
     "serve": "http-server . -p 8080 -c-1",
     "_serve-tauri": "http-server . -p 8081 -c-1",
     "bumpPatchVersion": "npm --no-git-tag-version version patch",
@@ -40,6 +40,8 @@
   "files": [
     "dist/virtualfs.js",
     "dist/virtualfs.js.map",
+    "dist/virtualfs-debug.js",
+    "dist/virtualfs-debug.js.map",
     "dist/phoenix-fs.js"
   ],
   "devDependencies": {
