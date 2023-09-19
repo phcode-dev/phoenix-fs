@@ -134,11 +134,17 @@ See filer docs for API docs: https://filer.js.org/
 <!--// using CDN link in your html file-->
 <script src="https://unpkg.com/@phcode/fs@latest/dist/virtualfs.js"/>
 
+<!--// using CDN link in your html file if you want to debug the file system internals-->
+<script src="https://unpkg.com/@phcode/fs@latest/dist/virtualfs-debug.js"/>
+
 <!--// OR to get a particular version, change latest to the version you need:-->
-<script src="https://unpkg.com/@phcode/fs@1.0.4/dist/virtualfs.js"/>
+<script src="https://unpkg.com/@phcode/fs@2.0.3/dist/virtualfs.js"/>
 
 <!--// OR if you did npm install-->
 <script src="<project_root>/node_modules/@phcode/fs/dist/virtualfs.js"/>
+
+<!--// OR if you did npm install and want to debug the file system internals-->
+<script src="<project_root>/node_modules/@phcode/fs/dist/virtualfs-debug.js"/>
 
 <!--If you want to enable debug mode add this before the import script line-->
 <script type="text/javascript">
