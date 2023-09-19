@@ -234,19 +234,27 @@ To build it:
 
 ```bash
 npm install
-npm run build:dev
+npm run build
 ```
+
+The `npm run build` command will create two files `dist/virtualfs.js` and `dist/virtualfs-debug.js`.
+Use `dist/virtualfs-debug.js` if you want to debug the phoenix filesystem lib itself.
 
 ## Tests in Browser
 While developing, use test script to open browser tests.
 * Test runs tests against the built artifacts in dist folder.
 * You should `npm run build` if any changes were made to the src folder
 ```bash
-npm run build:dev
+npm run build
 npm run test-browser
 ```
 
 NOTE: you can also use `npm run serve` to also start a web server for development.
+
+### Debug Symbols in tests.
+By default, tests are run against the release build `test/virtualfs.js`. As it is heavily optimized it might be hard to debug with the release lib. 
+
+If you want to debug the tests with more debug symbols, search for `<script src="virtualfs-debug.js"></script>` in file `test/index.html` and follow steps there.
 
 ## Tests in tauri
 Again, Test runs tests against the built artifacts in dist folder.
@@ -254,7 +262,7 @@ To develop tests in tauri, run the following commands:
 1. First, build the artifacts in the `dist` folder by running:
 
 ```bash
-npm run build:dev
+npm run build
 ```
 
 2. Next, initiate the tests by executing:

@@ -12,4 +12,10 @@ dist/*
 !dist/phoenix-fs.js
 test/virtualfs.js
 test/virtualfs.js.map
+
+!dist/virtualfs-debug.js
+!dist/virtualfs-debug.js.map
+test/virtualfs-debug.js
+test/virtualfs-debug.js.map
+
 phcode-fs-*.tgz
