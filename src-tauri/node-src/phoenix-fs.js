@@ -1,10 +1,10 @@
 const WebSocket = require('ws');
 const fs = require("fs/promises");
+const fsNormal = require("fs");
 const path = require("path");
 const os = require('os');
 const { exec } = require('child_process');
 const chokidar = require('chokidar');
-const anymatch = require('anymatch');
 const ignore = require('ignore');
 const crypto = require('crypto');
 
@@ -255,10 +255,17 @@ function _stat(ws, metadata) {
 
 function _readBinaryFile(ws, metadata) {
     const fullPath = metadata.data.path;
-    fs.readFile(fullPath)
-        .then(data => {
-            _sendResponse(ws, metadata, {}, toArrayBuffer(data));
-        }).catch((err)=>_reportError(ws, metadata, err, `Failed to read file at path ${fullPath}`));
+    // fs.promises.readFile is 40% slower than fs.readFile Though we noted only minor variations is our test
+    // but fsNormal.readFile was faster most of the time though only by 10's of MS.
+    // Leaving no quick fix performance on the table, so we moved to this impl.
+    // https://github.com/nodejs/node/issues/37583
+    fsNormal.readFile(fullPath, (err, data)=>{
+        if(err) {
+            _reportError(ws, metadata, err, `Failed to read file at path ${fullPath}`);
+            return;
+        }
+        _sendResponse(ws, metadata, {}, toArrayBuffer(data));
+    });
 }
 
 /**
