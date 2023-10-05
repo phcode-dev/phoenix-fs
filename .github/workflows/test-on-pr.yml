@@ -41,6 +41,7 @@ jobs:
       - name: Run tauri integration tests in windows
         # GUI apps in windows doesn't log on console. so we capture the output to a text file and print it, then fail on error.
         if: matrix.platform == 'windows-latest'
+        id: windowsRun
         run: |
           "src-tauri\target\release\Phoenix File system.exe" -q > output.txt 2>&1
         shell: cmd
@@ -52,8 +53,9 @@ jobs:
           type output.txt
         shell: cmd
 
-      - name: Run tauri integration tests in windows and fail on error
-        if: matrix.platform == 'windows-latest'
+      - name: Fail on test runs failed in windows
+        if: matrix.platform == 'windows-latest' && steps.windowsRun.outcome == 'failure'
         run: |
-          "src-tauri\target\release\Phoenix File system.exe" -q > output.txt 2>&1
+          echo "Windows tests failed, marking step as failed"
+          exit 1
         shell: cmd
