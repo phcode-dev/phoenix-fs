@@ -48,6 +48,7 @@ By adopting Phoenix VFS, you're not just leveraging a file system; you're integr
     * [Example: Setting Up Your Own `phoenix-fs` Server in Node.js](#example-setting-up-your-own-phoenix-fs-server-in-nodejs)
   * [Development](#development)
   * [Tests in Browser](#tests-in-browser)
+    * [Debug Symbols in tests.](#debug-symbols-in-tests)
   * [Tests in tauri](#tests-in-tauri)
     * [Publishing to npm](#publishing-to-npm)
 * [API Docs](#api-docs)
