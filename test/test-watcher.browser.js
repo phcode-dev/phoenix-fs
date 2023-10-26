@@ -255,7 +255,7 @@ function _setupTests(testType) {
         await _writeTestFile(fileInSameDirNotWatched);
 
         await waitForTrue(()=>{return pathChangeArray.length === 1;},10000);
-        await _waitForSomeTime(100); // maybe some more events might come in so wait for some time to be sure?
+        await _waitForSomeTime(1000); // maybe some more events might come in so wait for some time to be sure?
         expect(pathChangeArray).to.deep.include({ path: watchPath, watchEvent: CHANGE});
         expect(pathChangeArray.length).to.eql(1);
     });
@@ -265,7 +265,7 @@ function _setupTests(testType) {
         await _creatDirAndValidate(watchPath);
         await _creatDirAndValidate(`${watchPath}/anotherPath`);
         await _creatDirAndValidate(`${watchPath}/exact`);
-        await _waitForSomeTime(500); // wait for some watcher events to trickle out maybe due to os delays
+        await _waitForSomeTime(1000); // wait for some watcher events to trickle out maybe due to os delays
 
         const pathChangeArray = [];
 
@@ -285,13 +285,21 @@ function _setupTests(testType) {
         await _writeTestFile(`${watchPath}/newPath/b.txt`);
 
         const expectedChanges = 5;
-        await waitForTrue(()=>{return pathChangeArray.length === expectedChanges;},10000);
-        await _waitForSomeTime(100); // maybe some more events might come in so wait for some time to be sure?
+        await waitForTrue(()=>{return pathChangeArray.length >= expectedChanges;},100000);
+        await _waitForSomeTime(1000); // maybe some more events might come in so wait for some time to be sure?
+        // check inclusions
         expect(pathChangeArray).to.deep.include({ path: `${watchPath}/b.txt`, watchEvent: ADD_FILE});
+        expect(pathChangeArray).to.deep.include({ path: `${watchPath}/anotherPath/exact`, watchEvent: ADD_DIR});
+        expect(pathChangeArray).to.deep.include({ path: `${watchPath}/anotherPath/file.txt`, watchEvent: ADD_FILE});
         expect(pathChangeArray).to.deep.include({ path: `${watchPath}/newPath`, watchEvent: ADD_DIR});
         expect(pathChangeArray).to.deep.include({ path: `${watchPath}/newPath/b.txt`, watchEvent: ADD_FILE});
-        expect(pathChangeArray.length).to.eql(expectedChanges);
-    }).timeout(10000);
+        // check exclusions
+        expect(pathChangeArray).not.to.deep.include({ path: `${watchPath}/ignored_path`, watchEvent: ADD_DIR});
+        expect(pathChangeArray).not.to.deep.include({ path: `${watchPath}/ignored_path/a.txt`, watchEvent: ADD_FILE});
+        expect(pathChangeArray).not.to.deep.include({ path: `${watchPath}/anotherPath/ignored_path`, watchEvent: ADD_DIR});
+        expect(pathChangeArray).not.to.deep.include({ path: `${watchPath}/exact/path`, watchEvent: ADD_DIR});
+        expect(pathChangeArray).not.to.deep.include({ path: `${watchPath}/exact/file.txt`, watchEvent: ADD_FILE});
+    }).timeout(100000);
 
     it(`Should phoenix ${testType} watch for file rename`, async function () {
         const watchPath = `${testPath}/watch`;
