@@ -19058,14 +19058,16 @@ function $d1f4f8cce920e9b9$var$rename(oldPath, newPath, callback) {
         options = $d1f4f8cce920e9b9$require$Utils.validateFileOptions(options, $d1f4f8cce920e9b9$require$Constants.BINARY_ENCODING, "r");
         if (!globalObject.__TAURI__ || $d1f4f8cce920e9b9$var$forceNodeWs || $d1f4f8cce920e9b9$var$preferNodeWs && $d1f4f8cce920e9b9$require$NodeTauriFS.isNodeWSReady()) {
             $d1f4f8cce920e9b9$require$NodeTauriFS.readBinaryFile(path).then((contents)=>{
-                // contents is Array buffer
+                // contents is Array buffer, can be undefined if empty file
+                contents = contents || new ArrayBuffer(0);
                 $d1f4f8cce920e9b9$var$_processContents(contents, options.encoding, callback, path);
             }).catch(callback);
             return;
         }
         const platformPath = $d1f4f8cce920e9b9$require$Utils.getTauriPlatformPath(path);
         __TAURI__.fs.readBinaryFile(platformPath).then((contents)=>{
-            // contents is Uint8Array
+            // contents is Array buffer, can be undefined if empty file
+            contents = contents || new ArrayBuffer(0);
             $d1f4f8cce920e9b9$var$_processContents(contents, options.encoding, callback, path);
         }).catch((err)=>{
             callback($d1f4f8cce920e9b9$var$mapOSTauriErrorMessage(err, path, `Failed to read File at path ${path}`));

@@ -469,7 +469,8 @@ function readFile(path, options, callback) {
         if(!globalObject.__TAURI__ || forceNodeWs || (preferNodeWs && NodeTauriFS.isNodeWSReady())) {
             NodeTauriFS.readBinaryFile(path)
                 .then(contents => {
-                    // contents is Array buffer
+                    // contents is Array buffer, can be undefined if empty file
+                    contents = contents || new ArrayBuffer(0);
                     _processContents(contents, options.encoding, callback, path);
                 })
                 .catch(callback);
@@ -479,7 +480,8 @@ function readFile(path, options, callback) {
         const platformPath = Utils.getTauriPlatformPath(path);
         __TAURI__.fs.readBinaryFile(platformPath)
             .then(contents => {
-                // contents is Uint8Array
+                // contents is Array buffer, can be undefined if empty file
+                contents = contents || new ArrayBuffer(0);
                 _processContents(contents, options.encoding, callback, path);
             })
             .catch(err=>{

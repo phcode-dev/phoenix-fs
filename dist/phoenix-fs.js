@@ -279,6 +279,7 @@ function _writeBinaryFile(ws, metadata, dataBuffer) {
     const fullPath = metadata.data.path,
         mode = metadata.data.mode,
         flag = metadata.data.flag;
+    dataBuffer = dataBuffer || new ArrayBuffer(0);
     fs.writeFile(fullPath, Buffer.from(dataBuffer), {mode, flag})
         .then( ()=> {
             _sendResponse(ws, metadata);

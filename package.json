@@ -1,7 +1,7 @@
 {
   "name": "@phcode/fs",
   "description": "Phoenix virtual file system over filer/ browser fs access/ tauri / phoenix web socket APIs",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "keywords": [
     "phoenix",
     "browser",
@@ -45,7 +45,7 @@
     "dist/phoenix-fs.js"
   ],
   "devDependencies": {
-    "@tauri-apps/cli": "1.4.0",
+    "@tauri-apps/cli": "1.5.7",
     "anymatch": "^3.1.3",
     "browser-mime": "1.0.1",
     "buffer": "^6.0.3",
