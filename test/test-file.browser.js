@@ -472,9 +472,8 @@ function _setupTests(testType) {
         });
     }
 
-    async function _writeBinTest(writeEncoding, useArrayBuffer) {
+    async function _writeBinTest(writeEncoding, useArrayBuffer, str = "ldkhjkxr htiou hbgoetruish") {
         const filePath = `${testPath}/browserWrite.txt`;
-        let str = "ldkhjkxr htiou hbgoetruish";
         const buf = useArrayBuffer? Buffer.from(str).buffer: Buffer.from(str);
         await _writeFile(filePath, buf, writeEncoding);
         let {content, encoding} = await _readFile(filePath, "utf8");
@@ -487,6 +486,39 @@ function _setupTests(testType) {
         await _writeBinTest('binary');
         await _writeBinTest(fs.BYTE_ARRAY_ENCODING, true);
         await _writeBinTest('binary', true);
+    });
+
+    it(`Should phoenix ${testType} write and read empty file with Buffer and array buffer`, async function () {
+        await _writeBinTest(fs.BYTE_ARRAY_ENCODING, false, "");
+        await _writeBinTest('binary', false, "");
+        await _writeBinTest(fs.BYTE_ARRAY_ENCODING, true, "");
+        await _writeBinTest('binary', true, "");
+    });
+
+    it(`Should phoenix ${testType} write and read empty file with string`, async function () {
+        const filePath = `${testPath}/browserWrite.txt`;
+        await _writeFile(filePath, "", "utf8");
+        let {content, encoding} = await _readFile(filePath, "utf8");
+        expect(encoding).to.eql('utf8');
+        expect(content).to.eql("");
+    });
+
+    it(`Should phoenix ${testType} write as buffer and read empty file with buffer`, async function () {
+        const filePath = `${testPath}/browserWrite.txt`;
+        const emptyBuffer = Buffer.from("");
+        await _writeFile(filePath, emptyBuffer, 'binary');
+        let {content, encoding} = await _readFile(filePath, 'binary');
+        expect(encoding).to.eql('binary');
+        expect(content).to.eql(emptyBuffer);
+    });
+
+    it(`Should phoenix ${testType} write as buffer and read empty file with array buffer`, async function () {
+        const filePath = `${testPath}/browserWrite.txt`;
+        const emptyArrayBuffer = Buffer.from("").buffer;
+        await _writeFile(filePath, emptyArrayBuffer, fs.BYTE_ARRAY_ENCODING);
+        let {content, encoding} = await _readFile(filePath, fs.BYTE_ARRAY_ENCODING);
+        expect(encoding).to.eql(fs.BYTE_ARRAY_ENCODING);
+        expect(content).to.eql(emptyArrayBuffer);
     });
 
     it(`Should phoenix ${testType} write file with number content`, async function () {

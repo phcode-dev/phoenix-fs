@@ -1058,9 +1058,9 @@ case"17":case"183":return new eV.EEXIST(r+` File exists: ${t} `+e,t);case"39":re
  * });
  *
  * @returns {void}
- */function(e,t,r){try{if(e=globalObject.path.normalize(e),r=arguments[arguments.length-1],t=ez.validateFileOptions(t,eY.BINARY_ENCODING,"r"),!globalObject.__TAURI__||tu||ti&&tn.isNodeWSReady()){tn.readBinaryFile(e).then(a=>{// contents is Array buffer
-td(a,t.encoding,r,e)}).catch(r);return}let a=ez.getTauriPlatformPath(e);__TAURI__.fs.readBinaryFile(a).then(a=>{// contents is Uint8Array
-td(a,t.encoding,r,e)}).catch(t=>{r(tf(t,e,`Failed to read File at path ${e}`))})}catch(t){eq.ERROR_CODES[t.code]?r(t):r(new eV.EIO(`IO error while processing data read from file on path: ${e}`,e))}},writeFile:/**
+ */function(e,t,r){try{if(e=globalObject.path.normalize(e),r=arguments[arguments.length-1],t=ez.validateFileOptions(t,eY.BINARY_ENCODING,"r"),!globalObject.__TAURI__||tu||ti&&tn.isNodeWSReady()){tn.readBinaryFile(e).then(a=>{// contents is Array buffer, can be undefined if empty file
+a=a||new ArrayBuffer(0),td(a,t.encoding,r,e)}).catch(r);return}let a=ez.getTauriPlatformPath(e);__TAURI__.fs.readBinaryFile(a).then(a=>{// contents is Array buffer, can be undefined if empty file
+a=a||new ArrayBuffer(0),td(a,t.encoding,r,e)}).catch(t=>{r(tf(t,e,`Failed to read File at path ${e}`))})}catch(t){eq.ERROR_CODES[t.code]?r(t):r(new eV.EIO(`IO error while processing data read from file on path: ${e}`,e))}},writeFile:/**
  * Writes data to a file, replacing the file if it already exists.
  *
  * @param {string} path - The path of the file where data should be written.
