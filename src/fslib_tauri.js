@@ -602,6 +602,21 @@ function preferNodeWSEndpoint(use) {
     preferNodeWs = use;
 }
 
+function canCopy() {
+    // we can only copy if node tari fs is ready as tauri doesn't have folder copy apis.
+    return NodeTauriFS.isNodeWSReady();
+}
+
+async function copy(src, dst, callback) {
+    if(!canCopy()){
+        callback(new Errors.EIO(`IO error while copying: ${src} to ${dst}, node not ready.`, src));
+        return ;
+    }
+    src = globalObject.path.normalize(src);
+    dst = globalObject.path.normalize(dst);
+    return NodeTauriFS.copy(src, dst, callback);
+}
+
 const TauriFS = {
     isTauriPath: Utils.isTauriPath,
     isTauriSubPath: Utils.isTauriSubPath,
@@ -617,7 +632,9 @@ const TauriFS = {
     rename,
     unlink,
     readFile,
-    writeFile
+    writeFile,
+    copy,
+    canCopy
 };
 
 module.exports ={

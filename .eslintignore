@@ -6,3 +6,4 @@ test/virtualfs.js
 test/virtualfs.js.map
 test/virtualfs-debug.js
 test/virtualfs-debug.js.map
+test/thirdparty
