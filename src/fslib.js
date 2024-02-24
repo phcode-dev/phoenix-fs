@@ -305,6 +305,8 @@ const fileSystemLib = {
         // fall back to global copy here and will use node Tauri web socket fs adapter as and when it becomes available.
         if(Mounts.isMountSubPath(src) && Mounts.isMountSubPath(dst)) {
             return NativeFS.copy(src, dst, callbackInterceptor);
+        } else if(TauriFS.canCopy() && TauriFS.isTauriSubPath(src) && TauriFS.isTauriSubPath(dst)) {
+            return TauriFS.copy(src, dst, callbackInterceptor);
         } else {
             return globalCopy(src, dst, callbackInterceptor);
         }

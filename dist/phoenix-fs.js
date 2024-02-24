@@ -125,6 +125,7 @@ const WS_COMMAND = {
     WRITE_BIN_FILE: "writeBinFile",
     MKDIR: "mkdir",
     RENAME: "rename",
+    COPY: "copy",
     UNLINK: "unlink",
     WATCH: "watch",
     UNWATCH: "unwatch"
@@ -207,6 +208,104 @@ function _getStat(fullPath) {
             })
             .catch(reject);
     });
+}
+
+/**
+ * A stat that never rejects
+ * @param fullPath
+ * @return {Promise<unknown>}
+ * @private
+ */
+function _resolvingStat(fullPath) {
+    return new Promise((resolve, reject) => {
+        fs.stat(fullPath)
+            .then(resolve)
+            .catch( (err) => {
+                if(err && err.code === "ENOENT"){
+                    resolve(null);
+                    return;
+                }
+                reject(err);
+            });
+    });
+}
+
+async function _copyFile(srcFile, dst) {
+    let dstStat = await _resolvingStat(dst);
+    if(!dstStat){
+        let parentDir= path.dirname(dst);
+        let dstFileName= path.basename(dst);
+        dstStat = await _resolvingStat(parentDir);
+        if(dstStat && dstStat.isDirectory()){
+            let dstFilePath = path.join(parentDir, dstFileName);
+            await fs.copyFile(srcFile, dstFilePath);
+            return dstFilePath;
+        } else {
+            const error = new Error(`_copyFile Cannot create file: ${dst} as parent dir ${parentDir} is file`);
+            error.code = 'ENOTDIR';
+            throw error;
+        }
+    }
+
+    let srcFileName= path.basename(srcFile);
+    if(dstStat && dstStat.isDirectory()){
+        let dstFilePath = path.join(dst, srcFileName);
+        await fs.copyFile(srcFile, dstFilePath);
+        return dstFilePath;
+    } else if(dstStat && dstStat.isFile()){
+        const error = new Error(`_copyFile Destination file already exists: ${dst}`);
+        error.code = 'EEXIST';
+        throw error;
+    } else {
+        const error = new Error(`_copyFile Cannot copy file, unknown destination: ${srcFile} to ${dst}`);
+        error.code = 'EIO';
+        throw error;
+    }
+}
+
+async function _copyFolder(srcFolder, dst) {
+    let dstStat = await _resolvingStat(dst);
+    if(dstStat && dstStat.isFile()){
+        const error = new Error(`Destination file already exists: ${dst}`);
+        error.code = 'EEXIST';
+        throw error;
+    } else if(dstStat && dstStat.isDirectory()){
+        let destSubFolderPath= path.join(dst, path.basename(srcFolder));
+        dstStat = await _resolvingStat(destSubFolderPath);
+        if(dstStat){
+            const error = new Error(`Destination folder already exists: ${destSubFolderPath}`);
+            error.code = 'EEXIST';
+            throw error;
+        }
+        await fs.cp(srcFolder, destSubFolderPath, { recursive: true });
+        return destSubFolderPath;
+    } else {
+        await fs.cp(srcFolder, dst, { recursive: true });
+        return dst;
+    }
+}
+
+async function _copy(ws, metadata) {
+    const src = metadata.data.src,
+        dst = metadata.data.dst;
+    try {
+        let srcStat = await _resolvingStat(src);
+        if(!srcStat){
+            const error = new Error(`Failed to copy ${src} to ${dst}, src does not exist.`);
+            error.code = 'ENOENT';
+            _reportError(ws, metadata, error)
+            return;
+        }
+        if (srcStat.isFile()) {
+            let copiedPath = await _copyFile(src, dst);
+            _sendResponse(ws, metadata, {copiedPath});
+        } else if (srcStat.isDirectory()) {
+            let copiedPath = await _copyFolder(src, dst);
+            _sendResponse(ws, metadata, {copiedPath});
+        }
+    } catch (err) {
+        _reportError(ws, metadata, err, `Failed to copy file at path ${src} to ${dst}`);
+    }
 }
 
 function _reportError(ws, metadata, err= { }, defaultMessage = "Operation failed! ") {
@@ -431,6 +530,9 @@ function processWSCommand(ws, metadata, dataBuffer) {
             return;
         case WS_COMMAND.RENAME:
             _rename(ws, metadata);
+            return;
+        case WS_COMMAND.COPY:
+            _copy(ws, metadata);
             return;
         case WS_COMMAND.UNLINK:
             _unlink(ws, metadata);

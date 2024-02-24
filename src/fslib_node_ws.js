@@ -41,6 +41,7 @@ const WS_COMMAND = {
     WRITE_BIN_FILE: "writeBinFile",
     MKDIR: "mkdir",
     RENAME: "rename",
+    COPY: "copy",
     UNLINK: "unlink",
     WATCH: "watch",
     UNWATCH: "unwatch"
@@ -529,6 +530,19 @@ function unwatchAsync(eventEmitter) {
     });
 }
 
+async function copy(src, dst, callback) {
+    const srcPlatformPath = Utils.getTauriPlatformPath(src);
+    const dstPlatformPath = Utils.getTauriPlatformPath(dst);
+    _execCommand(WS_COMMAND.COPY, {src: srcPlatformPath, dst: dstPlatformPath})
+        .then(({metadata})=>{
+            callback(null, Utils.getTauriVirtualPath(metadata.data.copiedPath));
+        })
+        .catch((err)=>{
+            callback(mapNodeTauriErrorMessage(err, src, `Failed to copy: ${src} to ${dst}`));
+        });
+}
+
+
 const NodeTauriFS = {
     testNodeWsEndpoint,
     setNodeWSEndpoint,
@@ -543,7 +557,8 @@ const NodeTauriFS = {
     rename,
     unlink,
     watchAsync,
-    unwatchAsync
+    unwatchAsync,
+    copy
 };
 
 module.exports = {

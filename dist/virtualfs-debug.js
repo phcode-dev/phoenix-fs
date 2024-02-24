@@ -18232,6 +18232,7 @@ const $17476582ace0b2bc$var$WS_COMMAND = {
     WRITE_BIN_FILE: "writeBinFile",
     MKDIR: "mkdir",
     RENAME: "rename",
+    COPY: "copy",
     UNLINK: "unlink",
     WATCH: "watch",
     UNWATCH: "unwatch"
@@ -18664,6 +18665,18 @@ function $17476582ace0b2bc$var$unlink(path, callback) {
         });
     });
 }
+async function $17476582ace0b2bc$var$copy(src, dst, callback) {
+    const srcPlatformPath = $17476582ace0b2bc$require$Utils.getTauriPlatformPath(src);
+    const dstPlatformPath = $17476582ace0b2bc$require$Utils.getTauriPlatformPath(dst);
+    $17476582ace0b2bc$var$_execCommand($17476582ace0b2bc$var$WS_COMMAND.COPY, {
+        src: srcPlatformPath,
+        dst: dstPlatformPath
+    }).then(({ metadata: metadata })=>{
+        callback(null, $17476582ace0b2bc$require$Utils.getTauriVirtualPath(metadata.data.copiedPath));
+    }).catch((err)=>{
+        callback($17476582ace0b2bc$var$mapNodeTauriErrorMessage(err, src, `Failed to copy: ${src} to ${dst}`));
+    });
+}
 const $17476582ace0b2bc$var$NodeTauriFS = {
     testNodeWsEndpoint: $17476582ace0b2bc$var$testNodeWsEndpoint,
     setNodeWSEndpoint: $17476582ace0b2bc$var$setNodeWSEndpoint,
@@ -18678,7 +18691,8 @@ const $17476582ace0b2bc$var$NodeTauriFS = {
     rename: $17476582ace0b2bc$var$rename,
     unlink: $17476582ace0b2bc$var$unlink,
     watchAsync: $17476582ace0b2bc$var$watchAsync,
-    unwatchAsync: $17476582ace0b2bc$var$unwatchAsync
+    unwatchAsync: $17476582ace0b2bc$var$unwatchAsync,
+    copy: $17476582ace0b2bc$var$copy
 };
 $17476582ace0b2bc$exports = {
     NodeTauriFS: $17476582ace0b2bc$var$NodeTauriFS
@@ -19159,6 +19173,19 @@ function $d1f4f8cce920e9b9$var$rename(oldPath, newPath, callback) {
     if (!$d1f4f8cce920e9b9$require$NodeTauriFS.getNodeWSEndpoint()) throw new Error("Please call fs.setNodeWSEndpoint('ws://your server') before calling this function.");
     $d1f4f8cce920e9b9$var$preferNodeWs = use;
 }
+function $d1f4f8cce920e9b9$var$canCopy() {
+    // we can only copy if node tari fs is ready as tauri doesn't have folder copy apis.
+    return $d1f4f8cce920e9b9$require$NodeTauriFS.isNodeWSReady();
+}
+async function $d1f4f8cce920e9b9$var$copy(src, dst, callback) {
+    if (!$d1f4f8cce920e9b9$var$canCopy()) {
+        callback(new $d1f4f8cce920e9b9$require$Errors.EIO(`IO error while copying: ${src} to ${dst}, node not ready.`, src));
+        return;
+    }
+    src = globalObject.path.normalize(src);
+    dst = globalObject.path.normalize(dst);
+    return $d1f4f8cce920e9b9$require$NodeTauriFS.copy(src, dst, callback);
+}
 const $d1f4f8cce920e9b9$var$TauriFS = {
     isTauriPath: $d1f4f8cce920e9b9$require$Utils.isTauriPath,
     isTauriSubPath: $d1f4f8cce920e9b9$require$Utils.isTauriSubPath,
@@ -19174,7 +19201,9 @@ const $d1f4f8cce920e9b9$var$TauriFS = {
     rename: $d1f4f8cce920e9b9$var$rename,
     unlink: $d1f4f8cce920e9b9$var$unlink,
     readFile: $d1f4f8cce920e9b9$var$readFile,
-    writeFile: $d1f4f8cce920e9b9$var$writeFile
+    writeFile: $d1f4f8cce920e9b9$var$writeFile,
+    copy: $d1f4f8cce920e9b9$var$copy,
+    canCopy: $d1f4f8cce920e9b9$var$canCopy
 };
 $d1f4f8cce920e9b9$exports = {
     TauriFS: $d1f4f8cce920e9b9$var$TauriFS
@@ -20328,6 +20357,7 @@ const $e3f139c5065f0041$var$fileSystemLib = {
         // spawn different threads in rust and write tauri handlers which is pretty complex atm. so instead we will
         // fall back to global copy here and will use node Tauri web socket fs adapter as and when it becomes available.
         if ($e3f139c5065f0041$require$Mounts.isMountSubPath(src) && $e3f139c5065f0041$require$Mounts.isMountSubPath(dst)) return $e3f139c5065f0041$require$NativeFS.copy(src, dst, callbackInterceptor);
+        else if ($e3f139c5065f0041$require$TauriFS.canCopy() && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(src) && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(dst)) return $e3f139c5065f0041$require$TauriFS.copy(src, dst, callbackInterceptor);
         else return $e3f139c5065f0041$require$globalCopy(src, dst, callbackInterceptor);
     },
     showSaveDialog: function(options) {
