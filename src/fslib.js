@@ -30,7 +30,7 @@ const {Constants} = require('./constants');
 const {Mounts} = require('./fslib_mounts');
 const {FsWatch} = require('./fslib_watch');
 const {globalCopy} = require('./filerlib_copy.js');
-const anymatch = require('anymatch');
+const picomatch = require('picomatch/posix');
 const ignore = require('ignore');
 import * as iconv from 'iconv-lite';
 
@@ -394,7 +394,7 @@ const fileSystemLib = {
     },
     utils: {
         iconv,
-        anymatch,
+        picomatch,
         ignore
     }
 };
