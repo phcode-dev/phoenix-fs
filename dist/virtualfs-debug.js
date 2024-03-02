@@ -4501,8 +4501,6 @@ parcelRequire.register("lb6jJ", function(module, exports) {
 parcelRequire.register("1xCGA", function(module, exports) {
 "use strict";
 
-var $6zG9Y = parcelRequire("6zG9Y");
-
 var $fxI7A = parcelRequire("fxI7A");
 
 var $381AU = parcelRequire("381AU");
@@ -4546,7 +4544,7 @@ const $11f6e1bf559d811f$var$isObject = (val)=>val && typeof val === "object" && 
     const isState = $11f6e1bf559d811f$var$isObject(glob) && glob.tokens && glob.input;
     if (glob === "" || typeof glob !== "string" && !isState) throw new TypeError("Expected pattern to be a non-empty string");
     const opts = options || {};
-    const posix = $lqji5.isWindows(options);
+    const posix = opts.windows;
     const regex = isState ? $11f6e1bf559d811f$var$picomatch.compileRe(glob, options) : $11f6e1bf559d811f$var$picomatch.makeRe(glob, options, false, true);
     const state = regex.state;
     delete regex.state;
@@ -4642,9 +4640,9 @@ const $11f6e1bf559d811f$var$isObject = (val)=>val && typeof val === "object" && 
  * @param {RegExp|String} `glob` Glob pattern or regex created by [.makeRe](#makeRe).
  * @return {Boolean}
  * @api public
- */ $11f6e1bf559d811f$var$picomatch.matchBase = (input, glob, options, posix = $lqji5.isWindows(options))=>{
+ */ $11f6e1bf559d811f$var$picomatch.matchBase = (input, glob, options)=>{
     const regex = glob instanceof RegExp ? glob : $11f6e1bf559d811f$var$picomatch.makeRe(glob, options);
-    return regex.test($6zG9Y.basename(input));
+    return regex.test($lqji5.basename(input));
 };
 /**
  * Returns true if **any** of the given glob `patterns` match the specified `string`.
@@ -4788,434 +4786,6 @@ const $11f6e1bf559d811f$var$isObject = (val)=>val && typeof val === "object" && 
  */ module.exports = $11f6e1bf559d811f$var$picomatch;
 
 });
-parcelRequire.register("6zG9Y", function(module, exports) {
-// 'path' module extracted from Node.js v8.11.1 (only the posix part)
-// transplited with Babel
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-var $FkHbz = parcelRequire("FkHbz");
-"use strict";
-function $4c96b70ea9ef553b$var$assertPath(path) {
-    if (typeof path !== "string") throw new TypeError("Path must be a string. Received " + JSON.stringify(path));
-}
-// Resolves . and .. elements in a path with directory names
-function $4c96b70ea9ef553b$var$normalizeStringPosix(path, allowAboveRoot) {
-    var res = "";
-    var lastSegmentLength = 0;
-    var lastSlash = -1;
-    var dots = 0;
-    var code;
-    for(var i = 0; i <= path.length; ++i){
-        if (i < path.length) code = path.charCodeAt(i);
-        else if (code === 47 /*/*/ ) break;
-        else code = 47 /*/*/ ;
-        if (code === 47 /*/*/ ) {
-            if (lastSlash === i - 1 || dots === 1) ;
-            else if (lastSlash !== i - 1 && dots === 2) {
-                if (res.length < 2 || lastSegmentLength !== 2 || res.charCodeAt(res.length - 1) !== 46 /*.*/  || res.charCodeAt(res.length - 2) !== 46 /*.*/ ) {
-                    if (res.length > 2) {
-                        var lastSlashIndex = res.lastIndexOf("/");
-                        if (lastSlashIndex !== res.length - 1) {
-                            if (lastSlashIndex === -1) {
-                                res = "";
-                                lastSegmentLength = 0;
-                            } else {
-                                res = res.slice(0, lastSlashIndex);
-                                lastSegmentLength = res.length - 1 - res.lastIndexOf("/");
-                            }
-                            lastSlash = i;
-                            dots = 0;
-                            continue;
-                        }
-                    } else if (res.length === 2 || res.length === 1) {
-                        res = "";
-                        lastSegmentLength = 0;
-                        lastSlash = i;
-                        dots = 0;
-                        continue;
-                    }
-                }
-                if (allowAboveRoot) {
-                    if (res.length > 0) res += "/..";
-                    else res = "..";
-                    lastSegmentLength = 2;
-                }
-            } else {
-                if (res.length > 0) res += "/" + path.slice(lastSlash + 1, i);
-                else res = path.slice(lastSlash + 1, i);
-                lastSegmentLength = i - lastSlash - 1;
-            }
-            lastSlash = i;
-            dots = 0;
-        } else if (code === 46 /*.*/  && dots !== -1) ++dots;
-        else dots = -1;
-    }
-    return res;
-}
-function $4c96b70ea9ef553b$var$_format(sep, pathObject) {
-    var dir = pathObject.dir || pathObject.root;
-    var base = pathObject.base || (pathObject.name || "") + (pathObject.ext || "");
-    if (!dir) return base;
-    if (dir === pathObject.root) return dir + base;
-    return dir + sep + base;
-}
-var $4c96b70ea9ef553b$var$posix = {
-    // path.resolve([from ...], to)
-    resolve: function resolve() {
-        var resolvedPath = "";
-        var resolvedAbsolute = false;
-        var cwd;
-        for(var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--){
-            var path;
-            if (i >= 0) path = arguments[i];
-            else {
-                if (cwd === undefined) cwd = $FkHbz.cwd();
-                path = cwd;
-            }
-            $4c96b70ea9ef553b$var$assertPath(path);
-            // Skip empty entries
-            if (path.length === 0) continue;
-            resolvedPath = path + "/" + resolvedPath;
-            resolvedAbsolute = path.charCodeAt(0) === 47 /*/*/ ;
-        }
-        // At this point the path should be resolved to a full absolute path, but
-        // handle relative paths to be safe (might happen when process.cwd() fails)
-        // Normalize the path
-        resolvedPath = $4c96b70ea9ef553b$var$normalizeStringPosix(resolvedPath, !resolvedAbsolute);
-        if (resolvedAbsolute) {
-            if (resolvedPath.length > 0) return "/" + resolvedPath;
-            else return "/";
-        } else if (resolvedPath.length > 0) return resolvedPath;
-        else return ".";
-    },
-    normalize: function normalize(path) {
-        $4c96b70ea9ef553b$var$assertPath(path);
-        if (path.length === 0) return ".";
-        var isAbsolute = path.charCodeAt(0) === 47 /*/*/ ;
-        var trailingSeparator = path.charCodeAt(path.length - 1) === 47 /*/*/ ;
-        // Normalize the path
-        path = $4c96b70ea9ef553b$var$normalizeStringPosix(path, !isAbsolute);
-        if (path.length === 0 && !isAbsolute) path = ".";
-        if (path.length > 0 && trailingSeparator) path += "/";
-        if (isAbsolute) return "/" + path;
-        return path;
-    },
-    isAbsolute: function isAbsolute(path) {
-        $4c96b70ea9ef553b$var$assertPath(path);
-        return path.length > 0 && path.charCodeAt(0) === 47 /*/*/ ;
-    },
-    join: function join() {
-        if (arguments.length === 0) return ".";
-        var joined;
-        for(var i = 0; i < arguments.length; ++i){
-            var arg = arguments[i];
-            $4c96b70ea9ef553b$var$assertPath(arg);
-            if (arg.length > 0) {
-                if (joined === undefined) joined = arg;
-                else joined += "/" + arg;
-            }
-        }
-        if (joined === undefined) return ".";
-        return $4c96b70ea9ef553b$var$posix.normalize(joined);
-    },
-    relative: function relative(from, to) {
-        $4c96b70ea9ef553b$var$assertPath(from);
-        $4c96b70ea9ef553b$var$assertPath(to);
-        if (from === to) return "";
-        from = $4c96b70ea9ef553b$var$posix.resolve(from);
-        to = $4c96b70ea9ef553b$var$posix.resolve(to);
-        if (from === to) return "";
-        // Trim any leading backslashes
-        var fromStart = 1;
-        for(; fromStart < from.length; ++fromStart){
-            if (from.charCodeAt(fromStart) !== 47 /*/*/ ) break;
-        }
-        var fromEnd = from.length;
-        var fromLen = fromEnd - fromStart;
-        // Trim any leading backslashes
-        var toStart = 1;
-        for(; toStart < to.length; ++toStart){
-            if (to.charCodeAt(toStart) !== 47 /*/*/ ) break;
-        }
-        var toEnd = to.length;
-        var toLen = toEnd - toStart;
-        // Compare paths to find the longest common path from root
-        var length = fromLen < toLen ? fromLen : toLen;
-        var lastCommonSep = -1;
-        var i = 0;
-        for(; i <= length; ++i){
-            if (i === length) {
-                if (toLen > length) {
-                    if (to.charCodeAt(toStart + i) === 47 /*/*/ ) // We get here if `from` is the exact base path for `to`.
-                    // For example: from='/foo/bar'; to='/foo/bar/baz'
-                    return to.slice(toStart + i + 1);
-                    else if (i === 0) // We get here if `from` is the root
-                    // For example: from='/'; to='/foo'
-                    return to.slice(toStart + i);
-                } else if (fromLen > length) {
-                    if (from.charCodeAt(fromStart + i) === 47 /*/*/ ) // We get here if `to` is the exact base path for `from`.
-                    // For example: from='/foo/bar/baz'; to='/foo/bar'
-                    lastCommonSep = i;
-                    else if (i === 0) // We get here if `to` is the root.
-                    // For example: from='/foo'; to='/'
-                    lastCommonSep = 0;
-                }
-                break;
-            }
-            var fromCode = from.charCodeAt(fromStart + i);
-            var toCode = to.charCodeAt(toStart + i);
-            if (fromCode !== toCode) break;
-            else if (fromCode === 47 /*/*/ ) lastCommonSep = i;
-        }
-        var out = "";
-        // Generate the relative path based on the path difference between `to`
-        // and `from`
-        for(i = fromStart + lastCommonSep + 1; i <= fromEnd; ++i)if (i === fromEnd || from.charCodeAt(i) === 47 /*/*/ ) {
-            if (out.length === 0) out += "..";
-            else out += "/..";
-        }
-        // Lastly, append the rest of the destination (`to`) path that comes after
-        // the common path parts
-        if (out.length > 0) return out + to.slice(toStart + lastCommonSep);
-        else {
-            toStart += lastCommonSep;
-            if (to.charCodeAt(toStart) === 47 /*/*/ ) ++toStart;
-            return to.slice(toStart);
-        }
-    },
-    _makeLong: function _makeLong(path) {
-        return path;
-    },
-    dirname: function dirname(path) {
-        $4c96b70ea9ef553b$var$assertPath(path);
-        if (path.length === 0) return ".";
-        var code = path.charCodeAt(0);
-        var hasRoot = code === 47 /*/*/ ;
-        var end = -1;
-        var matchedSlash = true;
-        for(var i = path.length - 1; i >= 1; --i){
-            code = path.charCodeAt(i);
-            if (code === 47 /*/*/ ) {
-                if (!matchedSlash) {
-                    end = i;
-                    break;
-                }
-            } else // We saw the first non-path separator
-            matchedSlash = false;
-        }
-        if (end === -1) return hasRoot ? "/" : ".";
-        if (hasRoot && end === 1) return "//";
-        return path.slice(0, end);
-    },
-    basename: function basename(path, ext) {
-        if (ext !== undefined && typeof ext !== "string") throw new TypeError('"ext" argument must be a string');
-        $4c96b70ea9ef553b$var$assertPath(path);
-        var start = 0;
-        var end = -1;
-        var matchedSlash = true;
-        var i;
-        if (ext !== undefined && ext.length > 0 && ext.length <= path.length) {
-            if (ext.length === path.length && ext === path) return "";
-            var extIdx = ext.length - 1;
-            var firstNonSlashEnd = -1;
-            for(i = path.length - 1; i >= 0; --i){
-                var code = path.charCodeAt(i);
-                if (code === 47 /*/*/ ) // If we reached a path separator that was not part of a set of path
-                // separators at the end of the string, stop now
-                {
-                    if (!matchedSlash) {
-                        start = i + 1;
-                        break;
-                    }
-                } else {
-                    if (firstNonSlashEnd === -1) {
-                        // We saw the first non-path separator, remember this index in case
-                        // we need it if the extension ends up not matching
-                        matchedSlash = false;
-                        firstNonSlashEnd = i + 1;
-                    }
-                    if (extIdx >= 0) {
-                        // Try to match the explicit extension
-                        if (code === ext.charCodeAt(extIdx)) {
-                            if (--extIdx === -1) // We matched the extension, so mark this as the end of our path
-                            // component
-                            end = i;
-                        } else {
-                            // Extension does not match, so our result is the entire path
-                            // component
-                            extIdx = -1;
-                            end = firstNonSlashEnd;
-                        }
-                    }
-                }
-            }
-            if (start === end) end = firstNonSlashEnd;
-            else if (end === -1) end = path.length;
-            return path.slice(start, end);
-        } else {
-            for(i = path.length - 1; i >= 0; --i){
-                if (path.charCodeAt(i) === 47 /*/*/ ) // If we reached a path separator that was not part of a set of path
-                // separators at the end of the string, stop now
-                {
-                    if (!matchedSlash) {
-                        start = i + 1;
-                        break;
-                    }
-                } else if (end === -1) {
-                    // We saw the first non-path separator, mark this as the end of our
-                    // path component
-                    matchedSlash = false;
-                    end = i + 1;
-                }
-            }
-            if (end === -1) return "";
-            return path.slice(start, end);
-        }
-    },
-    extname: function extname(path) {
-        $4c96b70ea9ef553b$var$assertPath(path);
-        var startDot = -1;
-        var startPart = 0;
-        var end = -1;
-        var matchedSlash = true;
-        // Track the state of characters (if any) we see before our first dot and
-        // after any path separator we find
-        var preDotState = 0;
-        for(var i = path.length - 1; i >= 0; --i){
-            var code = path.charCodeAt(i);
-            if (code === 47 /*/*/ ) {
-                // If we reached a path separator that was not part of a set of path
-                // separators at the end of the string, stop now
-                if (!matchedSlash) {
-                    startPart = i + 1;
-                    break;
-                }
-                continue;
-            }
-            if (end === -1) {
-                // We saw the first non-path separator, mark this as the end of our
-                // extension
-                matchedSlash = false;
-                end = i + 1;
-            }
-            if (code === 46 /*.*/ ) {
-                // If this is our first dot, mark it as the start of our extension
-                if (startDot === -1) startDot = i;
-                else if (preDotState !== 1) preDotState = 1;
-            } else if (startDot !== -1) // We saw a non-dot and non-path separator before our dot, so we should
-            // have a good chance at having a non-empty extension
-            preDotState = -1;
-        }
-        if (startDot === -1 || end === -1 || // We saw a non-dot character immediately before the dot
-        preDotState === 0 || // The (right-most) trimmed path component is exactly '..'
-        preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) return "";
-        return path.slice(startDot, end);
-    },
-    format: function format(pathObject) {
-        if (pathObject === null || typeof pathObject !== "object") throw new TypeError('The "pathObject" argument must be of type Object. Received type ' + typeof pathObject);
-        return $4c96b70ea9ef553b$var$_format("/", pathObject);
-    },
-    parse: function parse(path) {
-        $4c96b70ea9ef553b$var$assertPath(path);
-        var ret = {
-            root: "",
-            dir: "",
-            base: "",
-            ext: "",
-            name: ""
-        };
-        if (path.length === 0) return ret;
-        var code = path.charCodeAt(0);
-        var isAbsolute = code === 47 /*/*/ ;
-        var start;
-        if (isAbsolute) {
-            ret.root = "/";
-            start = 1;
-        } else start = 0;
-        var startDot = -1;
-        var startPart = 0;
-        var end = -1;
-        var matchedSlash = true;
-        var i = path.length - 1;
-        // Track the state of characters (if any) we see before our first dot and
-        // after any path separator we find
-        var preDotState = 0;
-        // Get non-dir info
-        for(; i >= start; --i){
-            code = path.charCodeAt(i);
-            if (code === 47 /*/*/ ) {
-                // If we reached a path separator that was not part of a set of path
-                // separators at the end of the string, stop now
-                if (!matchedSlash) {
-                    startPart = i + 1;
-                    break;
-                }
-                continue;
-            }
-            if (end === -1) {
-                // We saw the first non-path separator, mark this as the end of our
-                // extension
-                matchedSlash = false;
-                end = i + 1;
-            }
-            if (code === 46 /*.*/ ) {
-                // If this is our first dot, mark it as the start of our extension
-                if (startDot === -1) startDot = i;
-                else if (preDotState !== 1) preDotState = 1;
-            } else if (startDot !== -1) // We saw a non-dot and non-path separator before our dot, so we should
-            // have a good chance at having a non-empty extension
-            preDotState = -1;
-        }
-        if (startDot === -1 || end === -1 || // We saw a non-dot character immediately before the dot
-        preDotState === 0 || // The (right-most) trimmed path component is exactly '..'
-        preDotState === 1 && startDot === end - 1 && startDot === startPart + 1) {
-            if (end !== -1) {
-                if (startPart === 0 && isAbsolute) ret.base = ret.name = path.slice(1, end);
-                else ret.base = ret.name = path.slice(startPart, end);
-            }
-        } else {
-            if (startPart === 0 && isAbsolute) {
-                ret.name = path.slice(1, startDot);
-                ret.base = path.slice(1, end);
-            } else {
-                ret.name = path.slice(startPart, startDot);
-                ret.base = path.slice(startPart, end);
-            }
-            ret.ext = path.slice(startDot, end);
-        }
-        if (startPart > 0) ret.dir = path.slice(0, startPart - 1);
-        else if (isAbsolute) ret.dir = "/";
-        return ret;
-    },
-    sep: "/",
-    delimiter: ":",
-    win32: null,
-    posix: null
-};
-$4c96b70ea9ef553b$var$posix.posix = $4c96b70ea9ef553b$var$posix;
-module.exports = $4c96b70ea9ef553b$var$posix;
-
-});
-
 parcelRequire.register("fxI7A", function(module, exports) {
 "use strict";
 
@@ -5526,28 +5096,21 @@ $parcel$export(module.exports, "hasRegexChars", () => $f98afd6d618589fd$export$6
 $parcel$export(module.exports, "escapeRegex", () => $f98afd6d618589fd$export$104ed90cc1a13451, (v) => $f98afd6d618589fd$export$104ed90cc1a13451 = v);
 $parcel$export(module.exports, "toPosixSlashes", () => $f98afd6d618589fd$export$e610e037975797ee, (v) => $f98afd6d618589fd$export$e610e037975797ee = v);
 $parcel$export(module.exports, "removeBackslashes", () => $f98afd6d618589fd$export$f403de0a7ba7a743, (v) => $f98afd6d618589fd$export$f403de0a7ba7a743 = v);
-$parcel$export(module.exports, "supportsLookbehinds", () => $f98afd6d618589fd$export$bcf709e5e3483cdb, (v) => $f98afd6d618589fd$export$bcf709e5e3483cdb = v);
-$parcel$export(module.exports, "isWindows", () => $f98afd6d618589fd$export$f993c945890e93ba, (v) => $f98afd6d618589fd$export$f993c945890e93ba = v);
 $parcel$export(module.exports, "escapeLast", () => $f98afd6d618589fd$export$13d0f4185f159c8, (v) => $f98afd6d618589fd$export$13d0f4185f159c8 = v);
 $parcel$export(module.exports, "removePrefix", () => $f98afd6d618589fd$export$f2888183a34644d4, (v) => $f98afd6d618589fd$export$f2888183a34644d4 = v);
 $parcel$export(module.exports, "wrapOutput", () => $f98afd6d618589fd$export$25bddda26836484b, (v) => $f98afd6d618589fd$export$25bddda26836484b = v);
+$parcel$export(module.exports, "basename", () => $f98afd6d618589fd$export$9bf319d8f74f51d1, (v) => $f98afd6d618589fd$export$9bf319d8f74f51d1 = v);
 var $f98afd6d618589fd$export$a6cdc56e425d0d0a;
 var $f98afd6d618589fd$export$6540a013a39bb50d;
 var $f98afd6d618589fd$export$a92319f7ab133839;
 var $f98afd6d618589fd$export$104ed90cc1a13451;
 var $f98afd6d618589fd$export$e610e037975797ee;
 var $f98afd6d618589fd$export$f403de0a7ba7a743;
-var $f98afd6d618589fd$export$bcf709e5e3483cdb;
-var $f98afd6d618589fd$export$f993c945890e93ba;
 var $f98afd6d618589fd$export$13d0f4185f159c8;
 var $f98afd6d618589fd$export$f2888183a34644d4;
 var $f98afd6d618589fd$export$25bddda26836484b;
-
-var $FkHbz = parcelRequire("FkHbz");
+var $f98afd6d618589fd$export$9bf319d8f74f51d1;
 "use strict";
-
-var $6zG9Y = parcelRequire("6zG9Y");
-const $f98afd6d618589fd$var$win32 = $FkHbz.platform === "win32";
 
 var $emsfP = parcelRequire("emsfP");
 var $f98afd6d618589fd$require$REGEX_BACKSLASH = $emsfP.REGEX_BACKSLASH;
@@ -5563,15 +5126,6 @@ $f98afd6d618589fd$export$f403de0a7ba7a743 = (str)=>{
     return str.replace($f98afd6d618589fd$require$REGEX_REMOVE_BACKSLASH, (match)=>{
         return match === "\\" ? "" : match;
     });
-};
-$f98afd6d618589fd$export$bcf709e5e3483cdb = ()=>{
-    const segs = $FkHbz.version.slice(1).split(".").map(Number);
-    if (segs.length === 3 && segs[0] >= 9 || segs[0] === 8 && segs[1] >= 10) return true;
-    return false;
-};
-$f98afd6d618589fd$export$f993c945890e93ba = (options)=>{
-    if (options && typeof options.windows === "boolean") return options.windows;
-    return $f98afd6d618589fd$var$win32 === true || $6zG9Y.sep === "\\";
 };
 $f98afd6d618589fd$export$13d0f4185f159c8 = (input, char, lastIdx)=>{
     const idx = input.lastIndexOf(char, lastIdx);
@@ -5594,12 +5148,16 @@ $f98afd6d618589fd$export$25bddda26836484b = (input, state = {}, options = {})=>{
     if (state.negated === true) output = `(?:^(?!${output}).*$)`;
     return output;
 };
+$f98afd6d618589fd$export$9bf319d8f74f51d1 = (path, { windows: windows } = {})=>{
+    const segs = path.split(windows ? /[\\/]/ : "/");
+    const last = segs[segs.length - 1];
+    if (last === "") return segs[segs.length - 2];
+    return last;
+};
 
 });
 parcelRequire.register("emsfP", function(module, exports) {
 "use strict";
-
-var $6zG9Y = parcelRequire("6zG9Y");
 const $a749097ad8937d36$var$WIN_SLASH = "\\\\/";
 const $a749097ad8937d36$var$WIN_NO_SLASH = `[^${$a749097ad8937d36$var$WIN_SLASH}]`;
 /**
@@ -5619,6 +5177,7 @@ const $a749097ad8937d36$var$NO_DOT_SLASH = `(?!${$a749097ad8937d36$var$DOT_LITER
 const $a749097ad8937d36$var$NO_DOTS_SLASH = `(?!${$a749097ad8937d36$var$DOTS_SLASH})`;
 const $a749097ad8937d36$var$QMARK_NO_DOT = `[^.${$a749097ad8937d36$var$SLASH_LITERAL}]`;
 const $a749097ad8937d36$var$STAR = `${$a749097ad8937d36$var$QMARK}*?`;
+const $a749097ad8937d36$var$SEP = "/";
 const $a749097ad8937d36$var$POSIX_CHARS = {
     DOT_LITERAL: $a749097ad8937d36$var$DOT_LITERAL,
     PLUS_LITERAL: $a749097ad8937d36$var$PLUS_LITERAL,
@@ -5634,7 +5193,8 @@ const $a749097ad8937d36$var$POSIX_CHARS = {
     NO_DOTS_SLASH: $a749097ad8937d36$var$NO_DOTS_SLASH,
     QMARK_NO_DOT: $a749097ad8937d36$var$QMARK_NO_DOT,
     STAR: $a749097ad8937d36$var$STAR,
-    START_ANCHOR: $a749097ad8937d36$var$START_ANCHOR
+    START_ANCHOR: $a749097ad8937d36$var$START_ANCHOR,
+    SEP: $a749097ad8937d36$var$SEP
 };
 /**
  * Windows glob regex
@@ -5650,7 +5210,8 @@ const $a749097ad8937d36$var$POSIX_CHARS = {
     NO_DOTS_SLASH: `(?!${$a749097ad8937d36$var$DOT_LITERAL}{1,2}(?:[${$a749097ad8937d36$var$WIN_SLASH}]|$))`,
     QMARK_NO_DOT: `[^.${$a749097ad8937d36$var$WIN_SLASH}]`,
     START_ANCHOR: `(?:^|[${$a749097ad8937d36$var$WIN_SLASH}])`,
-    END_ANCHOR: `(?:[${$a749097ad8937d36$var$WIN_SLASH}]|$)`
+    END_ANCHOR: `(?:[${$a749097ad8937d36$var$WIN_SLASH}]|$)`,
+    SEP: "\\"
 };
 /**
  * POSIX Bracket Regex
@@ -5732,8 +5293,7 @@ module.exports = {
     /* \t */ CHAR_UNDERSCORE: 95,
     /* _ */ CHAR_VERTICAL_LINE: 124,
     /* | */ CHAR_ZERO_WIDTH_NOBREAK_SPACE: 65279,
-    /* \uFEFF */ SEP: $6zG9Y.sep,
-    /**
+    /* \uFEFF */ /**
    * Create EXTGLOB_CHARS
    */ extglobChars (chars) {
         return {
@@ -5825,9 +5385,8 @@ var $lqji5 = parcelRequire("lqji5");
         bos
     ];
     const capture = opts.capture ? "" : "?:";
-    const win32 = $lqji5.isWindows(options);
     // create constants based on platform, for windows or posix
-    const PLATFORM_CHARS = $emsfP.globChars(win32);
+    const PLATFORM_CHARS = $emsfP.globChars(opts.windows);
     const EXTGLOB_CHARS = $emsfP.extglobChars(PLATFORM_CHARS);
     const { DOT_LITERAL: DOT_LITERAL, PLUS_LITERAL: PLUS_LITERAL, SLASH_LITERAL: SLASH_LITERAL, ONE_CHAR: ONE_CHAR, DOTS_SLASH: DOTS_SLASH, NO_DOT: NO_DOT, NO_DOT_SLASH: NO_DOT_SLASH, NO_DOTS_SLASH: NO_DOTS_SLASH, QMARK: QMARK, QMARK_NO_DOT: QMARK_NO_DOT, STAR: STAR, START_ANCHOR: START_ANCHOR } = PLATFORM_CHARS;
     const globstar = (opts)=>{
@@ -5918,8 +5477,8 @@ var $lqji5 = parcelRequire("lqji5");
         if (extglobs.length && tok.type !== "paren") extglobs[extglobs.length - 1].inner += tok.value;
         if (tok.value || tok.output) append(tok);
         if (prev && prev.type === "text" && tok.type === "text") {
+            prev.output = (prev.output || prev.value) + tok.value;
             prev.value += tok.value;
-            prev.output = (prev.output || "") + tok.value;
             return;
         }
         tok.prev = prev;
@@ -6323,7 +5882,6 @@ var $lqji5 = parcelRequire("lqji5");
             if (prev && prev.type === "paren") {
                 const next = peek();
                 let output = value;
-                if (next === "<" && !$lqji5.supportsLookbehinds()) throw new Error("Node.js v10 or higher is required for regex lookbehinds");
                 if (prev.value === "(" && !/[!=<:]/.test(next) || next === "<" && !/<([!=]|\w+>)/.test(remaining())) output = `\\${value}`;
                 push({
                     type: "text",
@@ -6612,9 +6170,8 @@ var $lqji5 = parcelRequire("lqji5");
     const len = input.length;
     if (len > max) throw new SyntaxError(`Input length: ${len}, exceeds maximum allowed length: ${max}`);
     input = $24735b10edf6186b$var$REPLACEMENTS[input] || input;
-    const win32 = $lqji5.isWindows(options);
     // create constants based on platform, for windows or posix
-    const { DOT_LITERAL: DOT_LITERAL, SLASH_LITERAL: SLASH_LITERAL, ONE_CHAR: ONE_CHAR, DOTS_SLASH: DOTS_SLASH, NO_DOT: NO_DOT, NO_DOTS: NO_DOTS, NO_DOTS_SLASH: NO_DOTS_SLASH, STAR: STAR, START_ANCHOR: START_ANCHOR } = $emsfP.globChars(win32);
+    const { DOT_LITERAL: DOT_LITERAL, SLASH_LITERAL: SLASH_LITERAL, ONE_CHAR: ONE_CHAR, DOTS_SLASH: DOTS_SLASH, NO_DOT: NO_DOT, NO_DOTS: NO_DOTS, NO_DOTS_SLASH: NO_DOTS_SLASH, STAR: STAR, START_ANCHOR: START_ANCHOR } = $emsfP.globChars(opts.windows);
     const nodot = opts.dot ? NO_DOTS : NO_DOT;
     const slashDot = opts.dot ? NO_DOTS_SLASH : NO_DOT;
     const capture = opts.capture ? "" : "?:";
@@ -20050,116 +19607,10 @@ $b77f34d02b78ab8d$exports = {
 
 
 var $e3f139c5065f0041$require$globalCopy = $b77f34d02b78ab8d$exports.globalCopy;
-var $ac87188ade0fa4d3$exports = {};
-"use strict";
-Object.defineProperty($ac87188ade0fa4d3$exports, "__esModule", {
-    value: true
-});
-var $379540b081fefc3a$exports = {};
+var $b45ac22e865b129b$exports = {};
 "use strict";
 
-$379540b081fefc3a$exports = (parcelRequire("1xCGA"));
-
-
-var $c75303f3ac8864e9$exports = {};
-/*!
- * normalize-path <https://github.com/jonschlinkert/normalize-path>
- *
- * Copyright (c) 2014-2018, Jon Schlinkert.
- * Released under the MIT License.
- */ $c75303f3ac8864e9$exports = function(path, stripTrailing) {
-    if (typeof path !== "string") throw new TypeError("expected path to be a string");
-    if (path === "\\" || path === "/") return "/";
-    var len = path.length;
-    if (len <= 1) return path;
-    // ensure that win32 namespaces has two leading slashes, so that the path is
-    // handled properly by the win32 version of path.parse() after being normalized
-    // https://msdn.microsoft.com/library/windows/desktop/aa365247(v=vs.85).aspx#namespaces
-    var prefix = "";
-    if (len > 4 && path[3] === "\\") {
-        var ch = path[2];
-        if ((ch === "?" || ch === ".") && path.slice(0, 2) === "\\\\") {
-            path = path.slice(2);
-            prefix = "//";
-        }
-    }
-    var segs = path.split(/[/\\]+/);
-    if (stripTrailing !== false && segs[segs.length - 1] === "") segs.pop();
-    return prefix + segs.join("/");
-};
-
-
-/**
- * @typedef {(testString: string) => boolean} AnymatchFn
- * @typedef {string|RegExp|AnymatchFn} AnymatchPattern
- * @typedef {AnymatchPattern|AnymatchPattern[]} AnymatchMatcher
- */ const $ac87188ade0fa4d3$var$BANG = "!";
-const $ac87188ade0fa4d3$var$DEFAULT_OPTIONS = {
-    returnIndex: false
-};
-const $ac87188ade0fa4d3$var$arrify = (item)=>Array.isArray(item) ? item : [
-        item
-    ];
-/**
- * @param {AnymatchPattern} matcher
- * @param {object} options
- * @returns {AnymatchFn}
- */ const $ac87188ade0fa4d3$var$createPattern = (matcher, options)=>{
-    if (typeof matcher === "function") return matcher;
-    if (typeof matcher === "string") {
-        const glob = $379540b081fefc3a$exports(matcher, options);
-        return (string)=>matcher === string || glob(string);
-    }
-    if (matcher instanceof RegExp) return (string)=>matcher.test(string);
-    return (string)=>false;
-};
-/**
- * @param {Array<Function>} patterns
- * @param {Array<Function>} negPatterns
- * @param {String|Array} args
- * @param {Boolean} returnIndex
- * @returns {boolean|number}
- */ const $ac87188ade0fa4d3$var$matchPatterns = (patterns, negPatterns, args, returnIndex)=>{
-    const isList = Array.isArray(args);
-    const _path = isList ? args[0] : args;
-    if (!isList && typeof _path !== "string") throw new TypeError("anymatch: second argument must be a string: got " + Object.prototype.toString.call(_path));
-    const path = $c75303f3ac8864e9$exports(_path, false);
-    for(let index = 0; index < negPatterns.length; index++){
-        const nglob = negPatterns[index];
-        if (nglob(path)) return returnIndex ? -1 : false;
-    }
-    const applied = isList && [
-        path
-    ].concat(args.slice(1));
-    for(let index = 0; index < patterns.length; index++){
-        const pattern = patterns[index];
-        if (isList ? pattern(...applied) : pattern(path)) return returnIndex ? index : true;
-    }
-    return returnIndex ? -1 : false;
-};
-/**
- * @param {AnymatchMatcher} matchers
- * @param {Array|string} testString
- * @param {object} options
- * @returns {boolean|number|Function}
- */ const $ac87188ade0fa4d3$var$anymatch = (matchers, testString, options = $ac87188ade0fa4d3$var$DEFAULT_OPTIONS)=>{
-    if (matchers == null) throw new TypeError("anymatch: specify first argument");
-    const opts = typeof options === "boolean" ? {
-        returnIndex: options
-    } : options;
-    const returnIndex = opts.returnIndex || false;
-    // Early cache for matchers.
-    const mtchers = $ac87188ade0fa4d3$var$arrify(matchers);
-    const negatedGlobs = mtchers.filter((item)=>typeof item === "string" && item.charAt(0) === $ac87188ade0fa4d3$var$BANG).map((item)=>item.slice(1)).map((item)=>$379540b081fefc3a$exports(item, opts));
-    const patterns = mtchers.filter((item)=>typeof item !== "string" || typeof item === "string" && item.charAt(0) !== $ac87188ade0fa4d3$var$BANG).map((matcher)=>$ac87188ade0fa4d3$var$createPattern(matcher, opts));
-    if (testString == null) return (testString, ri = false)=>{
-        const returnIndex = typeof ri === "boolean" ? ri : false;
-        return $ac87188ade0fa4d3$var$matchPatterns(patterns, negatedGlobs, testString, returnIndex);
-    };
-    return $ac87188ade0fa4d3$var$matchPatterns(patterns, negatedGlobs, testString, returnIndex);
-};
-$ac87188ade0fa4d3$var$anymatch.default = $ac87188ade0fa4d3$var$anymatch;
-$ac87188ade0fa4d3$exports = $ac87188ade0fa4d3$var$anymatch;
+$b45ac22e865b129b$exports = (parcelRequire("1xCGA"));
 
 
 
@@ -20425,7 +19876,7 @@ const $e3f139c5065f0041$var$fileSystemLib = {
     },
     utils: {
         iconv: $54aff2427aaf4272$exports,
-        anymatch: $ac87188ade0fa4d3$exports,
+        picomatch: $b45ac22e865b129b$exports,
         ignore: $a3d6107d2fcf3806$exports
     }
 };

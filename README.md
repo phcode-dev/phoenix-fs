@@ -351,7 +351,7 @@ fs.utils.iconv.encodingExists("us-ascii")
 ## `fs.utils`
 `fs.utils` houses several file related utilities. 
 1. [`fs.utils.iconv`](https://www.npmjs.com/package/iconv-lite) - iconv-lite: Pure JS character encoding conversion library. See API docs here: https://www.npmjs.com/package/iconv-lite
-2. [`fs.utils.anymatch`](https://github.com/micromatch/anymatch) - Javascript module to match a string against a regular expression, glob, string, or function that takes the string as an argument and returns a truthy or falsy value. The matcher can also be an array of any or all of these. Useful for allowing a very flexible user-defined config to define things like file paths. Docs: https://github.com/micromatch/anymatch
+2. [`fs.utils.picomatch`](https://www.npmjs.com/package/picomatch) - Javascript module to match a string against a regular expression, glob, string, or function that takes the string as an argument and returns a truthy or falsy value. https://www.npmjs.com/package/picomatch
 3. [`fs.utils.ignore`](https://www.npmjs.com/package/ignore) - To filter filenames according to a .gitignore file. https://www.npmjs.com/package/ignore
 
 ### Usage of encoding in `fs.readFile` API
