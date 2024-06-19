@@ -235,11 +235,14 @@ const fileSystemLib = {
             cb(new Errors.EPERM('Tauri root directory cannot be renamed.'));
             return;
         }
-        if(IS_WINDOWS && (oldPath.toLowerCase() === newPath.toLowerCase()) &&
-            TauriFS.isTauriSubPath(oldPath) && TauriFS.isTauriSubPath(newPath)) {
+        if(IS_WINDOWS && (oldPath.toLowerCase() === newPath.toLowerCase())) {
             // in windows, we should be able to rename "a.txt" to "A.txt". Since windows is case-insensitive,
             // the below stat(A.txt) will return a stat for "a.txt" which is not what we want.
-            return TauriFS.rename(oldPath, newPath, callbackInterceptor);
+            if(TauriFS.isTauriSubPath(oldPath) && TauriFS.isTauriSubPath(newPath)) {
+                return TauriFS.rename(oldPath, newPath, callbackInterceptor);
+            } else if(Mounts.isMountSubPath(oldPath) && Mounts.isMountSubPath(newPath)) {
+                return NativeFS.renameWindowsSameName(oldPath, newPath, callbackInterceptor);
+            }
         }
         fileSystemLib.stat(newPath, (err)=>{
             if(!err){

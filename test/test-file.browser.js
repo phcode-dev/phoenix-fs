@@ -1,5 +1,7 @@
 /* global expect , Filer, fs, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI, TEST_TYPE_TAURI_WS*/
 
+const IS_WINDOWS = navigator.userAgent.includes('Windows');
+
 function _setupTests(testType) {
     let testPath;
 
@@ -312,7 +314,11 @@ function _setupTests(testType) {
         let filePathCreated = await _writeTestFile(fileName);
         let newPath = `${testPath}/${fileName.toUpperCase()}`;
         await _validateRename(filePathCreated, newPath);
-        await _validate_not_exists(filePathCreated);
+        if(IS_WINDOWS && (filePathCreated.startsWith("/tauri") || filePathCreated.startsWith("/mnt/"))) {
+            await _validate_exists(filePathCreated);
+        } else {
+            await _validate_not_exists(filePathCreated);
+        }
         await _validate_exists(newPath);
     });
 

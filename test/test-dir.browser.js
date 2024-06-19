@@ -1,5 +1,7 @@
 /* global expect , Filer, fs, waitForTrue, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI, TEST_TYPE_TAURI_WS, path, iconv*/
 
+const IS_WINDOWS = navigator.userAgent.includes('Windows');
+
 function _setupTests(testType) {
     let testPath;
 
@@ -436,7 +438,11 @@ function _setupTests(testType) {
         const lowerCaseDir = `${dirCreated}/${dirName}`, upperCaseDir = `${dirCreated}/${dirName.toUpperCase()}`;
         await _creatDirAndValidate(lowerCaseDir);
         await _validateRename(lowerCaseDir, upperCaseDir);
-        await _validate_not_exists(lowerCaseDir);
+        if(IS_WINDOWS && (lowerCaseDir.startsWith("/tauri") || lowerCaseDir.startsWith("/mnt/"))) {
+            await _validate_exists(lowerCaseDir);
+        } else {
+            await _validate_not_exists(lowerCaseDir);
+        }
         await _validate_exists(upperCaseDir);
     });
 
@@ -456,7 +462,11 @@ function _setupTests(testType) {
         await _creatDirAndValidate(`${dirCreated}/a`);
         await _creatDirAndValidate(`${dirCreated}/a/x`);
         await _validateRename(`${dirCreated}/a`, `${dirCreated}/A`);
-        await _validate_not_exists(`${dirCreated}/a`);
+        if(IS_WINDOWS && (dirCreated.startsWith("/tauri") || dirCreated.startsWith("/mnt/"))) {
+            await _validate_exists(`${dirCreated}/a`);
+        } else {
+            await _validate_not_exists(`${dirCreated}/a`);
+        }
         await _validate_exists(`${dirCreated}/A`);
         await _validate_exists(`${dirCreated}/A/x`);
     });
