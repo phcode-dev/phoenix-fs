@@ -2,6 +2,8 @@
 
 function _setupTests(testType) {
     const IS_WINDOWS = navigator.userAgent.includes('Windows');
+    const IS_MACOS = navigator.userAgent.includes('Macintosh') || navigator.userAgent.includes('Mac OS');
+
     let testPath;
 
     function consoleLogToShell(message) {
@@ -313,7 +315,7 @@ function _setupTests(testType) {
         let filePathCreated = await _writeTestFile(fileName);
         let newPath = `${testPath}/${fileName.toUpperCase()}`;
         await _validateRename(filePathCreated, newPath);
-        if(IS_WINDOWS && (filePathCreated.startsWith("/tauri") || filePathCreated.startsWith("/mnt/"))) {
+        if((IS_WINDOWS || IS_MACOS) && (filePathCreated.startsWith("/tauri") || filePathCreated.startsWith("/mnt/"))) {
             await _validate_exists(filePathCreated);
         } else {
             await _validate_not_exists(filePathCreated);

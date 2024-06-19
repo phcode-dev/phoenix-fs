@@ -17698,8 +17698,9 @@ async function $bd5c47de9e98f4fa$var$rename(oldPath, newPath, cb) {
         }, 0);
     });
 }
-// this is when in windows, you have to rename "a.txt" to "A.TXT". We have to have an intermediate name
-async function $bd5c47de9e98f4fa$var$renameWindowsSameName(oldPath, newPath, cb) {
+// this is when in windows/macos, the fs is not case-sensitive, you have to rename "a.txt" to "A.TXT".
+// We have to have an intermediate name
+async function $bd5c47de9e98f4fa$var$renameSameNameDiffCase(oldPath, newPath, cb) {
     const tempPath = globalObject.path.normalize(oldPath) + "_" + Math.floor(Math.random() * 4294967296);
     $bd5c47de9e98f4fa$var$rename(oldPath, tempPath, (err)=>{
         if (err) cb(err);
@@ -17725,7 +17726,7 @@ const $bd5c47de9e98f4fa$var$NativeFS = {
     unlink: $bd5c47de9e98f4fa$var$unlink,
     copy: $bd5c47de9e98f4fa$var$copy,
     rename: $bd5c47de9e98f4fa$var$rename,
-    renameWindowsSameName: $bd5c47de9e98f4fa$var$renameWindowsSameName
+    renameSameNameDiffCase: $bd5c47de9e98f4fa$var$renameSameNameDiffCase
 };
 $bd5c47de9e98f4fa$exports = {
     NativeFS: $bd5c47de9e98f4fa$var$NativeFS
@@ -19627,7 +19628,6 @@ $b45ac22e865b129b$exports = (parcelRequire("1xCGA"));
 
 let $e3f139c5065f0041$var$filerLib = null;
 let $e3f139c5065f0041$var$filerShell = null;
-const $e3f139c5065f0041$var$IS_WINDOWS = navigator.userAgent.includes("Windows");
 /**
  * Offers functionality similar to mkdir -p
  *
@@ -19765,11 +19765,11 @@ const $e3f139c5065f0041$var$fileSystemLib = {
             cb(new $e3f139c5065f0041$require$Errors.EPERM("Tauri root directory cannot be renamed."));
             return;
         }
-        if ($e3f139c5065f0041$var$IS_WINDOWS && oldPath.toLowerCase() === newPath.toLowerCase()) {
+        if (oldPath !== newPath && oldPath.toLowerCase() === newPath.toLowerCase()) {
             // in windows, we should be able to rename "a.txt" to "A.txt". Since windows is case-insensitive,
             // the below stat(A.txt) will return a stat for "a.txt" which is not what we want.
             if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(oldPath) && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(newPath)) return $e3f139c5065f0041$require$TauriFS.rename(oldPath, newPath, callbackInterceptor);
-            else if ($e3f139c5065f0041$require$Mounts.isMountSubPath(oldPath) && $e3f139c5065f0041$require$Mounts.isMountSubPath(newPath)) return $e3f139c5065f0041$require$NativeFS.renameWindowsSameName(oldPath, newPath, callbackInterceptor);
+            else if ($e3f139c5065f0041$require$Mounts.isMountSubPath(oldPath) && $e3f139c5065f0041$require$Mounts.isMountSubPath(newPath)) return $e3f139c5065f0041$require$NativeFS.renameSameNameDiffCase(oldPath, newPath, callbackInterceptor);
         }
         $e3f139c5065f0041$var$fileSystemLib.stat(newPath, (err)=>{
             if (!err) {
