@@ -19616,6 +19616,7 @@ $b45ac22e865b129b$exports = (parcelRequire("1xCGA"));
 
 let $e3f139c5065f0041$var$filerLib = null;
 let $e3f139c5065f0041$var$filerShell = null;
+const $e3f139c5065f0041$var$IS_WINDOWS = navigator.userAgent.includes("Windows");
 /**
  * Offers functionality similar to mkdir -p
  *
@@ -19753,6 +19754,9 @@ const $e3f139c5065f0041$var$fileSystemLib = {
             cb(new $e3f139c5065f0041$require$Errors.EPERM("Tauri root directory cannot be renamed."));
             return;
         }
+        if ($e3f139c5065f0041$var$IS_WINDOWS && oldPath.toLowerCase() === newPath.toLowerCase() && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(oldPath) && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(newPath)) // in windows, we should be able to rename "a.txt" to "A.txt". Since windows is case-insensitive,
+        // the below stat(A.txt) will return a stat for "a.txt" which is not what we want.
+        return $e3f139c5065f0041$require$TauriFS.rename(oldPath, newPath, callbackInterceptor);
         $e3f139c5065f0041$var$fileSystemLib.stat(newPath, (err)=>{
             if (!err) {
                 // the destination folder/file exists and we should not rename

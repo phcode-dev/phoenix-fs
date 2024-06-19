@@ -37,6 +37,7 @@ import * as iconv from 'iconv-lite';
 let filerLib = null;
 let filerShell = null;
 
+const IS_WINDOWS = navigator.userAgent.includes('Windows');
 /**
  * Offers functionality similar to mkdir -p
  *
@@ -233,6 +234,12 @@ const fileSystemLib = {
         } else if(TauriFS.isTauriPath(oldPath) || TauriFS.isTauriPath(newPath)) {
             cb(new Errors.EPERM('Tauri root directory cannot be renamed.'));
             return;
+        }
+        if(IS_WINDOWS && (oldPath.toLowerCase() === newPath.toLowerCase()) &&
+            TauriFS.isTauriSubPath(oldPath) && TauriFS.isTauriSubPath(newPath)) {
+            // in windows, we should be able to rename "a.txt" to "A.txt". Since windows is case-insensitive,
+            // the below stat(A.txt) will return a stat for "a.txt" which is not what we want.
+            return TauriFS.rename(oldPath, newPath, callbackInterceptor);
         }
         fileSystemLib.stat(newPath, (err)=>{
             if(!err){
