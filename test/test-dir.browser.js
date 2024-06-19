@@ -430,6 +430,16 @@ function _setupTests(testType) {
         await _validate_exists(`${dirCreated}/b`);
     });
 
+    it(`Should phoenix ${testType} rename existing lower case dir to upper case dir`, async function () {
+        let dirCreated = await _writeTestDir();
+        const dirName = "rename_test_case_sensitive";
+        const lowerCaseDir = `${dirCreated}/${dirName}`, upperCaseDir = `${dirCreated}/${dirName.toUpperCase()}`;
+        await _creatDirAndValidate(lowerCaseDir);
+        await _validateRename(lowerCaseDir, upperCaseDir);
+        await _validate_not_exists(lowerCaseDir);
+        await _validate_exists(upperCaseDir);
+    });
+
     it(`Should phoenix ${testType} rename dir test 2`, async function () {
         let dirCreated = await _writeTestDir();
         await _creatDirAndValidate(`${dirCreated}/a`);
@@ -439,6 +449,16 @@ function _setupTests(testType) {
         await _validate_not_exists(`${dirCreated}/a`);
         await _validate_exists(`${dirCreated}/z/b`);
         await _validate_exists(`${dirCreated}/z/b/x`);
+    });
+
+    it(`Should phoenix ${testType} rename case sensitive dir test 2`, async function () {
+        let dirCreated = await _writeTestDir();
+        await _creatDirAndValidate(`${dirCreated}/a`);
+        await _creatDirAndValidate(`${dirCreated}/a/x`);
+        await _validateRename(`${dirCreated}/a`, `${dirCreated}/A`);
+        await _validate_not_exists(`${dirCreated}/a`);
+        await _validate_exists(`${dirCreated}/A`);
+        await _validate_exists(`${dirCreated}/A/x`);
     });
 
     it(`Should phoenix ${testType} rename non-empty dir`, async function () {

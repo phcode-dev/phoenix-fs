@@ -110,8 +110,8 @@ function _setupTests(testType) {
         return "hello world";
     }
 
-    async function _writeTestFile() {
-        let filePath = `${testPath}/browserWrite.txt`;
+    async function _writeTestFile(fileName = null) {
+        let filePath = fileName ? `${testPath}/${fileName}` : `${testPath}/browserWrite.txt`;
         let resolveP,rejectP;
         const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP=reject;});
         fs.writeFile(filePath, _fileContent(), `utf8`, (err)=>{
@@ -302,6 +302,15 @@ function _setupTests(testType) {
     it(`Should phoenix ${testType} rename file`, async function () {
         let filePathCreated = await _writeTestFile();
         let newPath = `${testPath}/new_file.txt`;
+        await _validateRename(filePathCreated, newPath);
+        await _validate_not_exists(filePathCreated);
+        await _validate_exists(newPath);
+    });
+
+    it(`Should phoenix ${testType} rename file to upper case`, async function () {
+        const fileName = "case_test.txt";
+        let filePathCreated = await _writeTestFile(fileName);
+        let newPath = `${testPath}/${fileName.toUpperCase()}`;
         await _validateRename(filePathCreated, newPath);
         await _validate_not_exists(filePathCreated);
         await _validate_exists(newPath);
