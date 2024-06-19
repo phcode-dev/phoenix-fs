@@ -410,6 +410,20 @@ async function rename(oldPath, newPath, cb) {
     });
 }
 
+// this is when in windows, you have to rename "a.txt" to "A.TXT". We have to have an intermediate name
+async function renameWindowsSameName(oldPath, newPath, cb) {
+    const tempPath = globalObject.path.normalize(oldPath) + "_" + Math.floor(Math.random() * 4294967296);
+    rename(oldPath, tempPath, (err)=>{
+        if(err) {
+            cb(err);
+        }  else {
+            setTimeout(()=>{
+                rename(tempPath, newPath, cb);
+            }, 0);
+        }
+    });
+}
+
 function mountNativeFolder(...args) {
     Mounts.mountNativeFolder(...args);
 }
@@ -428,7 +442,8 @@ const NativeFS = {
     writeFile,
     unlink,
     copy,
-    rename
+    rename,
+    renameWindowsSameName
 };
 
 module.exports ={
