@@ -2,6 +2,8 @@
 
 function _setupTests(testType) {
     const IS_WINDOWS = navigator.userAgent.includes('Windows');
+    const IS_MACOS = navigator.userAgent.includes('Macintosh') || navigator.userAgent.includes('Mac OS');
+
     let testPath;
 
     function consoleLogToShell(message) {
@@ -437,7 +439,7 @@ function _setupTests(testType) {
         const lowerCaseDir = `${dirCreated}/${dirName}`, upperCaseDir = `${dirCreated}/${dirName.toUpperCase()}`;
         await _creatDirAndValidate(lowerCaseDir);
         await _validateRename(lowerCaseDir, upperCaseDir);
-        if(IS_WINDOWS && (lowerCaseDir.startsWith("/tauri") || lowerCaseDir.startsWith("/mnt/"))) {
+        if((IS_WINDOWS || IS_MACOS) && (lowerCaseDir.startsWith("/tauri") || lowerCaseDir.startsWith("/mnt/"))) {
             await _validate_exists(lowerCaseDir);
         } else {
             await _validate_not_exists(lowerCaseDir);
@@ -461,7 +463,7 @@ function _setupTests(testType) {
         await _creatDirAndValidate(`${dirCreated}/a`);
         await _creatDirAndValidate(`${dirCreated}/a/x`);
         await _validateRename(`${dirCreated}/a`, `${dirCreated}/A`);
-        if(IS_WINDOWS && (dirCreated.startsWith("/tauri") || dirCreated.startsWith("/mnt/"))) {
+        if((IS_WINDOWS || IS_MACOS) && (dirCreated.startsWith("/tauri") || dirCreated.startsWith("/mnt/"))) {
             await _validate_exists(`${dirCreated}/a`);
         } else {
             await _validate_not_exists(`${dirCreated}/a`);

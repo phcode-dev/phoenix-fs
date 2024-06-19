@@ -410,8 +410,9 @@ async function rename(oldPath, newPath, cb) {
     });
 }
 
-// this is when in windows, you have to rename "a.txt" to "A.TXT". We have to have an intermediate name
-async function renameWindowsSameName(oldPath, newPath, cb) {
+// this is when in windows/macos, the fs is not case-sensitive, you have to rename "a.txt" to "A.TXT".
+// We have to have an intermediate name
+async function renameSameNameDiffCase(oldPath, newPath, cb) {
     const tempPath = globalObject.path.normalize(oldPath) + "_" + Math.floor(Math.random() * 4294967296);
     rename(oldPath, tempPath, (err)=>{
         if(err) {
@@ -443,7 +444,7 @@ const NativeFS = {
     unlink,
     copy,
     rename,
-    renameWindowsSameName
+    renameSameNameDiffCase
 };
 
 module.exports ={
