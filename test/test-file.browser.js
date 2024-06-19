@@ -1,8 +1,7 @@
 /* global expect , Filer, fs, TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER, TEST_TYPE_TAURI, TEST_TYPE_TAURI_WS*/
 
-const IS_WINDOWS = navigator.userAgent.includes('Windows');
-
 function _setupTests(testType) {
+    const IS_WINDOWS = navigator.userAgent.includes('Windows');
     let testPath;
 
     function consoleLogToShell(message) {
