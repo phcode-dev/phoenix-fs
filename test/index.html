@@ -9,18 +9,25 @@
 <!--    Comment above line and Uncomment below line if you want to get more debug symbols in web inspector.-->
 <!--    <script src="virtualfs-debug.js"></script>-->
     <script>
+        // Electron detection and setup
+        if(window.electronAPI) {
+            window.__ELECTRON__ = true;
+        }
         window.addEventListener('keydown', function(event) {
             if (event.key === 'F5') {
                 location.reload();
             }
         });
-        if(window.showOpenFilePicker && !window.__TAURI__){
+        if(window.showOpenFilePicker){
            window.supportsFsAccessAPIs = true;
+        }
+        if(window.__TAURI__ || window.__ELECTRON__) {
+            window.supportsFsAccessAPIs = false; // use native fs apis directly
         }
         const TEST_TYPE_FS_ACCESS = "fs access";
         const TEST_TYPE_FILER = "filer";
-        const TEST_TYPE_TAURI = "tauri";
-        const TEST_TYPE_TAURI_WS = "tauriWs";
+        const TEST_TYPE_TAURI = "tauri"; // electron will reuse this. tauri is our native edge name(which includes electron)
+        const TEST_TYPE_TAURI_WS = "tauriWs"; // electron will reuse this
         window.IS_WINDOWS = navigator.userAgent.includes('Windows');
     </script>
     <script>
@@ -76,6 +83,18 @@
                 },10000);
             }). catch(console.error);
         }
+        // Electron detection and setup
+        if(window.electronAPI){
+            window.electronAPI.getNodeWSPort().then(port => {
+                window.nodeWSEndpoint = `ws://localhost:${port}/phoenixFS`;
+                fs.setNodeWSEndpoint(`ws://localhost:${port}/phoenixFS`);
+                window.isNodeSetup = true;
+            });
+            // Heartbeat to keep Node server alive
+            setInterval(() => {
+                // Heartbeat is handled by main process in Electron
+            }, 10000);
+        }
     </script>
     <script src="thirdparty/chai@4.2.0.js"></script>
     <script src="thirdparty/mocha@10.3.0.js"></script>
@@ -98,29 +117,45 @@
         window.virtualTestPath = '/test-phoenix-fs';
 
         function observeRunStatus(runner) {
-            if(!window.__TAURI__){
+            if(!window.__TAURI__ && !window.__ELECTRON__){
                 return;
             }
-            console.log("setting up tauri test reporters to log to system console.")
-            function consoleLogToShell(message) {
-                return __TAURI__.invoke("console_log", {message});
-            }
 
-            async function quitIfNeeded(exitStatus) {
-                if(!window.__TAURI__){
-                    return;
-                }
-                if(!location.href.startsWith("http://localhost:8081/test/")) {
-                    // during development, we dont switch off node at end of tests for ease of development and debug
-                    fs.stopNodeWSEndpoint();
-                    window.execNode(NODE_COMMANDS.TERMINATE);
-                    await waitForTrue(()=>{return window.isNodeTerminated;},1000);
-                }
-                __TAURI__.cli.getMatches().then(matches=>{
-                    if(matches?.args["quit-when-done"]?.occurrences) {
-                        __TAURI__.process.exit(exitStatus)
+            let consoleLogToShell;
+            let quitIfNeeded;
+
+            if(window.__TAURI__) {
+                console.log("setting up tauri test reporters to log to system console.");
+                consoleLogToShell = function(message) {
+                    return window.__TAURI__.invoke("console_log", {message});
+                };
+                quitIfNeeded = async function(exitStatus) {
+                    if(!location.href.startsWith("http://localhost:8081/test/")) {
+                        // during development, we dont switch off node at end of tests for ease of development and debug
+                        fs.stopNodeWSEndpoint();
+                        window.execNode(NODE_COMMANDS.TERMINATE);
+                        await waitForTrue(()=>{return window.isNodeTerminated;},1000);
                     }
-                });
+                    window.__TAURI__.cli.getMatches().then(matches=>{
+                        if(matches?.args["quit-when-done"]?.occurrences) {
+                            window.__TAURI__.process.exit(exitStatus)
+                        }
+                    });
+                };
+            } else if(window.__ELECTRON__) {
+                console.log("setting up electron test reporters to log to system console.");
+                consoleLogToShell = function(message) {
+                    window.electronAPI.consoleLog(message);
+                    return Promise.resolve();
+                };
+                quitIfNeeded = async function(exitStatus) {
+                    if(!location.href.startsWith("http://localhost:8081/test/")) {
+                        // during development, we dont quit at end of tests for ease of development and debug
+                        fs.stopNodeWSEndpoint();
+                    }
+                    // Always quit in Electron since there's no CLI arg parsing
+                    window.electronAPI.quitApp(exitStatus);
+                };
             }
 
             runner.on('end', function() {
@@ -180,17 +215,25 @@
                 observeRunStatus(mocha.run());
             });
         }
-        function runTauriTests() {
-            if(window.__TAURI__){
-                window.tauriTests = true;
-                console.log("Tauri env detected. running tauri specific tests.");
+        function runNativeAppTests() {
+            if(window.__TAURI__ || window.__ELECTRON__){
+                window.tauriTests = true; // reuse tauriTests flag for both
+                console.log("Native app env detected. Running native app tests.");
                 document.getElementById('openFolderButton').style = "display:none";
-                observeRunStatus(mocha.run());
+                // Wait for Node WebSocket setup before running tests
+                function waitAndRun() {
+                    if(window.isNodeSetup) {
+                        observeRunStatus(mocha.run());
+                    } else {
+                        setTimeout(waitAndRun, 100);
+                    }
+                }
+                waitAndRun();
             }
         }
     </script>
 </head>
-<body onload="runTauriTests()">
+<body onload="runNativeAppTests()">
 <div id="mocha"></div>
 <button id="openFolderButton" onclick="openFolderAndRunTests()">Open any blank folder to start tests. Warning - folder contents will be deleted!!!!</button>
 </body>
