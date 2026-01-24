@@ -1,0 +1,9 @@
+{
+  "name": "phoenix-fs-electron-shell",
+  "version": "1.0.0",
+  "description": "Electron development shell for phoenix-fs testing",
+  "main": "main.js",
+  "devDependencies": {
+    "electron": "^40.0.0"
+  }
+}
