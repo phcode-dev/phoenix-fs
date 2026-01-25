@@ -15790,7 +15790,9 @@ var $e3f139c5065f0041$exports = {};
  * with this program. If not, see https://opensource.org/licenses/AGPL-3.0.
  *
  */ // jshint ignore: start
-/*global globalObject*/ /*eslint no-console: 0*/ /*eslint strict: ["error", "global"]*/ var $54aff2427aaf4272$exports = {};
+/*global globalObject*/ /*eslint no-console: 0*/ /*eslint strict: ["error", "global"]*/ // Ensure globalObject is available in both browser and web worker contexts
+// virtualfs.js sets this up, but we need a fallback for safety
+var $54aff2427aaf4272$exports = {};
 "use strict";
 
 var $xaL3N = parcelRequire("xaL3N");
@@ -15963,6 +15965,10 @@ $54aff2427aaf4272$var$iconv.encodeStream = $54aff2427aaf4272$var$iconv.decodeStr
 
 
 var $FkHbz = parcelRequire("FkHbz");
+if (typeof globalObject === "undefined") {
+    if (typeof window !== "undefined") window.globalObject = window;
+    else if (typeof self !== "undefined") self.globalObject = self;
+}
 var $ee841df9a5ce9c95$exports = {};
 /*
  * GNU AGPL-3.0 License
@@ -17753,9 +17759,14 @@ var $d1f4f8cce920e9b9$exports = {};
  * with this program. If not, see https://opensource.org/licenses/AGPL-3.0.
  *
  */ // jshint ignore: start
-/*global __TAURI__, globalObject*/ /*eslint no-console: 0*/ /*eslint strict: ["error", "global"]*/ 
+/*global __TAURI__, globalObject*/ /*eslint no-console: 0*/ /*eslint strict: ["error", "global"]*/ // Ensure globalObject is available in both browser and web worker contexts
+
 var $kznHi = parcelRequire("kznHi");
 var $d1f4f8cce920e9b9$require$Buffer = $kznHi.Buffer;
+if (typeof globalObject === "undefined") {
+    if (typeof window !== "undefined") window.globalObject = window;
+    else if (typeof self !== "undefined") self.globalObject = self;
+}
 
 var $d1f4f8cce920e9b9$require$Constants = $2ef5299e07961cfe$exports.Constants;
 
@@ -18435,7 +18446,7 @@ function $d1f4f8cce920e9b9$var$_readDirHelper(entries, path, options, callback, 
     }
     if (!globalObject.__TAURI__ || $d1f4f8cce920e9b9$var$forceNodeWs || $d1f4f8cce920e9b9$var$preferNodeWs && $d1f4f8cce920e9b9$require$NodeTauriFS.isNodeWSReady()) return $d1f4f8cce920e9b9$require$NodeTauriFS.readdir(path, options, callback);
     if ($d1f4f8cce920e9b9$var$IS_WINDOWS && path === $d1f4f8cce920e9b9$require$Constants.TAURI_ROOT) {
-        window.__TAURI__.invoke("_get_windows_drives").then((drives)=>{
+        globalObject.__TAURI__.invoke("_get_windows_drives").then((drives)=>{
             let entries = [];
             for (let drive of drives)entries.push({
                 name: drive
@@ -18799,9 +18810,14 @@ var $f1a90a4a391136ce$exports = {};
  * with this program. If not, see https://opensource.org/licenses/AGPL-3.0.
  *
  */ // jshint ignore: start
-/*global globalObject*/ /*eslint no-console: 0*/ /*eslint strict: ["error", "global"]*/ 
+/*global globalObject*/ /*eslint no-console: 0*/ /*eslint strict: ["error", "global"]*/ // Ensure globalObject is available in both browser and web worker contexts
+
 var $kznHi = parcelRequire("kznHi");
 var $f1a90a4a391136ce$require$Buffer = $kznHi.Buffer;
+if (typeof globalObject === "undefined") {
+    if (typeof window !== "undefined") window.globalObject = window;
+    else if (typeof self !== "undefined") self.globalObject = self;
+}
 
 var $f1a90a4a391136ce$require$Constants = $2ef5299e07961cfe$exports.Constants;
 
@@ -18881,7 +18897,7 @@ let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeW
     options = options || {
         multiple: false
     };
-    if (!options.defaultPath) options.defaultPath = await window.electronAPI.getDocumentDir();
+    if (!options.defaultPath) options.defaultPath = await globalObject.electronAPI.getDocumentDir();
     const dialogOptions = {
         defaultPath: options.defaultPath,
         title: options.title,
@@ -18892,7 +18908,7 @@ let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeW
     if (options.multiple) dialogOptions.properties.push("multiSelections");
     if (options.filters) dialogOptions.filters = options.filters;
     try {
-        const filePaths = await window.electronAPI.showOpenDialog(dialogOptions);
+        const filePaths = await globalObject.electronAPI.showOpenDialog(dialogOptions);
         if (!filePaths || filePaths.length === 0) return null;
         if (options.multiple) return filePaths.map((p)=>$f1a90a4a391136ce$require$Utils.getTauriVirtualPath(p));
         return $f1a90a4a391136ce$require$Utils.getTauriVirtualPath(filePaths[0]);
@@ -18911,14 +18927,14 @@ let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeW
  * @returns {Promise<string|null>} A promise that resolves to the selected file path or null.
  */ async function $f1a90a4a391136ce$var$openElectronFileSaveDialogueAsync(options) {
     options = options || {};
-    if (!options.defaultPath) options.defaultPath = await window.electronAPI.getDocumentDir();
+    if (!options.defaultPath) options.defaultPath = await globalObject.electronAPI.getDocumentDir();
     const dialogOptions = {
         defaultPath: options.defaultPath,
         title: options.title
     };
     if (options.filters) dialogOptions.filters = options.filters;
     try {
-        const filePath = await window.electronAPI.showSaveDialog(dialogOptions);
+        const filePath = await globalObject.electronAPI.showSaveDialog(dialogOptions);
         if (typeof filePath === "string" && filePath) return $f1a90a4a391136ce$require$Utils.getTauriVirtualPath(filePath);
         return null;
     } catch (err) {
@@ -18927,7 +18943,7 @@ let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeW
 }
 async function $f1a90a4a391136ce$var$_getElectronStat(vfsPath) {
     const platformPath = globalObject.fs.getTauriPlatformPath(vfsPath);
-    const stats = await $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsStat(platformPath));
+    const stats = await $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsStat(platformPath));
     return $f1a90a4a391136ce$require$Utils.createFromNodeStat(vfsPath, stats, $f1a90a4a391136ce$require$Constants.ELECTRON_DEVICE_NAME);
 }
 function $f1a90a4a391136ce$var$_readDirHelper(entries, path, options, callback, useDummyStats) {
@@ -18960,7 +18976,7 @@ function $f1a90a4a391136ce$var$_readDirHelper(entries, path, options, callback, 
         return;
     }
     const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
-    $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsReaddir(platformPath)).then((entries)=>{
+    $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsReaddir(platformPath)).then((entries)=>{
         $f1a90a4a391136ce$var$_readDirHelper(entries, path, options, callback);
     }).catch((err)=>{
         callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, "Failed to read directory: "));
@@ -18984,7 +19000,7 @@ function $f1a90a4a391136ce$var$_readDirHelper(entries, path, options, callback, 
         return;
     }
     const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
-    $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsMkdir(platformPath, {
+    $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsMkdir(platformPath, {
         recursive: recursive,
         mode: mode
     })).then(()=>{
@@ -19012,12 +19028,12 @@ function $f1a90a4a391136ce$var$unlink(path, callback) {
     }
     $f1a90a4a391136ce$var$_getElectronStat(path).then((stat)=>{
         const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
-        if (stat.isDirectory()) $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsRmdir(platformPath, {
+        if (stat.isDirectory()) $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsRmdir(platformPath, {
             recursive: true
         })).then(()=>{
             callback(null);
         }).catch(errCallback);
-        else $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsUnlink(platformPath)).then(()=>{
+        else $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsUnlink(platformPath)).then(()=>{
             callback(null);
         }).catch(errCallback);
     }).catch(errCallback);
@@ -19031,7 +19047,7 @@ function $f1a90a4a391136ce$var$rename(oldPath, newPath, callback) {
     }
     const oldPlatformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(oldPath);
     const newPlatformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(newPath);
-    $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsRename(oldPlatformPath, newPlatformPath)).then(()=>{
+    $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsRename(oldPlatformPath, newPlatformPath)).then(()=>{
         callback(null);
     }).catch((err)=>{
         callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, oldPath, `Failed to rename ${oldPath} to ${newPath}`));
@@ -19073,7 +19089,7 @@ function $f1a90a4a391136ce$var$rename(oldPath, newPath, callback) {
             return;
         }
         const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
-        $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsReadFile(platformPath)).then((contents)=>{
+        $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsReadFile(platformPath)).then((contents)=>{
             // Electron returns a Buffer, convert to ArrayBuffer
             let arrayBuffer;
             if (contents instanceof ArrayBuffer) arrayBuffer = contents;
@@ -19115,7 +19131,7 @@ function $f1a90a4a391136ce$var$rename(oldPath, newPath, callback) {
         const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
         // Convert ArrayBuffer to Uint8Array for IPC transfer
         const uint8Array = new Uint8Array(arrayBuffer);
-        $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsWriteFile(platformPath, Array.from(uint8Array))).then(()=>{
+        $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsWriteFile(platformPath, Array.from(uint8Array))).then(()=>{
             callback(null);
         }).catch((err)=>{
             callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, `Failed to write File at path ${path}`));
@@ -20084,8 +20100,8 @@ const $e3f139c5065f0041$var$fileSystemLib = {
     readdir: function(...args) {
         let path = args[0];
         if ($e3f139c5065f0041$require$TauriFS.isTauriPath(path) || $e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) {
-            if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.readdir(...args);
-            if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.readdir(...args);
+            if (globalObject.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.readdir(...args);
+            return $e3f139c5065f0041$require$TauriFS.readdir(...args);
         }
         if ($e3f139c5065f0041$require$Mounts.isMountPath(path) || $e3f139c5065f0041$require$Mounts.isMountSubPath(path)) return $e3f139c5065f0041$require$NativeFS.readdir(...args);
         return $e3f139c5065f0041$var$filerLib.fs.readdir(...args);
@@ -20097,8 +20113,8 @@ const $e3f139c5065f0041$var$fileSystemLib = {
             return callback(new $e3f139c5065f0041$require$Errors.EINVAL(`Error Invalid path for stat: ${path}`));
         }
         if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) {
-            if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.stat(...args);
-            if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.stat(...args);
+            if (globalObject.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.stat(...args);
+            return $e3f139c5065f0041$require$TauriFS.stat(...args);
         }
         if ($e3f139c5065f0041$require$Mounts.isMountSubPath(path)) return $e3f139c5065f0041$require$NativeFS.stat(...args);
         return $e3f139c5065f0041$var$filerLib.fs.stat(...args);
@@ -20106,8 +20122,8 @@ const $e3f139c5065f0041$var$fileSystemLib = {
     readFile: function(...args) {
         let path = args[0];
         if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) {
-            if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.readFile(...args);
-            if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.readFile(...args);
+            if (globalObject.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.readFile(...args);
+            return $e3f139c5065f0041$require$TauriFS.readFile(...args);
         } else if ($e3f139c5065f0041$require$Mounts.isMountSubPath(path)) return $e3f139c5065f0041$require$NativeFS.readFile(...args);
         return $e3f139c5065f0041$require$FilerFSModified.readFile(...args);
     },
@@ -20128,8 +20144,8 @@ const $e3f139c5065f0041$var$fileSystemLib = {
             args[callbackIndex] = callbackInterceptor;
         }
         if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) {
-            if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.writeFile(...args);
-            if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.writeFile(...args);
+            if (globalObject.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.writeFile(...args);
+            return $e3f139c5065f0041$require$TauriFS.writeFile(...args);
         }
         $e3f139c5065f0041$var$fileSystemLib.stat(path, (err)=>{
             if (err && err.code === $e3f139c5065f0041$require$ERR_CODES.ERROR_CODES.ENOENT) newFileCreated = true;
@@ -20150,8 +20166,8 @@ const $e3f139c5065f0041$var$fileSystemLib = {
             args[callbackIndex] = callbackInterceptor;
         }
         if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) {
-            if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.mkdirs(...args);
-            if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.mkdirs(...args);
+            if (globalObject.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.mkdirs(...args);
+            return $e3f139c5065f0041$require$TauriFS.mkdirs(...args);
         }
         if ($e3f139c5065f0041$require$Mounts.isMountSubPath(path)) return $e3f139c5065f0041$require$NativeFS.mkdir(...args);
         return $e3f139c5065f0041$var$filerLib.fs.mkdir(...args);
@@ -20184,8 +20200,8 @@ const $e3f139c5065f0041$var$fileSystemLib = {
             // in windows, we should be able to rename "a.txt" to "A.txt". Since windows is case-insensitive,
             // the below stat(A.txt) will return a stat for "a.txt" which is not what we want.
             if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(oldPath) && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(newPath)) {
-                if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.rename(oldPath, newPath, callbackInterceptor);
-                if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.rename(oldPath, newPath, callbackInterceptor);
+                if (globalObject.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.rename(oldPath, newPath, callbackInterceptor);
+                return $e3f139c5065f0041$require$TauriFS.rename(oldPath, newPath, callbackInterceptor);
             } else if ($e3f139c5065f0041$require$Mounts.isMountSubPath(oldPath) && $e3f139c5065f0041$require$Mounts.isMountSubPath(newPath)) return $e3f139c5065f0041$require$NativeFS.renameSameNameDiffCase(oldPath, newPath, callbackInterceptor);
         }
         $e3f139c5065f0041$var$fileSystemLib.stat(newPath, (err)=>{
@@ -20195,8 +20211,8 @@ const $e3f139c5065f0041$var$fileSystemLib = {
                 return;
             }
             if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(oldPath) && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(newPath)) {
-                if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.rename(oldPath, newPath, callbackInterceptor);
-                if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.rename(oldPath, newPath, callbackInterceptor);
+                if (globalObject.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.rename(oldPath, newPath, callbackInterceptor);
+                return $e3f139c5065f0041$require$TauriFS.rename(oldPath, newPath, callbackInterceptor);
             } else if ($e3f139c5065f0041$require$Mounts.isMountSubPath(oldPath) && $e3f139c5065f0041$require$Mounts.isMountSubPath(newPath)) return $e3f139c5065f0041$require$NativeFS.rename(oldPath, newPath, callbackInterceptor);
             return $e3f139c5065f0041$var$filerLib.fs.rename(oldPath, newPath, callbackInterceptor);
         });
@@ -20212,8 +20228,8 @@ const $e3f139c5065f0041$var$fileSystemLib = {
             callbackInterceptor(new $e3f139c5065f0041$require$Errors.EPERM("Mount root directory cannot be deleted."));
             return;
         } else if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) {
-            if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.unlink(path, callbackInterceptor);
-            if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.unlink(path, callbackInterceptor);
+            if (globalObject.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.unlink(path, callbackInterceptor);
+            return $e3f139c5065f0041$require$TauriFS.unlink(path, callbackInterceptor);
         }
         $e3f139c5065f0041$var$fileSystemLib.stat(path, (err, stat)=>{
             isDir = !err && stat.isDirectory();
@@ -20249,15 +20265,15 @@ const $e3f139c5065f0041$var$fileSystemLib = {
         // fall back to global copy here and will use node Tauri web socket fs adapter as and when it becomes available.
         if ($e3f139c5065f0041$require$Mounts.isMountSubPath(src) && $e3f139c5065f0041$require$Mounts.isMountSubPath(dst)) return $e3f139c5065f0041$require$NativeFS.copy(src, dst, callbackInterceptor);
         else if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(src) && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(dst)) {
-            if (window.__TAURI__ && $e3f139c5065f0041$require$TauriFS.canCopy()) return $e3f139c5065f0041$require$TauriFS.copy(src, dst, callbackInterceptor);
-            if (window.__ELECTRON__ && $e3f139c5065f0041$require$ElectronFS.canCopy()) return $e3f139c5065f0041$require$ElectronFS.copy(src, dst, callbackInterceptor);
+            if (globalObject.__ELECTRON__ && $e3f139c5065f0041$require$ElectronFS.canCopy()) return $e3f139c5065f0041$require$ElectronFS.copy(src, dst, callbackInterceptor);
+            if ($e3f139c5065f0041$require$TauriFS.canCopy()) return $e3f139c5065f0041$require$TauriFS.copy(src, dst, callbackInterceptor);
             return $e3f139c5065f0041$require$globalCopy(src, dst, callbackInterceptor);
         } else return $e3f139c5065f0041$require$globalCopy(src, dst, callbackInterceptor);
     },
     showSaveDialog: function(options) {
-        if (window.__TAURI__) return $e3f139c5065f0041$var$fileSystemLib.openTauriFileSaveDialogueAsync(options);
-        if (window.__ELECTRON__) return $e3f139c5065f0041$var$fileSystemLib.openElectronFileSaveDialogueAsync(options);
-        throw new $e3f139c5065f0041$require$Errors.ENOSYS("Phoenix fs showSaveDialog function not yet supported.");
+        if (globalObject.__ELECTRON__) return $e3f139c5065f0041$var$fileSystemLib.openElectronFileSaveDialogueAsync(options);
+        // Default to Tauri for native environments (including workers via WebSocket)
+        return $e3f139c5065f0041$var$fileSystemLib.openTauriFileSaveDialogueAsync(options);
     },
     watchAsync: function(path, gitIgnorePaths = "") {
         if ($e3f139c5065f0041$require$TauriFS.isTauriPath(path)) throw new $e3f139c5065f0041$require$Errors.EPERM("Cannot watch root directory!", path);
@@ -20289,8 +20305,8 @@ const $e3f139c5065f0041$var$fileSystemLib = {
         };
         if (!recursive) $e3f139c5065f0041$var$fileSystemLib.mkdir(path, mode, callback);
         else if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) {
-            if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.mkdirs(path, mode, true, callback);
-            if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.mkdirs(path, mode, true, callback);
+            if (globalObject.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.mkdirs(path, mode, true, callback);
+            return $e3f139c5065f0041$require$TauriFS.mkdirs(path, mode, true, callback);
         } else $e3f139c5065f0041$var$_mkdir_p($e3f139c5065f0041$var$fileSystemLib, path, mode, callback);
     },
     testNodeWsEndpoint: function(wsEndPoint, echoData, echoBuffer) {
@@ -20306,12 +20322,12 @@ const $e3f139c5065f0041$var$fileSystemLib = {
         return $e3f139c5065f0041$require$NodeTauriFS.getNodeWSEndpoint();
     },
     forceUseNodeWSEndpoint: function(use) {
-        if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.forceUseNodeWSEndpoint(use);
-        if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.forceUseNodeWSEndpoint(use);
+        if (globalObject.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.forceUseNodeWSEndpoint(use);
+        return $e3f139c5065f0041$require$TauriFS.forceUseNodeWSEndpoint(use);
     },
     preferNodeWSEndpoint: function(use) {
-        if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.preferNodeWSEndpoint(use);
-        if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.preferNodeWSEndpoint(use);
+        if (globalObject.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.preferNodeWSEndpoint(use);
+        return $e3f139c5065f0041$require$TauriFS.preferNodeWSEndpoint(use);
     },
     BYTE_ARRAY_ENCODING: $e3f139c5065f0041$require$Constants.BYTE_ARRAY_ENCODING,
     MOUNT_POINT_ROOT: $e3f139c5065f0041$require$Constants.MOUNT_POINT_ROOT,
