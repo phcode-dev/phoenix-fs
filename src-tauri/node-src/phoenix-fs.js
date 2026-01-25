@@ -31,16 +31,18 @@ function generateRandomId(length = 20) {
 }
 
 function getWindowsDrives(callback) {
-    exec('wmic logicaldisk get name', (error, stdout) => {
+    // Use PowerShell instead of deprecated WMIC (not available in Windows Server 2025+)
+    exec('powershell -Command "Get-CimInstance -ClassName Win32_LogicalDisk | Select-Object -ExpandProperty DeviceID"', (error, stdout) => {
         if (error) {
             callback(error, null);
             return;
         }
 
-        // Parse the result
+        // Parse the result - each line is a drive like "C:" or "D:"
         const drives = stdout.split('\n')
-            .filter(value => /^[A-Z]:/.test(value.trim()))
-            .map(value => value.trim()[0]);
+            .map(line => line.trim())
+            .filter(line => /^[A-Z]:$/.test(line))
+            .map(line => line[0]);
 
         callback(null, drives);
     });
