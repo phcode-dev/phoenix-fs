@@ -85,15 +85,58 @@
         }
         // Electron detection and setup
         if(window.electronAPI){
-            window.electronAPI.getNodeWSPort().then(port => {
-                window.nodeWSEndpoint = `ws://localhost:${port}/phoenixFS`;
-                fs.setNodeWSEndpoint(`ws://localhost:${port}/phoenixFS`);
-                window.isNodeSetup = true;
-            });
-            // Heartbeat to keep Node server alive
-            setInterval(() => {
-                // Heartbeat is handled by main process in Electron
-            }, 10000);
+            window.electronAPI.getDocumentsDir().then(d => console.log("Electron documentsDir:", d));
+            window.electronAPI.getAppDataDir().then(d => console.log("Electron appDataDir:", d));
+            window.electronAPI.getAppPath().then(appPath => {
+                const nodeSrcPath = appPath + "/../src-tauri/node-src/index.js";
+                return window.electronAPI.spawnProcess('node', ['--inspect', nodeSrcPath]);
+            }).then(async (myInstanceId) => {
+                window.electronAPI.onProcessClose((instanceId, data) => {
+                    if(instanceId !== myInstanceId) return;
+                    window.isNodeTerminated = true;
+                    console.log(`Node: command finished with code ${data.code} and signal ${data.signal}`);
+                });
+                window.electronAPI.onProcessStdout((instanceId, line) => {
+                    if(instanceId !== myInstanceId) return;
+                    if(line){
+                        if(line.trim().startsWith("{")){
+                            const jsonMsg = JSON.parse(line);
+                            pendingCommands[jsonMsg.commandId].resolve(jsonMsg.message);
+                            delete pendingCommands[jsonMsg.commandId];
+                        } else {
+                            console.log(`Node: ${line}`);
+                        }
+                    }
+                });
+                window.electronAPI.onProcessStderr((instanceId, line) => {
+                    if(instanceId !== myInstanceId) return;
+                    console.error(`Node: ${line}`);
+                });
+
+                window.execNode = function (commandCode) {
+                    const newCommandID = commandId++;
+                    window.electronAPI.writeToProcess(myInstanceId,
+                        JSON.stringify({commandCode: commandCode, commandId: newCommandID}) + "\n"
+                    );
+                    let resolveP, rejectP;
+                    const promise = new Promise((resolve, reject) => {resolveP = resolve; rejectP = reject;});
+                    pendingCommands[newCommandID] = {resolve: resolveP, reject: rejectP};
+                    return promise;
+                };
+
+                execNode(NODE_COMMANDS.GET_PORT)
+                    .then(message => {
+                        window.nodeWSEndpoint = `ws://localhost:${message.port}/phoenixFS`;
+                        fs.setNodeWSEndpoint(`ws://localhost:${message.port}/phoenixFS`);
+                        window.isNodeSetup = true;
+                    });
+
+                setInterval(() => {
+                    if(!window.isNodeTerminated) {
+                        execNode(NODE_COMMANDS.HEART_BEAT);
+                    }
+                }, 10000);
+            }).catch(console.error);
         }
     </script>
     <script src="thirdparty/chai@4.2.0.js"></script>
@@ -150,8 +193,10 @@
                 };
                 quitIfNeeded = async function(exitStatus) {
                     if(!location.href.startsWith("http://localhost:8081/test/")) {
-                        // during development, we dont quit at end of tests for ease of development and debug
+                        // during development, we dont switch off node at end of tests for ease of development and debug
                         fs.stopNodeWSEndpoint();
+                        window.execNode(NODE_COMMANDS.TERMINATE);
+                        await waitForTrue(() => { return window.isNodeTerminated; }, 1000);
                     }
                     // Always quit in Electron since there's no CLI arg parsing
                     window.electronAPI.quitApp(exitStatus);
