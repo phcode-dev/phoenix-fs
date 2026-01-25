@@ -139,7 +139,7 @@ const createFromTauriStat = function (vfsPath, stats) {
     return new Stats(vfsPath, fileDetails, `${Constants.TAURI_DEVICE_NAME}_${stats.dev}`);
 };
 
-const createFromNodeStat = function (vfsPath, stats) {
+const createFromNodeStat = function (vfsPath, stats, deviceNamePrefix) {
     let type = Constants.NODE_TYPE_DIRECTORY;
     if(stats.isFile){
         type = Constants.NODE_TYPE_FILE;
@@ -157,7 +157,7 @@ const createFromNodeStat = function (vfsPath, stats) {
         mtime: stats.mtimeMs,
         nlinks: stats.nlink
     };
-    return new Stats(vfsPath, fileDetails, `${Constants.TAURI_WS_DEVICE_NAME}_${stats.dev}`);
+    return new Stats(vfsPath, fileDetails, `${deviceNamePrefix}_${stats.dev}`);
 };
 
 function validateFileOptions(options, enc, fileMode){

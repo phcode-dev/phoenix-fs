@@ -410,7 +410,7 @@ function readdir(path, options, callback) {
             } else if(metadata.data.contentStats){
                 let stats = [];
                 for(let contentStat of metadata.data.contentStats) {
-                    stats.push(Utils.createFromNodeStat(`${path}/${contentStat.name}`,contentStat));
+                    stats.push(Utils.createFromNodeStat(`${path}/${contentStat.name}`,contentStat, Constants.TAURI_WS_DEVICE_NAME));
                 }
                 callback(null, stats);
             } else {
@@ -426,7 +426,7 @@ function stat(path, callback) {
     let platformPath = Utils.getTauriPlatformPath(path);
     _execCommand(WS_COMMAND.STAT, {path: platformPath})
         .then(({metadata})=>{
-            callback(null, Utils.createFromNodeStat(`${path}/${metadata.data.stat.name}`,metadata.data.stat));
+            callback(null, Utils.createFromNodeStat(`${path}/${metadata.data.stat.name}`,metadata.data.stat, Constants.TAURI_WS_DEVICE_NAME));
         })
         .catch((err)=>{
             callback(mapNodeTauriErrorMessage(err, path, 'Failed to get stat: '));

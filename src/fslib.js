@@ -24,6 +24,7 @@
 const {ERR_CODES, Errors} = require('./errno');
 const {NativeFS} = require('./fslib_native');
 const {TauriFS} = require('./fslib_tauri');
+const {ElectronFS} = require('./fslib_electron');
 const {NodeTauriFS} = require('./fslib_node_ws');
 const {FilerFSModified} = require('./fslib_filer');
 const {Constants} = require('./constants');
@@ -100,6 +101,12 @@ const fileSystemLib = {
     openTauriFileSaveDialogueAsync: function (options) {
         return TauriFS.openTauriFileSaveDialogueAsync(options);
     },
+    openElectronFilePickerAsync: function (options) {
+        return ElectronFS.openElectronFilePickerAsync(options);
+    },
+    openElectronFileSaveDialogueAsync: function (options) {
+        return ElectronFS.openElectronFileSaveDialogueAsync(options);
+    },
     getTauriPlatformPath: function (virtualPath) {
         if(TauriFS.isTauriPath(virtualPath) || TauriFS.isTauriSubPath(virtualPath)) {
             return TauriFS.getTauriPlatformPath(virtualPath);
@@ -112,7 +119,12 @@ const fileSystemLib = {
     readdir: function (...args) { // (path, options, callback)
         let path = args[0];
         if(TauriFS.isTauriPath(path) || TauriFS.isTauriSubPath(path)) {
-            return TauriFS.readdir(...args);
+            if(window.__TAURI__) {
+                return TauriFS.readdir(...args);
+            }
+            if(window.__ELECTRON__) {
+                return ElectronFS.readdir(...args);
+            }
         }
         if(Mounts.isMountPath(path) || Mounts.isMountSubPath(path)) {
             return NativeFS.readdir(...args);
@@ -126,7 +138,12 @@ const fileSystemLib = {
             return callback(new Errors.EINVAL(`Error Invalid path for stat: ${path}`));
         }
         if(TauriFS.isTauriSubPath(path)) {
-            return TauriFS.stat(...args);
+            if(window.__TAURI__) {
+                return TauriFS.stat(...args);
+            }
+            if(window.__ELECTRON__) {
+                return ElectronFS.stat(...args);
+            }
         }
         if(Mounts.isMountSubPath(path)) {
             return NativeFS.stat(...args);
@@ -136,7 +153,12 @@ const fileSystemLib = {
     readFile: function (...args) { // (path, options, callback)
         let path = args[0];
         if(TauriFS.isTauriSubPath(path)) {
-            return TauriFS.readFile(...args);
+            if(window.__TAURI__) {
+                return TauriFS.readFile(...args);
+            }
+            if(window.__ELECTRON__) {
+                return ElectronFS.readFile(...args);
+            }
         } else if(Mounts.isMountSubPath(path)) {
             return NativeFS.readFile(...args);
         }
@@ -165,7 +187,12 @@ const fileSystemLib = {
         }
 
         if(TauriFS.isTauriSubPath(path)) {
-            return TauriFS.writeFile(...args);
+            if(window.__TAURI__) {
+                return TauriFS.writeFile(...args);
+            }
+            if(window.__ELECTRON__) {
+                return ElectronFS.writeFile(...args);
+            }
         }
         fileSystemLib.stat(path, (err)=>{
             if(err && err.code === ERR_CODES.ERROR_CODES.ENOENT){
@@ -195,7 +222,12 @@ const fileSystemLib = {
         }
 
         if(TauriFS.isTauriSubPath(path)) {
-            return TauriFS.mkdirs(...args);
+            if(window.__TAURI__) {
+                return TauriFS.mkdirs(...args);
+            }
+            if(window.__ELECTRON__) {
+                return ElectronFS.mkdirs(...args);
+            }
         }
         if(Mounts.isMountSubPath(path)) {
             return NativeFS.mkdir(...args);
@@ -238,7 +270,12 @@ const fileSystemLib = {
             // in windows, we should be able to rename "a.txt" to "A.txt". Since windows is case-insensitive,
             // the below stat(A.txt) will return a stat for "a.txt" which is not what we want.
             if(TauriFS.isTauriSubPath(oldPath) && TauriFS.isTauriSubPath(newPath)) {
-                return TauriFS.rename(oldPath, newPath, callbackInterceptor);
+                if(window.__TAURI__) {
+                    return TauriFS.rename(oldPath, newPath, callbackInterceptor);
+                }
+                if(window.__ELECTRON__) {
+                    return ElectronFS.rename(oldPath, newPath, callbackInterceptor);
+                }
             } else if(Mounts.isMountSubPath(oldPath) && Mounts.isMountSubPath(newPath)) {
                 return NativeFS.renameSameNameDiffCase(oldPath, newPath, callbackInterceptor);
             }
@@ -250,7 +287,12 @@ const fileSystemLib = {
                 return ;
             }
             if(TauriFS.isTauriSubPath(oldPath) && TauriFS.isTauriSubPath(newPath)) {
-                return TauriFS.rename(oldPath, newPath, callbackInterceptor);
+                if(window.__TAURI__) {
+                    return TauriFS.rename(oldPath, newPath, callbackInterceptor);
+                }
+                if(window.__ELECTRON__) {
+                    return ElectronFS.rename(oldPath, newPath, callbackInterceptor);
+                }
             } else if(Mounts.isMountSubPath(oldPath) && Mounts.isMountSubPath(newPath)) {
                 return NativeFS.rename(oldPath, newPath, callbackInterceptor);
             }
@@ -273,7 +315,12 @@ const fileSystemLib = {
             callbackInterceptor(new Errors.EPERM('Mount root directory cannot be deleted.'));
             return ;
         } else if(TauriFS.isTauriSubPath(path)) {
-            return TauriFS.unlink(path, callbackInterceptor);
+            if(window.__TAURI__) {
+                return TauriFS.unlink(path, callbackInterceptor);
+            }
+            if(window.__ELECTRON__) {
+                return ElectronFS.unlink(path, callbackInterceptor);
+            }
         }
 
         fileSystemLib.stat(path, (err, stat)=>{
@@ -314,8 +361,14 @@ const fileSystemLib = {
         // fall back to global copy here and will use node Tauri web socket fs adapter as and when it becomes available.
         if(Mounts.isMountSubPath(src) && Mounts.isMountSubPath(dst)) {
             return NativeFS.copy(src, dst, callbackInterceptor);
-        } else if(TauriFS.canCopy() && TauriFS.isTauriSubPath(src) && TauriFS.isTauriSubPath(dst)) {
-            return TauriFS.copy(src, dst, callbackInterceptor);
+        } else if(TauriFS.isTauriSubPath(src) && TauriFS.isTauriSubPath(dst)) {
+            if(window.__TAURI__ && TauriFS.canCopy()) {
+                return TauriFS.copy(src, dst, callbackInterceptor);
+            }
+            if(window.__ELECTRON__ && ElectronFS.canCopy()) {
+                return ElectronFS.copy(src, dst, callbackInterceptor);
+            }
+            return globalCopy(src, dst, callbackInterceptor);
         } else {
             return globalCopy(src, dst, callbackInterceptor);
         }
@@ -323,6 +376,9 @@ const fileSystemLib = {
     showSaveDialog: function (options) {
         if(window.__TAURI__){
             return fileSystemLib.openTauriFileSaveDialogueAsync(options);
+        }
+        if(window.__ELECTRON__){
+            return fileSystemLib.openElectronFileSaveDialogueAsync(options);
         }
         throw new Errors.ENOSYS('Phoenix fs showSaveDialog function not yet supported.');
     },
@@ -367,7 +423,12 @@ const fileSystemLib = {
         if (!recursive) {
             fileSystemLib.mkdir(path, mode, callback);
         } else if(TauriFS.isTauriSubPath(path)) {
-            return TauriFS.mkdirs(path, mode, true, callback);
+            if(window.__TAURI__) {
+                return TauriFS.mkdirs(path, mode, true, callback);
+            }
+            if(window.__ELECTRON__) {
+                return ElectronFS.mkdirs(path, mode, true, callback);
+            }
         } else {
             _mkdir_p(fileSystemLib, path, mode, callback);
         }
@@ -385,10 +446,20 @@ const fileSystemLib = {
         return NodeTauriFS.getNodeWSEndpoint();
     },
     forceUseNodeWSEndpoint: function (use) {
-        return TauriFS.forceUseNodeWSEndpoint(use);
+        if(window.__TAURI__) {
+            return TauriFS.forceUseNodeWSEndpoint(use);
+        }
+        if(window.__ELECTRON__) {
+            return ElectronFS.forceUseNodeWSEndpoint(use);
+        }
     },
     preferNodeWSEndpoint: function (use) {
-        return TauriFS.preferNodeWSEndpoint(use);
+        if(window.__TAURI__) {
+            return TauriFS.preferNodeWSEndpoint(use);
+        }
+        if(window.__ELECTRON__) {
+            return ElectronFS.preferNodeWSEndpoint(use);
+        }
     },
     BYTE_ARRAY_ENCODING: Constants.BYTE_ARRAY_ENCODING,
     MOUNT_POINT_ROOT: Constants.MOUNT_POINT_ROOT,
