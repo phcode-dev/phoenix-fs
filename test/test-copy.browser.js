@@ -69,14 +69,14 @@ function _setupTests(testTypeSrc, testTypeDst) {
         await _clean();
         console.log(`mkdir: `, srcTestPath);
         let makeSuccess = false;
-        fs.mkdirs(srcTestPath, 777 ,true, ()=>{
+        fs.mkdirs(srcTestPath, 0o777 ,true, ()=>{
             makeSuccess = true;
         });
         await waitForTrue(()=>{return makeSuccess;},10000);
 
         console.log(`mkdir: `, destTestPath);
         makeSuccess = false;
-        fs.mkdirs(destTestPath, 777 ,true, ()=>{
+        fs.mkdirs(destTestPath, 0o777 ,true, ()=>{
             makeSuccess = true;
         });
         await waitForTrue(()=>{return makeSuccess;},10000);
@@ -100,7 +100,7 @@ function _setupTests(testTypeSrc, testTypeDst) {
 
     function _createFolder(path) {
         return new Promise((resolve, reject)=>{
-            fs.mkdir(path, 777, (err)=>{
+            fs.mkdir(path, 0o777, (err)=>{
                 if(err){
                     reject(err);
                 } else {
