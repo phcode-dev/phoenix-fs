@@ -6,7 +6,11 @@ function _setupTests(testType) {
     let messageFromWorker = null;
 
     function consoleLogToShell(message) {
-        return window.__TAURI__.invoke("console_log", {message});
+        if (window.__TAURI__) {
+            return window.__TAURI__.invoke("console_log", {message});
+        } else if (window.electronAPI) {
+            return window.electronAPI.consoleLog(message);
+        }
     }
 
     async function _clean() {
@@ -28,8 +32,8 @@ function _setupTests(testType) {
     }
 
     async function _requestWritePerm() {
-        if(window.__TAURI__ || testPath !== window.mountTestPath){
-            // fs access apis not tested in tauri
+        if(window.__TAURI__ || window.__ELECTRON__ || testPath !== window.mountTestPath){
+            // fs access apis not tested in tauri/electron
             return;
         }
         return new Promise((resolve, reject)=>{
@@ -45,13 +49,19 @@ function _setupTests(testType) {
     }
 
     async function _setupTestPath() {
+        let appDataDir;
         switch (testType) {
         case TEST_TYPE_FS_ACCESS: testPath = window.mountTestPath;break;
         case TEST_TYPE_FILER: testPath = window.virtualTestPath;break;
         case TEST_TYPE_TAURI_WS:
             await window.waitForTrue(()=>{return window.isNodeSetup;}, 10000);
             fs.forceUseNodeWSEndpoint(true);
-            testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}test-phoenix-fs`);
+            if (window.__TAURI__) {
+                appDataDir = await window.__TAURI__.path.appLocalDataDir();
+            } else if (window.electronAPI) {
+                appDataDir = await window.electronAPI.getAppDataDir();
+            }
+            testPath = fs.getTauriVirtualPath(`${appDataDir}test-phoenix-fs`);
             consoleLogToShell("using tauri websocket test path: "+ testPath);
             break;
         default: throw new Error("unknown file system impl");
@@ -171,7 +181,7 @@ describe(`web worker filer tests`, function () {
     _setupTests(TEST_TYPE_FILER);
 });
 
-if(window.__TAURI__){
+if(window.__TAURI__ || window.__ELECTRON__){
     describe(`web worker Tauri WS tests`, function () {
         _setupTests(TEST_TYPE_TAURI_WS);
     });
@@ -179,8 +189,8 @@ if(window.__TAURI__){
 
 if(window.supportsFsAccessAPIs) {
     describe(`web worker fs access tests`, function () {
-        if(window.__TAURI__){
-            it(`fs access tests are disabled in tauri`, function () {});
+        if(window.__TAURI__ || window.__ELECTRON__){
+            it(`fs access tests are disabled in tauri/electron`, function () {});
             return;
         } else {
             _setupTests(TEST_TYPE_FS_ACCESS);

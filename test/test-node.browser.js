@@ -1,7 +1,7 @@
 /* global expect, execNode, NODE_COMMANDS, fs */
 
 describe(`node ws fs tests`, function () {
-    if(!window.__TAURI__){
+    if(!window.__TAURI__ && !window.__ELECTRON__){
         return;
     }
 

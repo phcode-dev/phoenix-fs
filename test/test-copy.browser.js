@@ -60,26 +60,41 @@ function _setupTests(testTypeSrc, testTypeDst) {
     }
 
     before(async function () {
+        this.timeout(15000);
+        if (window.__TAURI__ || window.__ELECTRON__) {
+            await window.waitForTrue(()=>{return window.isNodeSetup;}, 10000);
+        }
         srcTestPath = await _getPathForTestType(testTypeSrc) + '/src';
         destTestPath = await _getPathForTestType(testTypeDst)+ '/dest';
     });
 
     beforeEach(async function () {
+        this.timeout(15000);
         // setup test folders
         await _clean();
         console.log(`mkdir: `, srcTestPath);
         let makeSuccess = false;
-        fs.mkdirs(srcTestPath, 0o777 ,true, ()=>{
+        let makeError = null;
+        fs.mkdirs(srcTestPath, 0o777 ,true, (err)=>{
+            makeError = err;
             makeSuccess = true;
         });
         await waitForTrue(()=>{return makeSuccess;},10000);
+        if (makeError) {
+            console.error(`Failed to create srcTestPath: `, makeError);
+        }
 
         console.log(`mkdir: `, destTestPath);
         makeSuccess = false;
-        fs.mkdirs(destTestPath, 0o777 ,true, ()=>{
+        makeError = null;
+        fs.mkdirs(destTestPath, 0o777 ,true, (err)=>{
+            makeError = err;
             makeSuccess = true;
         });
         await waitForTrue(()=>{return makeSuccess;},10000);
+        if (makeError) {
+            console.error(`Failed to create destTestPath: `, makeError);
+        }
     });
 
     afterEach(async function () {
