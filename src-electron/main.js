@@ -5,115 +5,12 @@ const readline = require('readline');
 const fs = require('fs');
 const fsp = require('fs/promises');
 const os = require('os');
+const { identifier: APP_IDENTIFIER } = require('./package.json');
 
 let mainWindow;
-let nodeProcess;
-let nodeWSPort = null;
-let isNodeTerminated = false;
-
-// Promise that resolves when node server port is available (similar to Tauri's serverPortPromise)
-let nodePortResolve;
-const nodePortPromise = new Promise((resolve) => { nodePortResolve = resolve; });
-
-const NODE_COMMANDS = {
-    TERMINATE: "terminate",
-    PING: "ping",
-    GET_PORT: "getPort",
-    HEART_BEAT: "heartBeat"
-};
-
-let commandId = 0;
-const pendingCommands = {};
-
-function execNode(commandCode) {
-    return new Promise((resolve, reject) => {
-        if (!nodeProcess || isNodeTerminated) {
-            reject(new Error('Node process not running'));
-            return;
-        }
-        const newCommandID = commandId++;
-        const cmd = JSON.stringify({ commandCode, commandId: newCommandID }) + "\n";
-        nodeProcess.stdin.write(cmd);
-        pendingCommands[newCommandID] = { resolve, reject };
-    });
-}
-
-function startNodeServer() {
-    return new Promise((resolve, reject) => {
-        const nodeSrcPath = path.join(__dirname, '..', 'src-tauri', 'node-src', 'index.js');
-
-        console.log('Starting Node server from:', nodeSrcPath);
-
-        nodeProcess = spawn('node', [nodeSrcPath], {
-            stdio: ['pipe', 'pipe', 'pipe']
-        });
-
-        const rl = readline.createInterface({
-            input: nodeProcess.stdout,
-            crlfDelay: Infinity
-        });
-
-        rl.on('line', (line) => {
-            if (line && line.trim().startsWith("{")) {
-                try {
-                    const jsonMsg = JSON.parse(line);
-                    if (pendingCommands[jsonMsg.commandId]) {
-                        pendingCommands[jsonMsg.commandId].resolve(jsonMsg.message);
-                        delete pendingCommands[jsonMsg.commandId];
-                    }
-                } catch (e) {
-                    console.log('Node:', line);
-                }
-            } else if (line) {
-                console.log('Node:', line);
-            }
-        });
-
-        nodeProcess.stderr.on('data', (data) => {
-            console.error('Node Error:', data.toString());
-        });
-
-        nodeProcess.on('close', (code, signal) => {
-            isNodeTerminated = true;
-            console.log(`Node process exited with code ${code} and signal ${signal}`);
-        });
-
-        nodeProcess.on('error', (err) => {
-            console.error('Failed to start Node process:', err);
-            reject(err);
-        });
-
-        // Node-src's GET_PORT command waits for serverPortPromise internally,
-        // so no timeout needed - it will respond once the server is ready
-        execNode(NODE_COMMANDS.GET_PORT)
-            .then((result) => {
-                nodeWSPort = result.port;
-                nodePortResolve(nodeWSPort);
-                console.log('Node WebSocket server running on port:', nodeWSPort);
-                resolve(nodeWSPort);
-            })
-            .catch((err) => {
-                reject(err);
-            });
-    });
-}
-
-// Heartbeat to keep Node server alive
-let heartbeatInterval;
-function startHeartbeat() {
-    heartbeatInterval = setInterval(() => {
-        if (!isNodeTerminated) {
-            execNode(NODE_COMMANDS.HEART_BEAT).catch(() => {});
-        }
-    }, 10000);
-}
-
-function stopHeartbeat() {
-    if (heartbeatInterval) {
-        clearInterval(heartbeatInterval);
-        heartbeatInterval = null;
-    }
-}
+let processInstanceId = 0;
+// Map of instanceId -> { process, terminated }
+const spawnedProcesses = new Map();
 
 async function createWindow() {
     mainWindow = new BrowserWindow({
@@ -139,9 +36,59 @@ async function createWindow() {
 }
 
 // IPC handlers
-ipcMain.handle('get-node-ws-port', async () => {
-    // Wait for node server to be ready before returning port
-    return await nodePortPromise;
+
+// Spawn a child process and forward stdio to the calling renderer.
+// Returns an instanceId so the renderer can target the correct process.
+ipcMain.handle('spawn-process', async (event, command, args) => {
+    const instanceId = ++processInstanceId;
+    const sender = event.sender;
+    console.log(`Spawning: ${command} ${args.join(' ')} (instance ${instanceId})`);
+
+    const childProcess = spawn(command, args, {
+        stdio: ['pipe', 'pipe', 'pipe']
+    });
+
+    const instance = { process: childProcess, terminated: false };
+    spawnedProcesses.set(instanceId, instance);
+
+    const rl = readline.createInterface({
+        input: childProcess.stdout,
+        crlfDelay: Infinity
+    });
+
+    rl.on('line', (line) => {
+        if (!sender.isDestroyed()) {
+            sender.send('process-stdout', instanceId, line);
+        }
+    });
+
+    childProcess.stderr.on('data', (data) => {
+        if (!sender.isDestroyed()) {
+            sender.send('process-stderr', instanceId, data.toString());
+        }
+    });
+
+    childProcess.on('close', (code, signal) => {
+        instance.terminated = true;
+        console.log(`Process (instance ${instanceId}) exited with code ${code} and signal ${signal}`);
+        if (!sender.isDestroyed()) {
+            sender.send('process-close', instanceId, { code, signal });
+        }
+    });
+
+    childProcess.on('error', (err) => {
+        console.error(`Failed to start process (instance ${instanceId}):`, err);
+    });
+
+    return instanceId;
+});
+
+// Write data to a specific spawned process stdin
+ipcMain.handle('write-to-process', (event, instanceId, data) => {
+    const instance = spawnedProcesses.get(instanceId);
+    if (instance && !instance.terminated) {
+        instance.process.stdin.write(data);
+    }
 });
 
 ipcMain.handle('quit-app', (event, exitCode) => {
@@ -153,17 +100,30 @@ ipcMain.on('console-log', (event, message) => {
     console.log('Renderer:', message);
 });
 
+// App path (repo root when running from source)
+ipcMain.handle('get-app-path', () => {
+    return app.getAppPath();
+});
+
 // Directory APIs
 ipcMain.handle('get-documents-dir', () => {
     return path.join(os.homedir(), 'Documents');
 });
 
 ipcMain.handle('get-app-data-dir', () => {
-    // Returns app-specific data directory similar to Tauri's appLocalDataDir
-    // Linux: ~/.local/share/<app-name>/
-    // macOS: ~/Library/Application Support/<app-name>/
-    // Windows: %APPDATA%/<app-name>/
-    return app.getPath('userData');
+    // Match Tauri's appLocalDataDir which uses the bundle identifier "fs.phcode"
+    // Linux: ~/.local/share/fs.phcode/
+    // macOS: ~/Library/Application Support/fs.phcode/
+    // Windows: %LOCALAPPDATA%/fs.phcode/
+    const home = os.homedir();
+    switch (process.platform) {
+        case 'darwin':
+            return path.join(home, 'Library', 'Application Support', APP_IDENTIFIER);
+        case 'win32':
+            return path.join(process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'), APP_IDENTIFIER);
+        default:
+            return path.join(process.env.XDG_DATA_HOME || path.join(home, '.local', 'share'), APP_IDENTIFIER);
+    }
 });
 
 // Dialogs
@@ -228,22 +188,15 @@ function waitForTrue(fn, timeout) {
 async function gracefulShutdown(exitCode = 0) {
     console.log('Initiating graceful shutdown...');
 
-    stopHeartbeat();
+    for (const [, instance] of spawnedProcesses) {
+        if (!instance.terminated) {
+            try {
+                instance.process.kill();
+            } catch (e) {
+                // Process may already be terminated
+            }
 
-    if (!isNodeTerminated && nodeProcess) {
-        // Send terminate command (don't await - node exits without responding)
-        try {
-            const cmd = JSON.stringify({ commandCode: NODE_COMMANDS.TERMINATE, commandId: -1 }) + "\n";
-            nodeProcess.stdin.write(cmd);
-        } catch (e) {
-            // Process may already be terminated
-        }
-
-        // Wait for node process to terminate (like Tauri does)
-        await waitForTrue(() => isNodeTerminated, 1000);
-
-        if (!isNodeTerminated) {
-            nodeProcess.kill();
+            await waitForTrue(() => instance.terminated, 1000);
         }
     }
 
@@ -251,14 +204,7 @@ async function gracefulShutdown(exitCode = 0) {
 }
 
 app.whenReady().then(async () => {
-    try {
-        await startNodeServer();
-        startHeartbeat();
-        await createWindow();
-    } catch (err) {
-        console.error('Failed to start:', err);
-        app.exit(1);
-    }
+    await createWindow();
 });
 
 app.on('window-all-closed', () => {

@@ -1,8 +1,12 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electronAPI', {
-    // Get the WebSocket port for the Node.js file system server
-    getNodeWSPort: () => ipcRenderer.invoke('get-node-ws-port'),
+    // Process lifecycle
+    spawnProcess: (command, args) => ipcRenderer.invoke('spawn-process', command, args),
+    writeToProcess: (instanceId, data) => ipcRenderer.invoke('write-to-process', instanceId, data),
+    onProcessStdout: (callback) => ipcRenderer.on('process-stdout', (_event, instanceId, line) => callback(instanceId, line)),
+    onProcessStderr: (callback) => ipcRenderer.on('process-stderr', (_event, instanceId, line) => callback(instanceId, line)),
+    onProcessClose: (callback) => ipcRenderer.on('process-close', (_event, instanceId, data) => callback(instanceId, data)),
 
     // Quit the app with an exit code (for CI)
     quitApp: (exitCode) => ipcRenderer.invoke('quit-app', exitCode),
@@ -14,6 +18,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     isElectron: true,
 
     // File system APIs
+    getAppPath: () => ipcRenderer.invoke('get-app-path'),
     getDocumentsDir: () => ipcRenderer.invoke('get-documents-dir'),
     getAppDataDir: () => ipcRenderer.invoke('get-app-data-dir'),
     showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),
