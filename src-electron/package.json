@@ -1,5 +1,6 @@
 {
   "name": "phoenix-fs-electron-shell",
+  "identifier": "fs.phcode",
   "version": "1.0.0",
   "description": "Electron development shell for phoenix-fs testing",
   "main": "main.js",
