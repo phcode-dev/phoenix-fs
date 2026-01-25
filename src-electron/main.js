@@ -131,6 +131,26 @@ ipcMain.handle('get-app-data-dir', () => {
     }
 });
 
+// Get Windows drive letters (returns null on non-Windows platforms)
+ipcMain.handle('get-windows-drives', async () => {
+    if (process.platform !== 'win32') {
+        return null;
+    }
+    // On Windows, check which drive letters exist by testing A-Z
+    const drives = [];
+    for (let i = 65; i <= 90; i++) { // A-Z
+        const letter = String.fromCharCode(i);
+        const drivePath = `${letter}:\\`;
+        try {
+            await fsp.access(drivePath);
+            drives.push(letter);
+        } catch {
+            // Drive doesn't exist
+        }
+    }
+    return drives.length > 0 ? drives : null;
+});
+
 // Dialogs
 ipcMain.handle('show-open-dialog', async (event, options) => {
     const result = await dialog.showOpenDialog(mainWindow, options);

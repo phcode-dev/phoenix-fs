@@ -25,6 +25,10 @@ Here's a closer look at the Phoenix VFS organization:
   - **Windows Example**: `/tauri/c/Program Files/` could represent the C drive's "Program Files" directory.
   - **Linux/macOS Example**: `/tauri/usr/bin/` might be an accessible directory, akin to native paths you'd expect on these platforms.
 
+- **Electron Support**:
+  - Electron is also supported using the same `/tauri/` paths for backward compatibility.
+  - The APIs work identically in both Electron and Tauri environments.
+
 - **Node Websocket Connector Integration**:
   - The `/tauri/` paths can be accessed via websockets. This integration is much more
     performant than Tauri's fs rust APIs(generally 4x faster and 10x faster for large files).
