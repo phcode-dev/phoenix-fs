@@ -4,7 +4,24 @@ function _setupTests(testType) {
     let testPath, watcher, watcher2;
 
     function consoleLogToShell(message) {
-        return window.__TAURI__.invoke("console_log", {message});
+        if(window.__TAURI__) {
+            return window.__TAURI__.invoke("console_log", {message});
+        }
+        if(window.__ELECTRON__) {
+            window.electronAPI.consoleLog(message);
+            return Promise.resolve();
+        }
+        return Promise.resolve();
+    }
+
+    async function _getTestBaseDir() {
+        if(window.__TAURI__) {
+            return window.__TAURI__.path.appLocalDataDir();
+        }
+        if(window.__ELECTRON__) {
+            return await window.electronAPI.getAppDataDir() + "/";
+        }
+        throw new Error("No native environment detected");
     }
 
     async function _waitForSomeTime(timeMS) {
@@ -133,11 +150,11 @@ function _setupTests(testType) {
         case TEST_TYPE_TAURI_WS:
             await window.waitForTrue(()=>{return window.isNodeSetup;},1000);
             fs.forceUseNodeWSEndpoint(true);
-            testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}test-phoenix-fs`);
+            testPath = fs.getTauriVirtualPath(`${await _getTestBaseDir()}test-phoenix-fs`);
             consoleLogToShell("using tauri websocket test path: "+ testPath);
             break;
         case TEST_TYPE_TAURI:
-            testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}test-phoenix-fs`);
+            testPath = fs.getTauriVirtualPath(`${await _getTestBaseDir()}test-phoenix-fs`);
             consoleLogToShell("using tauri test path: "+ testPath);
             break;
         default: throw new Error("unknown file system impl");
@@ -171,7 +188,7 @@ function _setupTests(testType) {
     });
 
     after(function () {
-        if(window.__TAURI__) {
+        if(window.__TAURI__ || window.__ELECTRON__) {
             fs.forceUseNodeWSEndpoint(false);
         }
     });
@@ -461,7 +478,7 @@ describe(`Watcher: Browser virtual fs tests: filer paths`, function () {
     _setupTests(TEST_TYPE_FILER);
 });
 
-if(window.__TAURI__){
+if(window.__TAURI__ || window.__ELECTRON__){
     describe(`Watcher: Browser virtual fs tests: tauri paths`, function () {
         _setupTests(TEST_TYPE_TAURI);
     });
@@ -473,8 +490,8 @@ if(window.__TAURI__){
 
 if(window.supportsFsAccessAPIs){
     describe(`Watcher: Browser virtual fs tests: fs access mount point paths`, function () {
-        if(window.__TAURI__){
-            it('fs access Watcher tests are disabled in tauri', function () {});
+        if(window.__TAURI__ || window.__ELECTRON__){
+            it('fs access Watcher tests are disabled in tauri/electron', function () {});
             return;
         }
         _setupTests(TEST_TYPE_FS_ACCESS);

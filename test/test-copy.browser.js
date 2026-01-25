@@ -2,7 +2,24 @@
 
 function _setupTests(testTypeSrc, testTypeDst) {
     function consoleLogToShell(message) {
-        return window.__TAURI__.invoke("console_log", {message});
+        if(window.__TAURI__) {
+            return window.__TAURI__.invoke("console_log", {message});
+        }
+        if(window.__ELECTRON__) {
+            window.electronAPI.consoleLog(message);
+            return Promise.resolve();
+        }
+        return Promise.resolve();
+    }
+
+    async function _getTestBaseDir() {
+        if(window.__TAURI__) {
+            return window.__TAURI__.path.appLocalDataDir();
+        }
+        if(window.__ELECTRON__) {
+            return await window.electronAPI.getAppDataDir() + "/";
+        }
+        throw new Error("No native environment detected");
     }
 
     async function _getPathForTestType(testType) {
@@ -11,7 +28,7 @@ function _setupTests(testTypeSrc, testTypeDst) {
         case TEST_TYPE_FS_ACCESS: return window.mountTestPath;
         case TEST_TYPE_FILER: return window.virtualTestPath;
         case TEST_TYPE_TAURI:
-            testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}test-phoenix-fs`);
+            testPath = fs.getTauriVirtualPath(`${await _getTestBaseDir()}test-phoenix-fs`);
             consoleLogToShell("using tauri test path: "+ testPath);
             return testPath;
         default: throw new Error("unknown file system impl");
@@ -251,7 +268,7 @@ describe(`Browser copy tests from "filer" to "filer"`, function () {
     _setupTests(TEST_TYPE_FILER, TEST_TYPE_FILER);
 });
 
-if(window.__TAURI__){
+if(window.__TAURI__ || window.__ELECTRON__){
     describe(`Browser copy tests from "tauri" to "tauri"`, function () {
         _setupTests(TEST_TYPE_TAURI, TEST_TYPE_TAURI);
     });
@@ -259,8 +276,8 @@ if(window.__TAURI__){
 
 if(window.supportsFsAccessAPIs){
     describe(`Browser copy tests from "fs access" to "fs access"`, function () {
-        if(window.__TAURI__){
-            it(`fs access tests are disabled in tauri`, function () {});
+        if(window.__TAURI__ || window.__ELECTRON__){
+            it(`fs access tests are disabled in tauri/electron`, function () {});
             return;
         }
         _setupTests(TEST_TYPE_FS_ACCESS, TEST_TYPE_FS_ACCESS);
@@ -270,16 +287,16 @@ if(window.supportsFsAccessAPIs){
 // between filer and fs access start
 if(window.supportsFsAccessAPIs){
     describe(`Browser copy tests from "filer" to "fs access"`, function () {
-        if(window.__TAURI__){
-            it(`fs access tests are disabled in tauri`, function () {});
+        if(window.__TAURI__ || window.__ELECTRON__){
+            it(`fs access tests are disabled in tauri/electron`, function () {});
             return;
         }
         _setupTests(TEST_TYPE_FILER, TEST_TYPE_FS_ACCESS);
     });
 
     describe(`Browser copy tests from "fs access" to "filer"`, function () {
-        if(window.__TAURI__){
-            it(`fs access tests are disabled in tauri`, function () {});
+        if(window.__TAURI__ || window.__ELECTRON__){
+            it(`fs access tests are disabled in tauri/electron`, function () {});
             return;
         }
         _setupTests(TEST_TYPE_FS_ACCESS, TEST_TYPE_FILER);
@@ -288,7 +305,7 @@ if(window.supportsFsAccessAPIs){
 // between filer and fs access end
 
 // between filer and tauri start
-if(window.__TAURI__){
+if(window.__TAURI__ || window.__ELECTRON__){
     describe(`Browser copy tests from "filer" to "tauri"`, function () {
         _setupTests(TEST_TYPE_FILER, TEST_TYPE_TAURI);
     });

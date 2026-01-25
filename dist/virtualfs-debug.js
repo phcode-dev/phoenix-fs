@@ -17166,6 +17166,22 @@ const $659ab4db13967c07$var$createFromNodeStat = function(vfsPath, stats) {
     };
     return new $659ab4db13967c07$var$Stats(vfsPath, fileDetails, `${$659ab4db13967c07$require$Constants.TAURI_WS_DEVICE_NAME}_${stats.dev}`);
 };
+const $659ab4db13967c07$var$createFromElectronStat = function(vfsPath, stats) {
+    let type = $659ab4db13967c07$require$Constants.NODE_TYPE_DIRECTORY;
+    if (stats.isFile) type = $659ab4db13967c07$require$Constants.NODE_TYPE_FILE;
+    else if (stats.isSymbolicLink) type = $659ab4db13967c07$require$Constants.NODE_TYPE_SYMBOLIC_LINK;
+    let fileDetails = {
+        type: type,
+        size: stats.size,
+        mode: stats.mode,
+        readonly: false,
+        ctime: stats.ctimeMs,
+        atime: stats.atimeMs,
+        mtime: stats.mtimeMs,
+        nlinks: stats.nlink
+    };
+    return new $659ab4db13967c07$var$Stats(vfsPath, fileDetails, `${$659ab4db13967c07$require$Constants.TAURI_DEVICE_NAME}_${stats.dev}`);
+};
 function $659ab4db13967c07$var$validateFileOptions(options, enc, fileMode) {
     if (!options || typeof options === "function") options = {
         encoding: enc,
@@ -17369,6 +17385,7 @@ const $659ab4db13967c07$var$Utils = {
     createDummyStatObject: $659ab4db13967c07$var$createDummyStatObject,
     createFromTauriStat: $659ab4db13967c07$var$createFromTauriStat,
     createFromNodeStat: $659ab4db13967c07$var$createFromNodeStat,
+    createFromElectronStat: $659ab4db13967c07$var$createFromElectronStat,
     isTauriSubPath: $659ab4db13967c07$var$isTauriSubPath,
     isTauriPath: $659ab4db13967c07$var$isTauriPath,
     getTauriPlatformPath: $659ab4db13967c07$var$getTauriPlatformPath,
@@ -18780,6 +18797,386 @@ $d1f4f8cce920e9b9$exports = {
 
 
 var $e3f139c5065f0041$require$TauriFS = $d1f4f8cce920e9b9$exports.TauriFS;
+var $f1a90a4a391136ce$exports = {};
+/*
+ * GNU AGPL-3.0 License
+ *
+ * Copyright (c) 2021 - present core.ai . All rights reserved.
+ *
+ * This program is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Affero General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY;
+ * without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * See the GNU Affero General Public License for more details.
+ *
+ * You should have received a copy of the GNU Affero General Public License along
+ * with this program. If not, see https://opensource.org/licenses/AGPL-3.0.
+ *
+ */ // jshint ignore: start
+/*global globalObject*/ /*eslint no-console: 0*/ /*eslint strict: ["error", "global"]*/ 
+var $kznHi = parcelRequire("kznHi");
+var $f1a90a4a391136ce$require$Buffer = $kznHi.Buffer;
+
+var $f1a90a4a391136ce$require$Constants = $2ef5299e07961cfe$exports.Constants;
+
+var $f1a90a4a391136ce$require$Errors = $ee841df9a5ce9c95$exports.Errors;
+var $f1a90a4a391136ce$require$ERR_CODES = $ee841df9a5ce9c95$exports.ERR_CODES;
+
+var $f1a90a4a391136ce$require$Utils = $659ab4db13967c07$exports.Utils;
+
+var $f1a90a4a391136ce$require$NodeTauriFS = $17476582ace0b2bc$exports.NodeTauriFS;
+const $f1a90a4a391136ce$var$IS_WINDOWS = navigator.userAgent.includes("Windows");
+let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeWs = false;
+/**
+ * Maps Node.js error codes to Phoenix FS errors.
+ * @param {Error} err - The Node.js error
+ * @param {string} path - The path that caused the error
+ * @param {string} userMessage - Additional context message
+ * @returns {Error} Phoenix FS error
+ */ function $f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, userMessage = "") {
+    const code = err.code || "";
+    const message = err.message || "";
+    switch(code){
+        case "ENOENT":
+            return new $f1a90a4a391136ce$require$Errors.ENOENT(userMessage + ` No such File or Directory: ${path} ` + message, path);
+        case "EEXIST":
+            return new $f1a90a4a391136ce$require$Errors.EEXIST(userMessage + ` File exists: ${path} ` + message, path);
+        case "ENOTEMPTY":
+            return new $f1a90a4a391136ce$require$Errors.ENOTEMPTY(userMessage + ` Directory not empty: ${path} ` + message, path);
+        case "ENOTDIR":
+            return new $f1a90a4a391136ce$require$Errors.ENOTDIR(userMessage + ` Not a Directory: ${path} ` + message, path);
+        case "EACCES":
+            return new $f1a90a4a391136ce$require$Errors.EACCES(userMessage + ` Permission denied: ${path} ` + message, path);
+        case "EPERM":
+            return new $f1a90a4a391136ce$require$Errors.EPERM(userMessage + ` Operation not permitted: ${path} ` + message, path);
+        case "EISDIR":
+            return new $f1a90a4a391136ce$require$Errors.EISDIR(userMessage + ` Is a directory: ${path} ` + message, path);
+        case "EBADF":
+            return new $f1a90a4a391136ce$require$Errors.EBADF(userMessage + ` Bad file number: ${path} ` + message, path);
+        case "EROFS":
+            return new $f1a90a4a391136ce$require$Errors.EROFS(userMessage + ` Read-only file system: ${path} ` + message, path);
+        case "ENOSPC":
+            return new $f1a90a4a391136ce$require$Errors.ENOSPC(userMessage + ` No space left on device: ${path} ` + message, path);
+        case "EBUSY":
+            return new $f1a90a4a391136ce$require$Errors.EBUSY(userMessage + ` Device or resource busy: ${path} ` + message, path);
+        case "EINVAL":
+            return new $f1a90a4a391136ce$require$Errors.EINVAL(userMessage + ` Invalid argument: ${path} ` + message, path);
+        default:
+            return new $f1a90a4a391136ce$require$Errors.EIO(userMessage + ` IO error on path: ${path} ` + message, path);
+    }
+}
+/**
+ * Opens the Electron file picker asynchronously with given options.
+ *
+ * @param {Object} [options] - Configuration options for the file picker.
+ * @param {boolean} [options.directory=false] - Whether it is directory or file to be picked.
+ * @param {boolean} [options.multiple=false] - Whether to allow picking multiple files.
+ * @param {string} [options.defaultPath] - Default directory to open in the file picker.
+ * @param {string} [options.title] - The title of the dialog window.
+ * @param {Array<{name: string, extensions: string[]}>} [options.filters] - Extension filters.
+ *
+ * @returns {Promise<null|string|Array<string>>} A promise that resolves to null if user dismissed,
+ *          a string (selected filepath), or an array of strings (multiple selected filepaths).
+ */ async function $f1a90a4a391136ce$var$openElectronFilePickerAsync(options) {
+    options = options || {
+        multiple: false
+    };
+    if (!options.defaultPath) options.defaultPath = await window.electronAPI.getDocumentDir();
+    const dialogOptions = {
+        defaultPath: options.defaultPath,
+        title: options.title,
+        properties: []
+    };
+    if (options.directory) dialogOptions.properties.push("openDirectory");
+    else dialogOptions.properties.push("openFile");
+    if (options.multiple) dialogOptions.properties.push("multiSelections");
+    if (options.filters) dialogOptions.filters = options.filters;
+    try {
+        const filePaths = await window.electronAPI.showOpenDialog(dialogOptions);
+        if (!filePaths || filePaths.length === 0) return null;
+        if (options.multiple) return filePaths.map((p)=>$f1a90a4a391136ce$require$Utils.getTauriVirtualPath(p));
+        return $f1a90a4a391136ce$require$Utils.getTauriVirtualPath(filePaths[0]);
+    } catch (err) {
+        throw $f1a90a4a391136ce$var$mapNodeErrorMessage(err, options.defaultPath, "Failed to open file picker");
+    }
+}
+/**
+ * Opens the Electron file save dialogue asynchronously using the provided options.
+ *
+ * @param {Object} [options] - Configuration options for the file save dialogue.
+ * @param {string} [options.defaultPath] - Initial directory or file path.
+ * @param {string} [options.title] - The title of the dialog window.
+ * @param {Array<{name: string, extensions: string[]}>} [options.filters] - Extension filters.
+ *
+ * @returns {Promise<string|null>} A promise that resolves to the selected file path or null.
+ */ async function $f1a90a4a391136ce$var$openElectronFileSaveDialogueAsync(options) {
+    options = options || {};
+    if (!options.defaultPath) options.defaultPath = await window.electronAPI.getDocumentDir();
+    const dialogOptions = {
+        defaultPath: options.defaultPath,
+        title: options.title
+    };
+    if (options.filters) dialogOptions.filters = options.filters;
+    try {
+        const filePath = await window.electronAPI.showSaveDialog(dialogOptions);
+        if (typeof filePath === "string" && filePath) return $f1a90a4a391136ce$require$Utils.getTauriVirtualPath(filePath);
+        return null;
+    } catch (err) {
+        throw $f1a90a4a391136ce$var$mapNodeErrorMessage(err, options.defaultPath, "Failed to open save dialog");
+    }
+}
+async function $f1a90a4a391136ce$var$_getElectronStat(vfsPath) {
+    const platformPath = globalObject.fs.getTauriPlatformPath(vfsPath);
+    const stats = await window.electronAPI.fsStat(platformPath);
+    return $f1a90a4a391136ce$require$Utils.createFromElectronStat(vfsPath, stats);
+}
+function $f1a90a4a391136ce$var$_readDirHelper(entries, path, options, callback, useDummyStats) {
+    let children = [];
+    for (const entry of entries){
+        if (!options.withFileTypes) children.push(entry.name);
+        else if (useDummyStats) children.push($f1a90a4a391136ce$require$Utils.createDummyStatObject(`${path}/${entry.name}`, true, $f1a90a4a391136ce$require$Constants.TAURI_DEVICE_NAME));
+        else children.push($f1a90a4a391136ce$var$_getElectronStat(`${path}/${entry.name}`));
+    }
+    if (!options.withFileTypes || useDummyStats) callback(null, children);
+    else Promise.all(children).then((results)=>{
+        callback(null, results);
+    }).catch((err)=>{
+        callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, "Failed to read directory: "));
+    });
+}
+/**
+ * Reads the contents of a directory.
+ */ function $f1a90a4a391136ce$var$readdir(path, options, callback) {
+    path = globalObject.path.normalize(path);
+    if (typeof options === "function") {
+        callback = options;
+        options = {};
+    }
+    if (!globalObject.__ELECTRON__ || $f1a90a4a391136ce$var$forceNodeWs || $f1a90a4a391136ce$var$preferNodeWs && $f1a90a4a391136ce$require$NodeTauriFS.isNodeWSReady()) return $f1a90a4a391136ce$require$NodeTauriFS.readdir(path, options, callback);
+    if ($f1a90a4a391136ce$var$IS_WINDOWS && path === $f1a90a4a391136ce$require$Constants.TAURI_ROOT) {
+        // Windows drive listing not supported via Electron IPC fallback
+        // NodeTauriFS should handle this
+        callback(new $f1a90a4a391136ce$require$Errors.ENOSYS("Windows drive listing requires NodeTauriFS"));
+        return;
+    }
+    const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
+    window.electronAPI.fsReaddir(platformPath).then((entries)=>{
+        $f1a90a4a391136ce$var$_readDirHelper(entries, path, options, callback);
+    }).catch((err)=>{
+        callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, "Failed to read directory: "));
+    });
+}
+/**
+ * Creates a directory with optional mode and recursion.
+ */ function $f1a90a4a391136ce$var$mkdirs(path, mode, recursive, callback) {
+    if (typeof mode !== "number") {
+        callback = recursive;
+        recursive = mode;
+        mode = 511;
+    }
+    if (typeof recursive !== "boolean") {
+        callback = recursive;
+        recursive = false;
+    }
+    if (typeof callback !== "function") callback = function() {};
+    if (!globalObject.__ELECTRON__ || $f1a90a4a391136ce$var$forceNodeWs || $f1a90a4a391136ce$var$preferNodeWs && $f1a90a4a391136ce$require$NodeTauriFS.isNodeWSReady()) {
+        $f1a90a4a391136ce$require$NodeTauriFS.mkdirs(path, mode, recursive, callback);
+        return;
+    }
+    const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
+    window.electronAPI.fsMkdir(platformPath, {
+        recursive: recursive,
+        mode: mode
+    }).then(()=>{
+        callback(null);
+    }).catch((err)=>{
+        callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, "Failed to create directory: "));
+    });
+}
+/**
+ * Retrieves the status of a file or directory.
+ */ function $f1a90a4a391136ce$var$stat(path, callback, options = {}) {
+    path = globalObject.path.normalize(path);
+    if (!globalObject.__ELECTRON__ || $f1a90a4a391136ce$var$forceNodeWs || $f1a90a4a391136ce$var$preferNodeWs && $f1a90a4a391136ce$require$NodeTauriFS.isNodeWSReady()) return $f1a90a4a391136ce$require$NodeTauriFS.stat(path, callback, options);
+    $f1a90a4a391136ce$var$_getElectronStat(path).then((stat)=>{
+        callback(null, stat);
+    }).catch((err)=>{
+        callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, "Failed to get stat"));
+    });
+}
+function $f1a90a4a391136ce$var$unlink(path, callback) {
+    path = globalObject.path.normalize(path);
+    if (!globalObject.__ELECTRON__ || $f1a90a4a391136ce$var$forceNodeWs || $f1a90a4a391136ce$var$preferNodeWs && $f1a90a4a391136ce$require$NodeTauriFS.isNodeWSReady()) return $f1a90a4a391136ce$require$NodeTauriFS.unlink(path, callback);
+    function errCallback(err) {
+        callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, "Failed to unlink"));
+    }
+    $f1a90a4a391136ce$var$_getElectronStat(path).then((stat)=>{
+        const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
+        if (stat.isDirectory()) window.electronAPI.fsRmdir(platformPath, {
+            recursive: true
+        }).then(()=>{
+            callback(null);
+        }).catch(errCallback);
+        else window.electronAPI.fsUnlink(platformPath).then(()=>{
+            callback(null);
+        }).catch(errCallback);
+    }).catch(errCallback);
+}
+function $f1a90a4a391136ce$var$rename(oldPath, newPath, callback) {
+    oldPath = globalObject.path.normalize(oldPath);
+    newPath = globalObject.path.normalize(newPath);
+    if (!globalObject.__ELECTRON__ || $f1a90a4a391136ce$var$forceNodeWs || $f1a90a4a391136ce$var$preferNodeWs && $f1a90a4a391136ce$require$NodeTauriFS.isNodeWSReady()) {
+        $f1a90a4a391136ce$require$NodeTauriFS.rename(oldPath, newPath, callback);
+        return;
+    }
+    const oldPlatformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(oldPath);
+    const newPlatformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(newPath);
+    window.electronAPI.fsRename(oldPlatformPath, newPlatformPath).then(()=>{
+        callback(null);
+    }).catch((err)=>{
+        callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, oldPath, `Failed to rename ${oldPath} to ${newPath}`));
+    });
+}
+/**
+ * Processes file contents for different encodings.
+ */ function $f1a90a4a391136ce$var$_processContents(contents, encoding, callback, path) {
+    try {
+        let arrayBuffer = contents;
+        if (contents.buffer instanceof ArrayBuffer) arrayBuffer = contents.buffer;
+        if (encoding === $f1a90a4a391136ce$require$Constants.BYTE_ARRAY_ENCODING) {
+            callback(null, arrayBuffer, encoding);
+            return;
+        } else if (encoding === $f1a90a4a391136ce$require$Constants.BINARY_ENCODING) {
+            const contentBuffer = $f1a90a4a391136ce$require$Buffer.from(arrayBuffer);
+            callback(null, contentBuffer, encoding);
+            return;
+        }
+        let decodedString = $f1a90a4a391136ce$require$Utils.getDecodedString(arrayBuffer, encoding);
+        callback(null, decodedString, encoding);
+    } catch (e) {
+        if ($f1a90a4a391136ce$require$ERR_CODES.ERROR_CODES[e.code]) callback(e);
+        else callback(new $f1a90a4a391136ce$require$Errors.EIO(`IO error while processing data read from file on path: ${path}`, path));
+    }
+}
+/**
+ * Reads the contents of a file.
+ */ function $f1a90a4a391136ce$var$readFile(path, options, callback) {
+    try {
+        path = globalObject.path.normalize(path);
+        callback = arguments[arguments.length - 1];
+        options = $f1a90a4a391136ce$require$Utils.validateFileOptions(options, $f1a90a4a391136ce$require$Constants.BINARY_ENCODING, "r");
+        if (!globalObject.__ELECTRON__ || $f1a90a4a391136ce$var$forceNodeWs || $f1a90a4a391136ce$var$preferNodeWs && $f1a90a4a391136ce$require$NodeTauriFS.isNodeWSReady()) {
+            $f1a90a4a391136ce$require$NodeTauriFS.readBinaryFile(path).then((contents)=>{
+                contents = contents || new ArrayBuffer(0);
+                $f1a90a4a391136ce$var$_processContents(contents, options.encoding, callback, path);
+            }).catch(callback);
+            return;
+        }
+        const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
+        window.electronAPI.fsReadFile(platformPath).then((contents)=>{
+            // Electron returns a Buffer, convert to ArrayBuffer
+            let arrayBuffer;
+            if (contents instanceof ArrayBuffer) arrayBuffer = contents;
+            else if (contents && contents.buffer) arrayBuffer = contents.buffer.slice(contents.byteOffset, contents.byteOffset + contents.byteLength);
+            else if (contents) // Handle Uint8Array or similar
+            arrayBuffer = new Uint8Array(contents).buffer;
+            else arrayBuffer = new ArrayBuffer(0);
+            $f1a90a4a391136ce$var$_processContents(arrayBuffer, options.encoding, callback, path);
+        }).catch((err)=>{
+            callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, `Failed to read File at path ${path}`));
+        });
+    } catch (e) {
+        if ($f1a90a4a391136ce$require$ERR_CODES.ERROR_CODES[e.code]) callback(e);
+        else callback(new $f1a90a4a391136ce$require$Errors.EIO(`IO error while processing data read from file on path: ${path}`, path));
+    }
+}
+/**
+ * Writes data to a file, replacing the file if it already exists.
+ */ function $f1a90a4a391136ce$var$writeFile(path, data, options, callback) {
+    try {
+        path = globalObject.path.normalize(path);
+        callback = arguments[arguments.length - 1];
+        options = $f1a90a4a391136ce$require$Utils.validateFileOptions(options, $f1a90a4a391136ce$require$Constants.BINARY_ENCODING, "w");
+        let arrayBuffer;
+        if (data instanceof ArrayBuffer) arrayBuffer = data;
+        else if ($f1a90a4a391136ce$require$Buffer.isBuffer(data)) arrayBuffer = $f1a90a4a391136ce$require$Utils.toArrayBuffer(data);
+        else {
+            if (typeof data === "number") data = "" + data;
+            data = data || "";
+            if (typeof data !== "string") data = data.toString();
+            arrayBuffer = $f1a90a4a391136ce$require$Utils.getEncodedArrayBuffer(data, options.encoding);
+        }
+        if (!globalObject.__ELECTRON__ || $f1a90a4a391136ce$var$forceNodeWs || $f1a90a4a391136ce$var$preferNodeWs && $f1a90a4a391136ce$require$NodeTauriFS.isNodeWSReady()) {
+            $f1a90a4a391136ce$require$NodeTauriFS.writeBinaryFile(path, options.mode || 438, options.flag, arrayBuffer).then(()=>{
+                callback(null);
+            }).catch(callback);
+            return;
+        }
+        const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
+        // Convert ArrayBuffer to Uint8Array for IPC transfer
+        const uint8Array = new Uint8Array(arrayBuffer);
+        window.electronAPI.fsWriteFile(platformPath, Array.from(uint8Array)).then(()=>{
+            callback(null);
+        }).catch((err)=>{
+            callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, `Failed to write File at path ${path}`));
+        });
+    } catch (e) {
+        if ($f1a90a4a391136ce$require$ERR_CODES.ERROR_CODES[e.code]) callback(e);
+        else callback(new $f1a90a4a391136ce$require$Errors.EIO(`IO error while processing data write from file on path: ${path}`, path));
+    }
+}
+/**
+ * Forces the usage of the Node WebSocket endpoint.
+ */ function $f1a90a4a391136ce$var$forceUseNodeWSEndpoint(use) {
+    if (!$f1a90a4a391136ce$require$NodeTauriFS.getNodeWSEndpoint()) throw new Error("Please call fs.setNodeWSEndpoint('ws://your server') before calling this function.");
+    $f1a90a4a391136ce$var$forceNodeWs = use;
+}
+/**
+ * Sets the preference to use the Node WebSocket endpoint if available.
+ */ function $f1a90a4a391136ce$var$preferNodeWSEndpoint(use) {
+    if (!$f1a90a4a391136ce$require$NodeTauriFS.getNodeWSEndpoint()) throw new Error("Please call fs.setNodeWSEndpoint('ws://your server') before calling this function.");
+    $f1a90a4a391136ce$var$preferNodeWs = use;
+}
+function $f1a90a4a391136ce$var$canCopy() {
+    // we can only copy if node tari fs is ready as Electron IPC doesn't have folder copy APIs
+    return $f1a90a4a391136ce$require$NodeTauriFS.isNodeWSReady();
+}
+async function $f1a90a4a391136ce$var$copy(src, dst, callback) {
+    if (!$f1a90a4a391136ce$var$canCopy()) {
+        callback(new $f1a90a4a391136ce$require$Errors.EIO(`IO error while copying: ${src} to ${dst}, node not ready.`, src));
+        return;
+    }
+    src = globalObject.path.normalize(src);
+    dst = globalObject.path.normalize(dst);
+    return $f1a90a4a391136ce$require$NodeTauriFS.copy(src, dst, callback);
+}
+const $f1a90a4a391136ce$var$ElectronFS = {
+    isTauriPath: $f1a90a4a391136ce$require$Utils.isTauriPath,
+    isTauriSubPath: $f1a90a4a391136ce$require$Utils.isTauriSubPath,
+    getTauriPlatformPath: $f1a90a4a391136ce$require$Utils.getTauriPlatformPath,
+    getTauriVirtualPath: $f1a90a4a391136ce$require$Utils.getTauriVirtualPath,
+    openElectronFilePickerAsync: $f1a90a4a391136ce$var$openElectronFilePickerAsync,
+    openElectronFileSaveDialogueAsync: $f1a90a4a391136ce$var$openElectronFileSaveDialogueAsync,
+    forceUseNodeWSEndpoint: $f1a90a4a391136ce$var$forceUseNodeWSEndpoint,
+    preferNodeWSEndpoint: $f1a90a4a391136ce$var$preferNodeWSEndpoint,
+    stat: $f1a90a4a391136ce$var$stat,
+    readdir: $f1a90a4a391136ce$var$readdir,
+    mkdirs: $f1a90a4a391136ce$var$mkdirs,
+    rename: $f1a90a4a391136ce$var$rename,
+    unlink: $f1a90a4a391136ce$var$unlink,
+    readFile: $f1a90a4a391136ce$var$readFile,
+    writeFile: $f1a90a4a391136ce$var$writeFile,
+    copy: $f1a90a4a391136ce$var$copy,
+    canCopy: $f1a90a4a391136ce$var$canCopy
+};
+$f1a90a4a391136ce$exports = {
+    ElectronFS: $f1a90a4a391136ce$var$ElectronFS
+};
+
+
+var $e3f139c5065f0041$require$ElectronFS = $f1a90a4a391136ce$exports.ElectronFS;
 
 var $e3f139c5065f0041$require$NodeTauriFS = $17476582ace0b2bc$exports.NodeTauriFS;
 var $50518f37971e1950$exports = {};
@@ -19673,6 +20070,12 @@ const $e3f139c5065f0041$var$fileSystemLib = {
     openTauriFileSaveDialogueAsync: function(options) {
         return $e3f139c5065f0041$require$TauriFS.openTauriFileSaveDialogueAsync(options);
     },
+    openElectronFilePickerAsync: function(options) {
+        return $e3f139c5065f0041$require$ElectronFS.openElectronFilePickerAsync(options);
+    },
+    openElectronFileSaveDialogueAsync: function(options) {
+        return $e3f139c5065f0041$require$ElectronFS.openElectronFileSaveDialogueAsync(options);
+    },
     getTauriPlatformPath: function(virtualPath) {
         if ($e3f139c5065f0041$require$TauriFS.isTauriPath(virtualPath) || $e3f139c5065f0041$require$TauriFS.isTauriSubPath(virtualPath)) return $e3f139c5065f0041$require$TauriFS.getTauriPlatformPath(virtualPath);
         return null;
@@ -19682,7 +20085,10 @@ const $e3f139c5065f0041$var$fileSystemLib = {
     },
     readdir: function(...args) {
         let path = args[0];
-        if ($e3f139c5065f0041$require$TauriFS.isTauriPath(path) || $e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) return $e3f139c5065f0041$require$TauriFS.readdir(...args);
+        if ($e3f139c5065f0041$require$TauriFS.isTauriPath(path) || $e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) {
+            if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.readdir(...args);
+            if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.readdir(...args);
+        }
         if ($e3f139c5065f0041$require$Mounts.isMountPath(path) || $e3f139c5065f0041$require$Mounts.isMountSubPath(path)) return $e3f139c5065f0041$require$NativeFS.readdir(...args);
         return $e3f139c5065f0041$var$filerLib.fs.readdir(...args);
     },
@@ -19692,14 +20098,19 @@ const $e3f139c5065f0041$var$fileSystemLib = {
             let callback = args[$e3f139c5065f0041$var$_getFirstFunctionIndex(args)];
             return callback(new $e3f139c5065f0041$require$Errors.EINVAL(`Error Invalid path for stat: ${path}`));
         }
-        if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) return $e3f139c5065f0041$require$TauriFS.stat(...args);
+        if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) {
+            if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.stat(...args);
+            if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.stat(...args);
+        }
         if ($e3f139c5065f0041$require$Mounts.isMountSubPath(path)) return $e3f139c5065f0041$require$NativeFS.stat(...args);
         return $e3f139c5065f0041$var$filerLib.fs.stat(...args);
     },
     readFile: function(...args) {
         let path = args[0];
-        if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) return $e3f139c5065f0041$require$TauriFS.readFile(...args);
-        else if ($e3f139c5065f0041$require$Mounts.isMountSubPath(path)) return $e3f139c5065f0041$require$NativeFS.readFile(...args);
+        if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) {
+            if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.readFile(...args);
+            if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.readFile(...args);
+        } else if ($e3f139c5065f0041$require$Mounts.isMountSubPath(path)) return $e3f139c5065f0041$require$NativeFS.readFile(...args);
         return $e3f139c5065f0041$require$FilerFSModified.readFile(...args);
     },
     writeFile: function(...args) {
@@ -19718,7 +20129,10 @@ const $e3f139c5065f0041$var$fileSystemLib = {
             args.originalCallback = args[callbackIndex];
             args[callbackIndex] = callbackInterceptor;
         }
-        if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) return $e3f139c5065f0041$require$TauriFS.writeFile(...args);
+        if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) {
+            if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.writeFile(...args);
+            if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.writeFile(...args);
+        }
         $e3f139c5065f0041$var$fileSystemLib.stat(path, (err)=>{
             if (err && err.code === $e3f139c5065f0041$require$ERR_CODES.ERROR_CODES.ENOENT) newFileCreated = true;
             if ($e3f139c5065f0041$require$Mounts.isMountSubPath(path)) return $e3f139c5065f0041$require$NativeFS.writeFile(...args);
@@ -19737,7 +20151,10 @@ const $e3f139c5065f0041$var$fileSystemLib = {
             args.originalCallback = args[callbackIndex];
             args[callbackIndex] = callbackInterceptor;
         }
-        if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) return $e3f139c5065f0041$require$TauriFS.mkdirs(...args);
+        if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) {
+            if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.mkdirs(...args);
+            if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.mkdirs(...args);
+        }
         if ($e3f139c5065f0041$require$Mounts.isMountSubPath(path)) return $e3f139c5065f0041$require$NativeFS.mkdir(...args);
         return $e3f139c5065f0041$var$filerLib.fs.mkdir(...args);
     },
@@ -19768,8 +20185,10 @@ const $e3f139c5065f0041$var$fileSystemLib = {
         if (oldPath !== newPath && oldPath.toLowerCase() === newPath.toLowerCase()) {
             // in windows, we should be able to rename "a.txt" to "A.txt". Since windows is case-insensitive,
             // the below stat(A.txt) will return a stat for "a.txt" which is not what we want.
-            if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(oldPath) && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(newPath)) return $e3f139c5065f0041$require$TauriFS.rename(oldPath, newPath, callbackInterceptor);
-            else if ($e3f139c5065f0041$require$Mounts.isMountSubPath(oldPath) && $e3f139c5065f0041$require$Mounts.isMountSubPath(newPath)) return $e3f139c5065f0041$require$NativeFS.renameSameNameDiffCase(oldPath, newPath, callbackInterceptor);
+            if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(oldPath) && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(newPath)) {
+                if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.rename(oldPath, newPath, callbackInterceptor);
+                if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.rename(oldPath, newPath, callbackInterceptor);
+            } else if ($e3f139c5065f0041$require$Mounts.isMountSubPath(oldPath) && $e3f139c5065f0041$require$Mounts.isMountSubPath(newPath)) return $e3f139c5065f0041$require$NativeFS.renameSameNameDiffCase(oldPath, newPath, callbackInterceptor);
         }
         $e3f139c5065f0041$var$fileSystemLib.stat(newPath, (err)=>{
             if (!err) {
@@ -19777,8 +20196,10 @@ const $e3f139c5065f0041$var$fileSystemLib = {
                 cb(new $e3f139c5065f0041$require$Errors.EEXIST("Cannot rename, The destination path exists: " + newPath));
                 return;
             }
-            if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(oldPath) && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(newPath)) return $e3f139c5065f0041$require$TauriFS.rename(oldPath, newPath, callbackInterceptor);
-            else if ($e3f139c5065f0041$require$Mounts.isMountSubPath(oldPath) && $e3f139c5065f0041$require$Mounts.isMountSubPath(newPath)) return $e3f139c5065f0041$require$NativeFS.rename(oldPath, newPath, callbackInterceptor);
+            if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(oldPath) && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(newPath)) {
+                if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.rename(oldPath, newPath, callbackInterceptor);
+                if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.rename(oldPath, newPath, callbackInterceptor);
+            } else if ($e3f139c5065f0041$require$Mounts.isMountSubPath(oldPath) && $e3f139c5065f0041$require$Mounts.isMountSubPath(newPath)) return $e3f139c5065f0041$require$NativeFS.rename(oldPath, newPath, callbackInterceptor);
             return $e3f139c5065f0041$var$filerLib.fs.rename(oldPath, newPath, callbackInterceptor);
         });
     },
@@ -19792,7 +20213,10 @@ const $e3f139c5065f0041$var$fileSystemLib = {
         if ($e3f139c5065f0041$require$Mounts.isMountPath(path) || $e3f139c5065f0041$require$TauriFS.isTauriPath(path)) {
             callbackInterceptor(new $e3f139c5065f0041$require$Errors.EPERM("Mount root directory cannot be deleted."));
             return;
-        } else if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) return $e3f139c5065f0041$require$TauriFS.unlink(path, callbackInterceptor);
+        } else if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) {
+            if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.unlink(path, callbackInterceptor);
+            if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.unlink(path, callbackInterceptor);
+        }
         $e3f139c5065f0041$var$fileSystemLib.stat(path, (err, stat)=>{
             isDir = !err && stat.isDirectory();
             // we do this to emit fs watch events for non-tauri path unlinks.
@@ -19826,11 +20250,15 @@ const $e3f139c5065f0041$var$fileSystemLib = {
         // spawn different threads in rust and write tauri handlers which is pretty complex atm. so instead we will
         // fall back to global copy here and will use node Tauri web socket fs adapter as and when it becomes available.
         if ($e3f139c5065f0041$require$Mounts.isMountSubPath(src) && $e3f139c5065f0041$require$Mounts.isMountSubPath(dst)) return $e3f139c5065f0041$require$NativeFS.copy(src, dst, callbackInterceptor);
-        else if ($e3f139c5065f0041$require$TauriFS.canCopy() && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(src) && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(dst)) return $e3f139c5065f0041$require$TauriFS.copy(src, dst, callbackInterceptor);
-        else return $e3f139c5065f0041$require$globalCopy(src, dst, callbackInterceptor);
+        else if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(src) && $e3f139c5065f0041$require$TauriFS.isTauriSubPath(dst)) {
+            if (window.__TAURI__ && $e3f139c5065f0041$require$TauriFS.canCopy()) return $e3f139c5065f0041$require$TauriFS.copy(src, dst, callbackInterceptor);
+            if (window.__ELECTRON__ && $e3f139c5065f0041$require$ElectronFS.canCopy()) return $e3f139c5065f0041$require$ElectronFS.copy(src, dst, callbackInterceptor);
+            return $e3f139c5065f0041$require$globalCopy(src, dst, callbackInterceptor);
+        } else return $e3f139c5065f0041$require$globalCopy(src, dst, callbackInterceptor);
     },
     showSaveDialog: function(options) {
         if (window.__TAURI__) return $e3f139c5065f0041$var$fileSystemLib.openTauriFileSaveDialogueAsync(options);
+        if (window.__ELECTRON__) return $e3f139c5065f0041$var$fileSystemLib.openElectronFileSaveDialogueAsync(options);
         throw new $e3f139c5065f0041$require$Errors.ENOSYS("Phoenix fs showSaveDialog function not yet supported.");
     },
     watchAsync: function(path, gitIgnorePaths = "") {
@@ -19862,8 +20290,10 @@ const $e3f139c5065f0041$var$fileSystemLib = {
         // Do Nothing
         };
         if (!recursive) $e3f139c5065f0041$var$fileSystemLib.mkdir(path, mode, callback);
-        else if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) return $e3f139c5065f0041$require$TauriFS.mkdirs(path, mode, true, callback);
-        else $e3f139c5065f0041$var$_mkdir_p($e3f139c5065f0041$var$fileSystemLib, path, mode, callback);
+        else if ($e3f139c5065f0041$require$TauriFS.isTauriSubPath(path)) {
+            if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.mkdirs(path, mode, true, callback);
+            if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.mkdirs(path, mode, true, callback);
+        } else $e3f139c5065f0041$var$_mkdir_p($e3f139c5065f0041$var$fileSystemLib, path, mode, callback);
     },
     testNodeWsEndpoint: function(wsEndPoint, echoData, echoBuffer) {
         return $e3f139c5065f0041$require$NodeTauriFS.testNodeWsEndpoint(wsEndPoint, echoData, echoBuffer);
@@ -19878,10 +20308,12 @@ const $e3f139c5065f0041$var$fileSystemLib = {
         return $e3f139c5065f0041$require$NodeTauriFS.getNodeWSEndpoint();
     },
     forceUseNodeWSEndpoint: function(use) {
-        return $e3f139c5065f0041$require$TauriFS.forceUseNodeWSEndpoint(use);
+        if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.forceUseNodeWSEndpoint(use);
+        if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.forceUseNodeWSEndpoint(use);
     },
     preferNodeWSEndpoint: function(use) {
-        return $e3f139c5065f0041$require$TauriFS.preferNodeWSEndpoint(use);
+        if (window.__TAURI__) return $e3f139c5065f0041$require$TauriFS.preferNodeWSEndpoint(use);
+        if (window.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.preferNodeWSEndpoint(use);
     },
     BYTE_ARRAY_ENCODING: $e3f139c5065f0041$require$Constants.BYTE_ARRAY_ENCODING,
     MOUNT_POINT_ROOT: $e3f139c5065f0041$require$Constants.MOUNT_POINT_ROOT,
