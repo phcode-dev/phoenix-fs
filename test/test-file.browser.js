@@ -259,7 +259,7 @@ function _setupTests(testType) {
             expect(stats.dev).to.eql("local");
             break;
         case TEST_TYPE_TAURI:
-            expect(stats.dev.split("_")[0]).to.eql("tauri");
+            expect(stats.dev.split("_")[0]).to.eql(window.__ELECTRON__ ? "electron" : "tauri");
             break;
         case TEST_TYPE_TAURI_WS:
             expect(stats.dev.split("_")[0]).to.eql("tauriWS");

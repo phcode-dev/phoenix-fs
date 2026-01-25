@@ -16571,6 +16571,7 @@ var $983f70f1027f6cfd$exports = {};
  */ // jshint ignore: start
 /*eslint no-console: 0*/ /*eslint strict: ["error", "global"]*/ /* jshint ignore:start */ const $2ef5299e07961cfe$var$Constants = {
     MOUNT_DEVICE_NAME: "nativeFsAccess",
+    ELECTRON_DEVICE_NAME: "electron",
     TAURI_DEVICE_NAME: "tauri",
     TAURI_WS_DEVICE_NAME: "tauriWS",
     KIND_FILE: "file",
@@ -17149,7 +17150,7 @@ const $659ab4db13967c07$var$createFromTauriStat = function(vfsPath, stats) {
     };
     return new $659ab4db13967c07$var$Stats(vfsPath, fileDetails, `${$659ab4db13967c07$require$Constants.TAURI_DEVICE_NAME}_${stats.dev}`);
 };
-const $659ab4db13967c07$var$createFromNodeStat = function(vfsPath, stats) {
+const $659ab4db13967c07$var$createFromNodeStat = function(vfsPath, stats, deviceNamePrefix) {
     let type = $659ab4db13967c07$require$Constants.NODE_TYPE_DIRECTORY;
     if (stats.isFile) type = $659ab4db13967c07$require$Constants.NODE_TYPE_FILE;
     else if (stats.isSymbolicLink) type = $659ab4db13967c07$require$Constants.NODE_TYPE_SYMBOLIC_LINK;
@@ -17164,23 +17165,7 @@ const $659ab4db13967c07$var$createFromNodeStat = function(vfsPath, stats) {
         mtime: stats.mtimeMs,
         nlinks: stats.nlink
     };
-    return new $659ab4db13967c07$var$Stats(vfsPath, fileDetails, `${$659ab4db13967c07$require$Constants.TAURI_WS_DEVICE_NAME}_${stats.dev}`);
-};
-const $659ab4db13967c07$var$createFromElectronStat = function(vfsPath, stats) {
-    let type = $659ab4db13967c07$require$Constants.NODE_TYPE_DIRECTORY;
-    if (stats.isFile) type = $659ab4db13967c07$require$Constants.NODE_TYPE_FILE;
-    else if (stats.isSymbolicLink) type = $659ab4db13967c07$require$Constants.NODE_TYPE_SYMBOLIC_LINK;
-    let fileDetails = {
-        type: type,
-        size: stats.size,
-        mode: stats.mode,
-        readonly: false,
-        ctime: stats.ctimeMs,
-        atime: stats.atimeMs,
-        mtime: stats.mtimeMs,
-        nlinks: stats.nlink
-    };
-    return new $659ab4db13967c07$var$Stats(vfsPath, fileDetails, `${$659ab4db13967c07$require$Constants.TAURI_DEVICE_NAME}_${stats.dev}`);
+    return new $659ab4db13967c07$var$Stats(vfsPath, fileDetails, `${deviceNamePrefix}_${stats.dev}`);
 };
 function $659ab4db13967c07$var$validateFileOptions(options, enc, fileMode) {
     if (!options || typeof options === "function") options = {
@@ -17385,7 +17370,6 @@ const $659ab4db13967c07$var$Utils = {
     createDummyStatObject: $659ab4db13967c07$var$createDummyStatObject,
     createFromTauriStat: $659ab4db13967c07$var$createFromTauriStat,
     createFromNodeStat: $659ab4db13967c07$var$createFromNodeStat,
-    createFromElectronStat: $659ab4db13967c07$var$createFromElectronStat,
     isTauriSubPath: $659ab4db13967c07$var$isTauriSubPath,
     isTauriPath: $659ab4db13967c07$var$isTauriPath,
     getTauriPlatformPath: $659ab4db13967c07$var$getTauriPlatformPath,
@@ -18138,7 +18122,7 @@ function $17476582ace0b2bc$var$readdir(path, options, callback) {
         if (metadata.data.contents) callback(null, metadata.data.contents);
         else if (metadata.data.contentStats) {
             let stats = [];
-            for (let contentStat of metadata.data.contentStats)stats.push($17476582ace0b2bc$require$Utils.createFromNodeStat(`${path}/${contentStat.name}`, contentStat));
+            for (let contentStat of metadata.data.contentStats)stats.push($17476582ace0b2bc$require$Utils.createFromNodeStat(`${path}/${contentStat.name}`, contentStat, $17476582ace0b2bc$require$Constants.TAURI_WS_DEVICE_NAME));
             callback(null, stats);
         } else callback(new $17476582ace0b2bc$require$Errors.EIO("Failed readdir as node ws connector returned empty", path));
     }).catch((err)=>{
@@ -18150,7 +18134,7 @@ function $17476582ace0b2bc$var$stat(path, callback) {
     $17476582ace0b2bc$var$_execCommand($17476582ace0b2bc$var$WS_COMMAND.STAT, {
         path: platformPath
     }).then(({ metadata: metadata })=>{
-        callback(null, $17476582ace0b2bc$require$Utils.createFromNodeStat(`${path}/${metadata.data.stat.name}`, metadata.data.stat));
+        callback(null, $17476582ace0b2bc$require$Utils.createFromNodeStat(`${path}/${metadata.data.stat.name}`, metadata.data.stat, $17476582ace0b2bc$require$Constants.TAURI_WS_DEVICE_NAME));
     }).catch((err)=>{
         callback($17476582ace0b2bc$var$mapNodeTauriErrorMessage(err, path, "Failed to get stat: "));
     });
@@ -18830,6 +18814,20 @@ var $f1a90a4a391136ce$require$NodeTauriFS = $17476582ace0b2bc$exports.NodeTauriF
 const $f1a90a4a391136ce$var$IS_WINDOWS = navigator.userAgent.includes("Windows");
 let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeWs = false;
 /**
+ * Electron IPC strips Error.code during serialization (both main→preload and preload→renderer
+ * via contextBridge). FS handlers in main.js return {__fsError, code, message} plain objects
+ * on failure instead of throwing. This helper unwraps those into rejected promises.
+ */ function $f1a90a4a391136ce$var$unwrapFsResult(promise) {
+    return promise.then((result)=>{
+        if (result && result.__fsError) {
+            const err = new Error(result.message);
+            err.code = result.code;
+            throw err;
+        }
+        return result;
+    });
+}
+/**
  * Maps Node.js error codes to Phoenix FS errors.
  * @param {Error} err - The Node.js error
  * @param {string} path - The path that caused the error
@@ -18929,8 +18927,8 @@ let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeW
 }
 async function $f1a90a4a391136ce$var$_getElectronStat(vfsPath) {
     const platformPath = globalObject.fs.getTauriPlatformPath(vfsPath);
-    const stats = await window.electronAPI.fsStat(platformPath);
-    return $f1a90a4a391136ce$require$Utils.createFromElectronStat(vfsPath, stats);
+    const stats = await $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsStat(platformPath));
+    return $f1a90a4a391136ce$require$Utils.createFromNodeStat(vfsPath, stats, $f1a90a4a391136ce$require$Constants.ELECTRON_DEVICE_NAME);
 }
 function $f1a90a4a391136ce$var$_readDirHelper(entries, path, options, callback, useDummyStats) {
     let children = [];
@@ -18962,7 +18960,7 @@ function $f1a90a4a391136ce$var$_readDirHelper(entries, path, options, callback, 
         return;
     }
     const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
-    window.electronAPI.fsReaddir(platformPath).then((entries)=>{
+    $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsReaddir(platformPath)).then((entries)=>{
         $f1a90a4a391136ce$var$_readDirHelper(entries, path, options, callback);
     }).catch((err)=>{
         callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, "Failed to read directory: "));
@@ -18986,10 +18984,10 @@ function $f1a90a4a391136ce$var$_readDirHelper(entries, path, options, callback, 
         return;
     }
     const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
-    window.electronAPI.fsMkdir(platformPath, {
+    $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsMkdir(platformPath, {
         recursive: recursive,
         mode: mode
-    }).then(()=>{
+    })).then(()=>{
         callback(null);
     }).catch((err)=>{
         callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, "Failed to create directory: "));
@@ -19014,12 +19012,12 @@ function $f1a90a4a391136ce$var$unlink(path, callback) {
     }
     $f1a90a4a391136ce$var$_getElectronStat(path).then((stat)=>{
         const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
-        if (stat.isDirectory()) window.electronAPI.fsRmdir(platformPath, {
+        if (stat.isDirectory()) $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsRmdir(platformPath, {
             recursive: true
-        }).then(()=>{
+        })).then(()=>{
             callback(null);
         }).catch(errCallback);
-        else window.electronAPI.fsUnlink(platformPath).then(()=>{
+        else $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsUnlink(platformPath)).then(()=>{
             callback(null);
         }).catch(errCallback);
     }).catch(errCallback);
@@ -19033,7 +19031,7 @@ function $f1a90a4a391136ce$var$rename(oldPath, newPath, callback) {
     }
     const oldPlatformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(oldPath);
     const newPlatformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(newPath);
-    window.electronAPI.fsRename(oldPlatformPath, newPlatformPath).then(()=>{
+    $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsRename(oldPlatformPath, newPlatformPath)).then(()=>{
         callback(null);
     }).catch((err)=>{
         callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, oldPath, `Failed to rename ${oldPath} to ${newPath}`));
@@ -19075,7 +19073,7 @@ function $f1a90a4a391136ce$var$rename(oldPath, newPath, callback) {
             return;
         }
         const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
-        window.electronAPI.fsReadFile(platformPath).then((contents)=>{
+        $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsReadFile(platformPath)).then((contents)=>{
             // Electron returns a Buffer, convert to ArrayBuffer
             let arrayBuffer;
             if (contents instanceof ArrayBuffer) arrayBuffer = contents;
@@ -19117,7 +19115,7 @@ function $f1a90a4a391136ce$var$rename(oldPath, newPath, callback) {
         const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
         // Convert ArrayBuffer to Uint8Array for IPC transfer
         const uint8Array = new Uint8Array(arrayBuffer);
-        window.electronAPI.fsWriteFile(platformPath, Array.from(uint8Array)).then(()=>{
+        $f1a90a4a391136ce$var$unwrapFsResult(window.electronAPI.fsWriteFile(platformPath, Array.from(uint8Array))).then(()=>{
             callback(null);
         }).catch((err)=>{
             callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, `Failed to write File at path ${path}`));

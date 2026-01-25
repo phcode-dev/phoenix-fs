@@ -377,7 +377,7 @@ function _setupTests(testType) {
             expect(stats.mtime > 0).to.be.true;
             break;
         case TEST_TYPE_TAURI:
-            expect(stats.dev.split("_")[0]).to.eql("tauri");
+            expect(stats.dev.split("_")[0]).to.eql(window.__ELECTRON__ ? "electron" : "tauri");
             expect(stats.mtime).to.be.an.instanceof(Date);
             expect(stats.mtime > 0).to.be.true;
             break;
@@ -583,7 +583,7 @@ describe(`Should phoenix be able to read root dir`, async function () {
 
         it(`Should read root /tauri dir with file types`, async function () {
             fs.forceUseNodeWSEndpoint(false);
-            await _testTauriDir('tauri');
+            await _testTauriDir(window.__ELECTRON__ ? 'electron' : 'tauri');
         });
 
         it(`Should read root /tauri dir using tauriWS`, async function () {

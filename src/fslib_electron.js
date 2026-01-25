@@ -31,6 +31,22 @@ let preferNodeWs = false,
     forceNodeWs = false;
 
 /**
+ * Electron IPC strips Error.code during serialization (both main→preload and preload→renderer
+ * via contextBridge). FS handlers in main.js return {__fsError, code, message} plain objects
+ * on failure instead of throwing. This helper unwraps those into rejected promises.
+ */
+function unwrapFsResult(promise) {
+    return promise.then(result => {
+        if (result && result.__fsError) {
+            const err = new Error(result.message);
+            err.code = result.code;
+            throw err;
+        }
+        return result;
+    });
+}
+
+/**
  * Maps Node.js error codes to Phoenix FS errors.
  * @param {Error} err - The Node.js error
  * @param {string} path - The path that caused the error
@@ -150,7 +166,7 @@ async function openElectronFileSaveDialogueAsync(options) {
 
 async function _getElectronStat(vfsPath) {
     const platformPath = globalObject.fs.getTauriPlatformPath(vfsPath);
-    const stats = await window.electronAPI.fsStat(platformPath);
+    const stats = await unwrapFsResult(window.electronAPI.fsStat(platformPath));
     return Utils.createFromNodeStat(vfsPath, stats, Constants.ELECTRON_DEVICE_NAME);
 }
 
@@ -200,7 +216,7 @@ function readdir(path, options, callback) {
     }
 
     const platformPath = Utils.getTauriPlatformPath(path);
-    window.electronAPI.fsReaddir(platformPath)
+    unwrapFsResult(window.electronAPI.fsReaddir(platformPath))
         .then((entries) => {
             _readDirHelper(entries, path, options, callback);
         })
@@ -234,7 +250,7 @@ function mkdirs(path, mode, recursive, callback) {
     }
 
     const platformPath = Utils.getTauriPlatformPath(path);
-    window.electronAPI.fsMkdir(platformPath, { recursive, mode })
+    unwrapFsResult(window.electronAPI.fsMkdir(platformPath, { recursive, mode }))
         .then(() => {
             callback(null);
         })
@@ -275,11 +291,11 @@ function unlink(path, callback) {
         .then(stat => {
             const platformPath = Utils.getTauriPlatformPath(path);
             if (stat.isDirectory()) {
-                window.electronAPI.fsRmdir(platformPath, { recursive: true })
+                unwrapFsResult(window.electronAPI.fsRmdir(platformPath, { recursive: true }))
                     .then(() => { callback(null); })
                     .catch(errCallback);
             } else {
-                window.electronAPI.fsUnlink(platformPath)
+                unwrapFsResult(window.electronAPI.fsUnlink(platformPath))
                     .then(() => { callback(null); })
                     .catch(errCallback);
             }
@@ -298,7 +314,7 @@ function rename(oldPath, newPath, callback) {
 
     const oldPlatformPath = Utils.getTauriPlatformPath(oldPath);
     const newPlatformPath = Utils.getTauriPlatformPath(newPath);
-    window.electronAPI.fsRename(oldPlatformPath, newPlatformPath)
+    unwrapFsResult(window.electronAPI.fsRename(oldPlatformPath, newPlatformPath))
         .then(() => { callback(null); })
         .catch(err => {
             callback(mapNodeErrorMessage(err, oldPath, `Failed to rename ${oldPath} to ${newPath}`));
@@ -354,7 +370,7 @@ function readFile(path, options, callback) {
         }
 
         const platformPath = Utils.getTauriPlatformPath(path);
-        window.electronAPI.fsReadFile(platformPath)
+        unwrapFsResult(window.electronAPI.fsReadFile(platformPath))
             .then(contents => {
                 // Electron returns a Buffer, convert to ArrayBuffer
                 let arrayBuffer;
@@ -421,7 +437,7 @@ function writeFile(path, data, options, callback) {
         const platformPath = Utils.getTauriPlatformPath(path);
         // Convert ArrayBuffer to Uint8Array for IPC transfer
         const uint8Array = new Uint8Array(arrayBuffer);
-        window.electronAPI.fsWriteFile(platformPath, Array.from(uint8Array))
+        unwrapFsResult(window.electronAPI.fsWriteFile(platformPath, Array.from(uint8Array)))
             .then(() => {
                 callback(null);
             })

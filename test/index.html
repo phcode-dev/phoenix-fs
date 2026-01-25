@@ -198,8 +198,11 @@
                         window.execNode(NODE_COMMANDS.TERMINATE);
                         await waitForTrue(() => { return window.isNodeTerminated; }, 1000);
                     }
-                    // Always quit in Electron since there's no CLI arg parsing
-                    window.electronAPI.quitApp(exitStatus);
+                    window.electronAPI.getCliArgs().then(argv => {
+                        if(argv.includes('--quit-when-done') || argv.includes('-q')) {
+                            window.electronAPI.quitApp(exitStatus);
+                        }
+                    });
                 };
             }
 
