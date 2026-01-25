@@ -61,3 +61,64 @@ jobs:
           echo "Windows tests failed, marking step as failed"
           exit 1
         shell: cmd
+
+  test-electron:
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [macos-15, ubuntu-22.04, windows-latest]
+
+    runs-on: ${{ matrix.platform }}
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+      - name: install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y xvfb
+      - name: install frontend dependencies
+        run: |
+          npm install
+          echo "npm run build not executed as we will be running tests against the checked in release artifacts only!"
+          npm run _copy-dist-to-test
+      - name: Run electron integration tests in ubuntu
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          npm run _serve-tauri &
+          sleep 2
+          xvfb-run ./src-electron/node_modules/.bin/electron src-electron/main.js --quit-when-done
+
+      - name: Run electron integration tests in macos
+        if: matrix.platform == 'macos-15'
+        run: |
+          npm run _serve-tauri &
+          sleep 2
+          ./src-electron/node_modules/.bin/electron src-electron/main.js --quit-when-done
+
+      - name: Run electron integration tests in windows
+        if: matrix.platform == 'windows-latest'
+        id: windowsElectronRun
+        run: |
+          Start-Process -NoNewWindow -FilePath "npm" -ArgumentList "run", "_serve-tauri"
+          Start-Sleep -Seconds 2
+          & ".\src-electron\node_modules\.bin\electron.cmd" "src-electron\main.js" "--quit-when-done" 2>&1 | Tee-Object -FilePath electron-output.txt
+        shell: pwsh
+        continue-on-error: true
+
+      - name: Print windows electron test output to console
+        if: matrix.platform == 'windows-latest'
+        run: |
+          type electron-output.txt
+        shell: cmd
+
+      - name: Fail on electron test runs failed in windows
+        if: matrix.platform == 'windows-latest' && steps.windowsElectronRun.outcome == 'failure'
+        run: |
+          echo "Windows Electron tests failed, marking step as failed"
+          exit 1
+        shell: cmd
