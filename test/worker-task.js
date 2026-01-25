@@ -96,3 +96,6 @@ self.addEventListener('message', (event) => {
     default: console.error('unknown worker command: ', command);
     }
 }, false);
+
+// Signal that the worker is ready
+postMessage('worker.ready');

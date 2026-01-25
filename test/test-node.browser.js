@@ -8,7 +8,7 @@ describe(`node ws fs tests`, function () {
     let wssPort, wssEndpoint;
 
     before(async function () {
-        await window.waitForTrue(()=>{return window.isNodeSetup;},1000);
+        await window.waitForTrue(()=>{return window.isNodeSetup;}, 10000);
         let message = await execNode(NODE_COMMANDS.GET_PORT);
         expect(message.port).to.be.a('number');
         wssPort = message.port;
