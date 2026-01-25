@@ -30,6 +30,7 @@
     "serve": "http-server . -p 8080 -c-1",
     "_serve-tauri": "http-server . -p 8081 -c-1",
     "test-electron": "npm run _serve-tauri & sleep 2 && ./src-electron/node_modules/.bin/electron src-electron/main.js",
+    "test-electron-ci": "npm run _serve-tauri & sleep 2 && ./src-electron/node_modules/.bin/electron src-electron/main.js --quit-when-done",
     "bumpPatchVersion": "npm --no-git-tag-version version patch",
     "bumpPatchVersionWithGitTag": "npm version patch",
     "release": "npm run build && npm run bumpPatchVersionWithGitTag"

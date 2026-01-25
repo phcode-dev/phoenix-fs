@@ -17,14 +17,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Flag to identify Electron environment
     isElectron: true,
 
-    // File system APIs
+    // CLI and paths
+    getCliArgs: () => ipcRenderer.invoke('get-cli-args'),
     getAppPath: () => ipcRenderer.invoke('get-app-path'),
     getDocumentsDir: () => ipcRenderer.invoke('get-documents-dir'),
     getAppDataDir: () => ipcRenderer.invoke('get-app-data-dir'),
     showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),
     showSaveDialog: (options) => ipcRenderer.invoke('show-save-dialog', options),
 
-    // FS operations (fallback when NodeTauriFS not available)
+    // FS operations — results may be {__fsError, code, message} on failure since
+    // Electron IPC strips Error.code. The renderer (fslib_electron.js) handles unwrapping.
     fsReaddir: (path) => ipcRenderer.invoke('fs-readdir', path),
     fsStat: (path) => ipcRenderer.invoke('fs-stat', path),
     fsMkdir: (path, options) => ipcRenderer.invoke('fs-mkdir', path, options),

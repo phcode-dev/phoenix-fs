@@ -100,6 +100,11 @@ ipcMain.on('console-log', (event, message) => {
     console.log('Renderer:', message);
 });
 
+// CLI args (mirrors Tauri's cli.getMatches for --quit-when-done / -q)
+ipcMain.handle('get-cli-args', () => {
+    return process.argv;
+});
+
 // App path (repo root when running from source)
 ipcMain.handle('get-app-path', () => {
     return app.getAppPath();
@@ -137,37 +142,47 @@ ipcMain.handle('show-save-dialog', async (event, options) => {
     return result.filePath;
 });
 
+// Electron IPC only preserves Error.message when errors cross the IPC boundary (see
+// https://github.com/electron/electron/issues/24427). To preserve error.code for FS
+// operations, we catch errors and return them as plain objects {error: {code, message}}.
+// The preload layer unwraps these back into proper Error objects.
+function fsResult(promise) {
+    return promise.catch(err => {
+        return { __fsError: true, code: err.code, message: err.message };
+    });
+}
+
 // FS operations
 ipcMain.handle('fs-readdir', async (event, dirPath) => {
-    const entries = await fsp.readdir(dirPath, { withFileTypes: true });
-    return entries.map(e => ({ name: e.name, isDirectory: e.isDirectory() }));
+    return fsResult(
+        fsp.readdir(dirPath, { withFileTypes: true })
+            .then(entries => entries.map(e => ({ name: e.name, isDirectory: e.isDirectory() })))
+    );
 });
 
 ipcMain.handle('fs-stat', async (event, filePath) => {
-    const stats = await fsp.stat(filePath);
-    return {
-        isFile: stats.isFile(),
-        isDirectory: stats.isDirectory(),
-        isSymbolicLink: stats.isSymbolicLink(),
-        size: stats.size,
-        mode: stats.mode,
-        ctimeMs: stats.ctimeMs,
-        atimeMs: stats.atimeMs,
-        mtimeMs: stats.mtimeMs,
-        nlink: stats.nlink,
-        dev: stats.dev
-    };
+    return fsResult(
+        fsp.stat(filePath).then(stats => ({
+            isFile: stats.isFile(),
+            isDirectory: stats.isDirectory(),
+            isSymbolicLink: stats.isSymbolicLink(),
+            size: stats.size,
+            mode: stats.mode,
+            ctimeMs: stats.ctimeMs,
+            atimeMs: stats.atimeMs,
+            mtimeMs: stats.mtimeMs,
+            nlink: stats.nlink,
+            dev: stats.dev
+        }))
+    );
 });
 
-ipcMain.handle('fs-mkdir', (event, dirPath, options) => fsp.mkdir(dirPath, options));
-ipcMain.handle('fs-unlink', (event, filePath) => fsp.unlink(filePath));
-ipcMain.handle('fs-rmdir', (event, dirPath, options) => fsp.rm(dirPath, options));
-ipcMain.handle('fs-rename', (event, oldPath, newPath) => fsp.rename(oldPath, newPath));
-ipcMain.handle('fs-read-file', async (event, filePath) => {
-    const buffer = await fsp.readFile(filePath);
-    return buffer; // Electron serializes Buffer automatically
-});
-ipcMain.handle('fs-write-file', (event, filePath, data) => fsp.writeFile(filePath, Buffer.from(data)));
+ipcMain.handle('fs-mkdir', (event, dirPath, options) => fsResult(fsp.mkdir(dirPath, options)));
+ipcMain.handle('fs-unlink', (event, filePath) => fsResult(fsp.unlink(filePath)));
+ipcMain.handle('fs-rmdir', (event, dirPath, options) => fsResult(fsp.rm(dirPath, options)));
+ipcMain.handle('fs-rename', (event, oldPath, newPath) => fsResult(fsp.rename(oldPath, newPath)));
+ipcMain.handle('fs-read-file', (event, filePath) => fsResult(fsp.readFile(filePath)));
+ipcMain.handle('fs-write-file', (event, filePath, data) => fsResult(fsp.writeFile(filePath, Buffer.from(data))));
 
 function waitForTrue(fn, timeout) {
     return new Promise((resolve) => {
