@@ -1,7 +1,10 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const { spawn } = require('child_process');
 const path = require('path');
 const readline = require('readline');
+const fs = require('fs');
+const fsp = require('fs/promises');
+const os = require('os');
 
 let mainWindow;
 let nodeProcess;
@@ -149,6 +152,62 @@ ipcMain.handle('quit-app', (event, exitCode) => {
 ipcMain.on('console-log', (event, message) => {
     console.log('Renderer:', message);
 });
+
+// Directory APIs
+ipcMain.handle('get-documents-dir', () => {
+    return path.join(os.homedir(), 'Documents');
+});
+
+ipcMain.handle('get-app-data-dir', () => {
+    // Returns app-specific data directory similar to Tauri's appLocalDataDir
+    // Linux: ~/.local/share/<app-name>/
+    // macOS: ~/Library/Application Support/<app-name>/
+    // Windows: %APPDATA%/<app-name>/
+    return app.getPath('userData');
+});
+
+// Dialogs
+ipcMain.handle('show-open-dialog', async (event, options) => {
+    const result = await dialog.showOpenDialog(mainWindow, options);
+    return result.filePaths;
+});
+
+ipcMain.handle('show-save-dialog', async (event, options) => {
+    const result = await dialog.showSaveDialog(mainWindow, options);
+    return result.filePath;
+});
+
+// FS operations
+ipcMain.handle('fs-readdir', async (event, dirPath) => {
+    const entries = await fsp.readdir(dirPath, { withFileTypes: true });
+    return entries.map(e => ({ name: e.name, isDirectory: e.isDirectory() }));
+});
+
+ipcMain.handle('fs-stat', async (event, filePath) => {
+    const stats = await fsp.stat(filePath);
+    return {
+        isFile: stats.isFile(),
+        isDirectory: stats.isDirectory(),
+        isSymbolicLink: stats.isSymbolicLink(),
+        size: stats.size,
+        mode: stats.mode,
+        ctimeMs: stats.ctimeMs,
+        atimeMs: stats.atimeMs,
+        mtimeMs: stats.mtimeMs,
+        nlink: stats.nlink,
+        dev: stats.dev
+    };
+});
+
+ipcMain.handle('fs-mkdir', (event, dirPath, options) => fsp.mkdir(dirPath, options));
+ipcMain.handle('fs-unlink', (event, filePath) => fsp.unlink(filePath));
+ipcMain.handle('fs-rmdir', (event, dirPath, options) => fsp.rm(dirPath, options));
+ipcMain.handle('fs-rename', (event, oldPath, newPath) => fsp.rename(oldPath, newPath));
+ipcMain.handle('fs-read-file', async (event, filePath) => {
+    const buffer = await fsp.readFile(filePath);
+    return buffer; // Electron serializes Buffer automatically
+});
+ipcMain.handle('fs-write-file', (event, filePath, data) => fsp.writeFile(filePath, Buffer.from(data)));
 
 function waitForTrue(fn, timeout) {
     return new Promise((resolve) => {
