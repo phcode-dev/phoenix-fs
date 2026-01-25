@@ -58,11 +58,12 @@ function _setupTests(testType) {
     }
 
     before(async function () {
+        this.timeout(15000); // Increase timeout for Node WebSocket setup
         switch (testType) {
         case TEST_TYPE_FS_ACCESS: testPath = window.mountTestPath;break;
         case TEST_TYPE_FILER: testPath = window.virtualTestPath;break;
         case TEST_TYPE_TAURI_WS:
-            await window.waitForTrue(()=>{return window.isNodeSetup;},1000);
+            await window.waitForTrue(()=>{return window.isNodeSetup;}, 10000);
             fs.forceUseNodeWSEndpoint(true);
             testPath = fs.getTauriVirtualPath(`${await _getTestBaseDir()}test-phoenix-fs`);
             consoleLogToShell("using tauri websocket test path: "+ testPath);
@@ -82,6 +83,7 @@ function _setupTests(testType) {
     });
 
     beforeEach(async function () {
+        this.timeout(10000); // Increase timeout for setup operations
         // setup test folders
         await _clean();
         console.log(`mkdirs: `, testPath);
@@ -573,7 +575,7 @@ describe(`Should phoenix be able to read root dir`, async function () {
     if(window.__TAURI__ || window.__ELECTRON__){
 
         before(async ()=>{
-            await window.waitForTrue(()=>{return window.isNodeSetup;},1000);
+            await window.waitForTrue(()=>{return window.isNodeSetup;}, 10000);
         });
 
         it(`Should read root /tauri dir`, async function () {

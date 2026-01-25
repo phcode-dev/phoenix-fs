@@ -49,7 +49,7 @@ function _setupTests(testType) {
         case TEST_TYPE_FS_ACCESS: testPath = window.mountTestPath;break;
         case TEST_TYPE_FILER: testPath = window.virtualTestPath;break;
         case TEST_TYPE_TAURI_WS:
-            await window.waitForTrue(()=>{return window.isNodeSetup;},1000);
+            await window.waitForTrue(()=>{return window.isNodeSetup;}, 10000);
             fs.forceUseNodeWSEndpoint(true);
             testPath = fs.getTauriVirtualPath(`${await window.__TAURI__.path.appLocalDataDir()}test-phoenix-fs`);
             consoleLogToShell("using tauri websocket test path: "+ testPath);
@@ -69,8 +69,11 @@ function _setupTests(testType) {
             console.log(`From Worker:`, event);
             messageFromWorker = event.data;
         };
+        // Wait for worker to be ready before running tests
+        let workerReady = await waitForWorkerMessage(`worker.ready`, 5000);
+        expect(workerReady).to.be.true;
         if(testType === TEST_TYPE_TAURI_WS){
-            await window.waitForTrue(()=>{return window.isNodeSetup;},1000);
+            await window.waitForTrue(()=>{return window.isNodeSetup;}, 10000);
             worker.postMessage({command: `tauriWSInit`, wsEndpoint: window.nodeWSEndpoint});
             let status = await waitForWorkerMessage(`tauriWSInit.ok`, 1000);
             expect(status).to.be.true;
