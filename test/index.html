@@ -71,9 +71,9 @@
                     return promise;
                 }
                 execNode(NODE_COMMANDS.GET_PORT)
-                    .then(message=>{
+                    .then(async message=>{
                         window.nodeWSEndpoint = `ws://localhost:${message.port}/phoenixFS`;
-                        fs.setNodeWSEndpoint(`ws://localhost:${message.port}/phoenixFS`);
+                        await fs.setNodeWSEndpoint(`ws://localhost:${message.port}/phoenixFS`);
                         window.isNodeSetup = true;
                     });
                 setInterval(()=>{
@@ -125,9 +125,9 @@
                 };
 
                 execNode(NODE_COMMANDS.GET_PORT)
-                    .then(message => {
+                    .then(async message => {
                         window.nodeWSEndpoint = `ws://localhost:${message.port}/phoenixFS`;
-                        fs.setNodeWSEndpoint(`ws://localhost:${message.port}/phoenixFS`);
+                        await fs.setNodeWSEndpoint(`ws://localhost:${message.port}/phoenixFS`);
                         window.isNodeSetup = true;
                     });
 
