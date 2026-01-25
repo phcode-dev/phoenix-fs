@@ -21,6 +21,15 @@
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
+// Ensure globalObject is available in both browser and web worker contexts
+if (typeof globalObject === 'undefined') {
+    if (typeof window !== 'undefined') {
+        window.globalObject = window;
+    } else if (typeof self !== 'undefined') {
+        self.globalObject = self;
+    }
+}
+
 const {Constants} = require('./constants');
 const {Errors, ERR_CODES} = require("./errno");
 const {Utils} = require("./utils");
@@ -221,7 +230,7 @@ function readdir(path, options, callback) {
     }
 
     if(IS_WINDOWS && path === Constants.TAURI_ROOT){
-        window.__TAURI__.invoke('_get_windows_drives')
+        globalObject.__TAURI__.invoke('_get_windows_drives')
             .then(drives=>{
                 let entries = [];
                 for(let drive of drives) {

@@ -6,16 +6,16 @@ authors = ["arun@core.ai"]
 license = "GNU AGPL 3.0"
 repository = "https://github.com/phcode-dev/phoenix-fs"
 edition = "2021"
-rust-version = "1.70"
+rust-version = "1.85.1"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
-tauri-build = { version = "1.5.0", features = [] }
+tauri-build = { version = "1.5.1", features = [] }
 
 [dependencies]
-tauri = { version = "1.5.3", features = [ "cli", "api-all", "devtools"] }
-winapi = { version = "0.3", features = ["fileapi"] }
+tauri = { version = "1.6.2", features = [ "cli", "api-all", "devtools"] }
+winapi = { version = "0.3.9", features = ["fileapi"] }
 tauri-plugin-fs-extra = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 serde = "1.0"
 serde_json = "1.0"

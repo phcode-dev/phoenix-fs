@@ -47,7 +47,7 @@
     "dist/phoenix-fs.js"
   ],
   "devDependencies": {
-    "@tauri-apps/cli": "1.5.7",
+    "@tauri-apps/cli": "1.6.3",
     "picomatch": "^4.0.1",
     "browser-mime": "1.0.1",
     "buffer": "^6.0.3",

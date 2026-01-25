@@ -21,6 +21,15 @@
 /*eslint no-console: 0*/
 /*eslint strict: ["error", "global"]*/
 
+// Ensure globalObject is available in both browser and web worker contexts
+if (typeof globalObject === 'undefined') {
+    if (typeof window !== 'undefined') {
+        window.globalObject = window;
+    } else if (typeof self !== 'undefined') {
+        self.globalObject = self;
+    }
+}
+
 const {Constants} = require('./constants');
 const {Errors, ERR_CODES} = require("./errno");
 const {Utils} = require("./utils");
@@ -90,7 +99,7 @@ async function openElectronFilePickerAsync(options) {
     options = options || { multiple: false };
 
     if (!options.defaultPath) {
-        options.defaultPath = await window.electronAPI.getDocumentDir();
+        options.defaultPath = await globalObject.electronAPI.getDocumentDir();
     }
 
     const dialogOptions = {
@@ -114,7 +123,7 @@ async function openElectronFilePickerAsync(options) {
     }
 
     try {
-        const filePaths = await window.electronAPI.showOpenDialog(dialogOptions);
+        const filePaths = await globalObject.electronAPI.showOpenDialog(dialogOptions);
         if (!filePaths || filePaths.length === 0) {
             return null;
         }
@@ -141,7 +150,7 @@ async function openElectronFileSaveDialogueAsync(options) {
     options = options || {};
 
     if (!options.defaultPath) {
-        options.defaultPath = await window.electronAPI.getDocumentDir();
+        options.defaultPath = await globalObject.electronAPI.getDocumentDir();
     }
 
     const dialogOptions = {
@@ -154,7 +163,7 @@ async function openElectronFileSaveDialogueAsync(options) {
     }
 
     try {
-        const filePath = await window.electronAPI.showSaveDialog(dialogOptions);
+        const filePath = await globalObject.electronAPI.showSaveDialog(dialogOptions);
         if (typeof filePath === 'string' && filePath) {
             return Utils.getTauriVirtualPath(filePath);
         }
@@ -166,7 +175,7 @@ async function openElectronFileSaveDialogueAsync(options) {
 
 async function _getElectronStat(vfsPath) {
     const platformPath = globalObject.fs.getTauriPlatformPath(vfsPath);
-    const stats = await unwrapFsResult(window.electronAPI.fsStat(platformPath));
+    const stats = await unwrapFsResult(globalObject.electronAPI.fsStat(platformPath));
     return Utils.createFromNodeStat(vfsPath, stats, Constants.ELECTRON_DEVICE_NAME);
 }
 
@@ -216,7 +225,7 @@ function readdir(path, options, callback) {
     }
 
     const platformPath = Utils.getTauriPlatformPath(path);
-    unwrapFsResult(window.electronAPI.fsReaddir(platformPath))
+    unwrapFsResult(globalObject.electronAPI.fsReaddir(platformPath))
         .then((entries) => {
             _readDirHelper(entries, path, options, callback);
         })
@@ -250,7 +259,7 @@ function mkdirs(path, mode, recursive, callback) {
     }
 
     const platformPath = Utils.getTauriPlatformPath(path);
-    unwrapFsResult(window.electronAPI.fsMkdir(platformPath, { recursive, mode }))
+    unwrapFsResult(globalObject.electronAPI.fsMkdir(platformPath, { recursive, mode }))
         .then(() => {
             callback(null);
         })
@@ -291,11 +300,11 @@ function unlink(path, callback) {
         .then(stat => {
             const platformPath = Utils.getTauriPlatformPath(path);
             if (stat.isDirectory()) {
-                unwrapFsResult(window.electronAPI.fsRmdir(platformPath, { recursive: true }))
+                unwrapFsResult(globalObject.electronAPI.fsRmdir(platformPath, { recursive: true }))
                     .then(() => { callback(null); })
                     .catch(errCallback);
             } else {
-                unwrapFsResult(window.electronAPI.fsUnlink(platformPath))
+                unwrapFsResult(globalObject.electronAPI.fsUnlink(platformPath))
                     .then(() => { callback(null); })
                     .catch(errCallback);
             }
@@ -314,7 +323,7 @@ function rename(oldPath, newPath, callback) {
 
     const oldPlatformPath = Utils.getTauriPlatformPath(oldPath);
     const newPlatformPath = Utils.getTauriPlatformPath(newPath);
-    unwrapFsResult(window.electronAPI.fsRename(oldPlatformPath, newPlatformPath))
+    unwrapFsResult(globalObject.electronAPI.fsRename(oldPlatformPath, newPlatformPath))
         .then(() => { callback(null); })
         .catch(err => {
             callback(mapNodeErrorMessage(err, oldPath, `Failed to rename ${oldPath} to ${newPath}`));
@@ -370,7 +379,7 @@ function readFile(path, options, callback) {
         }
 
         const platformPath = Utils.getTauriPlatformPath(path);
-        unwrapFsResult(window.electronAPI.fsReadFile(platformPath))
+        unwrapFsResult(globalObject.electronAPI.fsReadFile(platformPath))
             .then(contents => {
                 // Electron returns a Buffer, convert to ArrayBuffer
                 let arrayBuffer;
@@ -437,7 +446,7 @@ function writeFile(path, data, options, callback) {
         const platformPath = Utils.getTauriPlatformPath(path);
         // Convert ArrayBuffer to Uint8Array for IPC transfer
         const uint8Array = new Uint8Array(arrayBuffer);
-        unwrapFsResult(window.electronAPI.fsWriteFile(platformPath, Array.from(uint8Array)))
+        unwrapFsResult(globalObject.electronAPI.fsWriteFile(platformPath, Array.from(uint8Array)))
             .then(() => {
                 callback(null);
             })
