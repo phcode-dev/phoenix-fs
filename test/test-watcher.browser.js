@@ -19,7 +19,7 @@ function _setupTests(testType) {
             return window.__TAURI__.path.appLocalDataDir();
         }
         if(window.__ELECTRON__) {
-            return await window.electronAPI.getAppDataDir() + "/";
+            return await window.electronAPI.appLocalDataDir() + "/";
         }
         throw new Error("No native environment detected");
     }
