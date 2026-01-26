@@ -29,8 +29,8 @@
     "build": "npm run eslint  && npm run _copy-node-src-dist && npm run _build-nonopt && npm run _make-debug-dist && npm run _build-optimized && npm run _copy-dist-to-test",
     "serve": "http-server . -p 8080 -c-1",
     "_serve-tauri": "http-server . -p 8081 -c-1",
-    "test-electron": "npm run _serve-tauri & sleep 2 && ./src-electron/node_modules/.bin/electron src-electron/main.js",
-    "test-electron-ci": "npm run _serve-tauri & sleep 2 && ./src-electron/node_modules/.bin/electron src-electron/main.js --quit-when-done",
+    "test-electron": "./scripts/run-with-server.sh ./src-electron/node_modules/.bin/electron src-electron/main.js",
+    "test-electron-ci": "./scripts/run-with-server.sh ./src-electron/node_modules/.bin/electron src-electron/main.js --quit-when-done",
     "bumpPatchVersion": "npm --no-git-tag-version version patch",
     "bumpPatchVersionWithGitTag": "npm version patch",
     "release": "npm run build && npm run bumpPatchVersionWithGitTag"
