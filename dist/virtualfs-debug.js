@@ -18897,7 +18897,7 @@ let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeW
     options = options || {
         multiple: false
     };
-    if (!options.defaultPath) options.defaultPath = await globalObject.electronAPI.getDocumentsDir();
+    if (!options.defaultPath) options.defaultPath = await globalObject.electronAPI.documentDir();
     const dialogOptions = {
         defaultPath: options.defaultPath,
         title: options.title,
@@ -18927,7 +18927,7 @@ let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeW
  * @returns {Promise<string|null>} A promise that resolves to the selected file path or null.
  */ async function $f1a90a4a391136ce$var$openElectronFileSaveDialogueAsync(options) {
     options = options || {};
-    if (!options.defaultPath) options.defaultPath = await globalObject.electronAPI.getDocumentsDir();
+    if (!options.defaultPath) options.defaultPath = await globalObject.electronAPI.documentDir();
     const dialogOptions = {
         defaultPath: options.defaultPath,
         title: options.title
@@ -20076,6 +20076,8 @@ function $e3f139c5065f0041$var$_isSubPathOf(dir, subDir) {
 }
 const $e3f139c5065f0041$var$fileSystemLib = {
     mountNativeFolder: async function(...args) {
+        // Opens a file picker(or use provided handle) to open the folder in the system with fs access api.
+        // to be used in browsers like chrome/edge that supports fs access apis
         return $e3f139c5065f0041$require$NativeFS.mountNativeFolder(...args);
     },
     openTauriFilePickerAsync: function(options) {
