@@ -20079,16 +20079,12 @@ const $e3f139c5065f0041$var$fileSystemLib = {
         return $e3f139c5065f0041$require$NativeFS.mountNativeFolder(...args);
     },
     openTauriFilePickerAsync: function(options) {
+        if (globalObject.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.openElectronFilePickerAsync(options);
         return $e3f139c5065f0041$require$TauriFS.openTauriFilePickerAsync(options);
     },
     openTauriFileSaveDialogueAsync: function(options) {
+        if (globalObject.__ELECTRON__) return $e3f139c5065f0041$require$ElectronFS.openElectronFileSaveDialogueAsync(options);
         return $e3f139c5065f0041$require$TauriFS.openTauriFileSaveDialogueAsync(options);
-    },
-    openElectronFilePickerAsync: function(options) {
-        return $e3f139c5065f0041$require$ElectronFS.openElectronFilePickerAsync(options);
-    },
-    openElectronFileSaveDialogueAsync: function(options) {
-        return $e3f139c5065f0041$require$ElectronFS.openElectronFileSaveDialogueAsync(options);
     },
     getTauriPlatformPath: function(virtualPath) {
         if ($e3f139c5065f0041$require$TauriFS.isTauriPath(virtualPath) || $e3f139c5065f0041$require$TauriFS.isTauriSubPath(virtualPath)) return $e3f139c5065f0041$require$TauriFS.getTauriPlatformPath(virtualPath);
