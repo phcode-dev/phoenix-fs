@@ -59,7 +59,7 @@ function _setupTests(testType) {
             if (window.__TAURI__) {
                 appDataDir = await window.__TAURI__.path.appLocalDataDir();
             } else if (window.electronAPI) {
-                appDataDir = await window.electronAPI.getAppDataDir();
+                appDataDir = await window.electronAPI.appLocalDataDir();
             }
             testPath = fs.getTauriVirtualPath(`${appDataDir}test-phoenix-fs`);
             consoleLogToShell("using tauri websocket test path: "+ testPath);
