@@ -99,7 +99,7 @@ async function openElectronFilePickerAsync(options) {
     options = options || { multiple: false };
 
     if (!options.defaultPath) {
-        options.defaultPath = await globalObject.electronAPI.getDocumentsDir();
+        options.defaultPath = await globalObject.electronAPI.documentDir();
     }
 
     const dialogOptions = {
@@ -150,7 +150,7 @@ async function openElectronFileSaveDialogueAsync(options) {
     options = options || {};
 
     if (!options.defaultPath) {
-        options.defaultPath = await globalObject.electronAPI.getDocumentsDir();
+        options.defaultPath = await globalObject.electronAPI.documentDir();
     }
 
     const dialogOptions = {

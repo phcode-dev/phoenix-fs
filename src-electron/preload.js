@@ -20,7 +20,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // CLI and paths
     getCliArgs: () => ipcRenderer.invoke('get-cli-args'),
     getAppPath: () => ipcRenderer.invoke('get-app-path'),
-    getDocumentsDir: () => ipcRenderer.invoke('get-documents-dir'),
+    documentDir: () => ipcRenderer.invoke('get-documents-dir'),
     appLocalDataDir: () => ipcRenderer.invoke('get-app-data-dir'),
     getWindowsDrives: () => ipcRenderer.invoke('get-windows-drives'),
     showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),

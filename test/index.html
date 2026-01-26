@@ -85,7 +85,7 @@
         }
         // Electron detection and setup
         if(window.electronAPI){
-            window.electronAPI.getDocumentsDir().then(d => console.log("Electron documentsDir:", d));
+            window.electronAPI.documentDir().then(d => console.log("Electron documentsDir:", d));
             window.electronAPI.appLocalDataDir().then(d => console.log("Electron appDataDir:", d));
             window.electronAPI.getAppPath().then(appPath => {
                 const nodeSrcPath = appPath + "/../src-tauri/node-src/index.js";
