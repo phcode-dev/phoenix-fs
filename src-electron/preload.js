@@ -17,10 +17,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Flag to identify Electron environment
     isElectron: true,
 
+    // Path utilities
+    path: {
+        sep: process.platform === 'win32' ? '\\' : '/'
+    },
+
     // CLI and paths
     getCliArgs: () => ipcRenderer.invoke('get-cli-args'),
     getAppPath: () => ipcRenderer.invoke('get-app-path'),
     documentDir: () => ipcRenderer.invoke('get-documents-dir'),
+    homeDir: () => ipcRenderer.invoke('get-home-dir'),
+    tempDir: () => ipcRenderer.invoke('get-temp-dir'),
     appLocalDataDir: () => ipcRenderer.invoke('get-app-data-dir'),
     getWindowsDrives: () => ipcRenderer.invoke('get-windows-drives'),
     showOpenDialog: (options) => ipcRenderer.invoke('show-open-dialog', options),
