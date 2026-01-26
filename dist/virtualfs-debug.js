@@ -18897,7 +18897,7 @@ let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeW
     options = options || {
         multiple: false
     };
-    if (!options.defaultPath) options.defaultPath = await globalObject.electronAPI.getDocumentDir();
+    if (!options.defaultPath) options.defaultPath = await globalObject.electronAPI.getDocumentsDir();
     const dialogOptions = {
         defaultPath: options.defaultPath,
         title: options.title,
@@ -18927,7 +18927,7 @@ let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeW
  * @returns {Promise<string|null>} A promise that resolves to the selected file path or null.
  */ async function $f1a90a4a391136ce$var$openElectronFileSaveDialogueAsync(options) {
     options = options || {};
-    if (!options.defaultPath) options.defaultPath = await globalObject.electronAPI.getDocumentDir();
+    if (!options.defaultPath) options.defaultPath = await globalObject.electronAPI.getDocumentsDir();
     const dialogOptions = {
         defaultPath: options.defaultPath,
         title: options.title
