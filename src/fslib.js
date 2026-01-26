@@ -106,16 +106,16 @@ const fileSystemLib = {
         return NativeFS.mountNativeFolder(...args);
     },
     openTauriFilePickerAsync: function (options) {
+        if(globalObject.__ELECTRON__) {
+            return ElectronFS.openElectronFilePickerAsync(options);
+        }
         return TauriFS.openTauriFilePickerAsync(options);
     },
     openTauriFileSaveDialogueAsync: function (options) {
+        if(globalObject.__ELECTRON__) {
+            return ElectronFS.openElectronFileSaveDialogueAsync(options);
+        }
         return TauriFS.openTauriFileSaveDialogueAsync(options);
-    },
-    openElectronFilePickerAsync: function (options) {
-        return ElectronFS.openElectronFilePickerAsync(options);
-    },
-    openElectronFileSaveDialogueAsync: function (options) {
-        return ElectronFS.openElectronFileSaveDialogueAsync(options);
     },
     getTauriPlatformPath: function (virtualPath) {
         if(TauriFS.isTauriPath(virtualPath) || TauriFS.isTauriSubPath(virtualPath)) {
