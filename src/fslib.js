@@ -103,6 +103,8 @@ function _isSubPathOf(dir, subDir) {
 
 const fileSystemLib = {
     mountNativeFolder: async function (...args) {
+        // Opens a file picker(or use provided handle) to open the folder in the system with fs access api.
+        // to be used in browsers like chrome/edge that supports fs access apis
         return NativeFS.mountNativeFolder(...args);
     },
     openTauriFilePickerAsync: function (options) {
