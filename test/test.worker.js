@@ -69,6 +69,7 @@ function _setupTests(testType) {
     }
 
     before(async function () {
+        this.timeout(10000); // Allow extra time for worker initialization
         await _setupTestPath();
         await _clean();
         await _init();

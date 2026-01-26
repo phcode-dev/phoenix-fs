@@ -112,7 +112,18 @@ ipcMain.handle('get-app-path', () => {
 
 // Directory APIs
 ipcMain.handle('get-documents-dir', () => {
-    return path.join(os.homedir(), 'Documents');
+    // Match Tauri's documentDir which ends with a trailing slash
+    return path.join(os.homedir(), 'Documents') + path.sep;
+});
+
+ipcMain.handle('get-home-dir', () => {
+    // Match Tauri's homeDir which ends with a trailing slash
+    const home = os.homedir();
+    return home.endsWith(path.sep) ? home : home + path.sep;
+});
+
+ipcMain.handle('get-temp-dir', () => {
+    return os.tmpdir();
 });
 
 ipcMain.handle('get-app-data-dir', () => {
@@ -121,14 +132,18 @@ ipcMain.handle('get-app-data-dir', () => {
     // macOS: ~/Library/Application Support/fs.phcode/
     // Windows: %LOCALAPPDATA%/fs.phcode/
     const home = os.homedir();
+    let appDataDir;
     switch (process.platform) {
         case 'darwin':
-            return path.join(home, 'Library', 'Application Support', APP_IDENTIFIER);
+            appDataDir = path.join(home, 'Library', 'Application Support', APP_IDENTIFIER);
+            break;
         case 'win32':
-            return path.join(process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'), APP_IDENTIFIER);
+            appDataDir = path.join(process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'), APP_IDENTIFIER);
+            break;
         default:
-            return path.join(process.env.XDG_DATA_HOME || path.join(home, '.local', 'share'), APP_IDENTIFIER);
+            appDataDir = path.join(process.env.XDG_DATA_HOME || path.join(home, '.local', 'share'), APP_IDENTIFIER);
     }
+    return appDataDir + path.sep;
 });
 
 // Get Windows drive letters (returns null on non-Windows platforms)

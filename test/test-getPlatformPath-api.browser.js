@@ -114,4 +114,78 @@ if(window.__TAURI__ || window.__ELECTRON__){
             });
         }
     });
+
+    describe(`test homeDir api`, function () {
+        async function getHomeDir() {
+            if (window.__TAURI__) {
+                return window.__TAURI__.path.homeDir();
+            } else if (window.electronAPI) {
+                return window.electronAPI.homeDir();
+            }
+            return null;
+        }
+
+        it(`should homeDir return a valid path ending with separator`, async function () {
+            let homeDir = await getHomeDir();
+            expect(homeDir).to.be.a('string');
+            expect(homeDir.length).to.be.greaterThan(0);
+            if(IS_WINDOWS){
+                // Windows home dir should contain a drive letter like C:\Users\...
+                expect(homeDir.charAt(1)).to.eql(':');
+                expect(homeDir.endsWith('\\')).to.be.true;
+            } else {
+                // Unix home dir should start and end with /
+                expect(homeDir.startsWith('/')).to.be.true;
+                expect(homeDir.endsWith('/')).to.be.true;
+            }
+        });
+    });
+
+    describe(`test tempDir api`, function () {
+        async function getTempDir() {
+            if (window.__TAURI__) {
+                return window.__TAURI__.os.tempdir();
+            } else if (window.electronAPI) {
+                return window.electronAPI.tempDir();
+            }
+            return null;
+        }
+
+        it(`should tempDir return a valid path without trailing separator`, async function () {
+            let tempDir = await getTempDir();
+            expect(tempDir).to.be.a('string');
+            expect(tempDir.length).to.be.greaterThan(0);
+            if(IS_WINDOWS){
+                // Windows temp dir should contain a drive letter like C:\...
+                expect(tempDir.charAt(1)).to.eql(':');
+                expect(tempDir.endsWith('\\')).to.be.false;
+            } else {
+                // Unix temp dir should start with / but not end with /
+                expect(tempDir.startsWith('/')).to.be.true;
+                expect(tempDir.endsWith('/')).to.be.false;
+            }
+        });
+    });
+
+    describe(`test path.sep api`, function () {
+        function getPathSep() {
+            if (window.__TAURI__) {
+                return window.__TAURI__.path.sep;
+            } else if (window.electronAPI) {
+                return window.electronAPI.path.sep;
+            }
+            return null;
+        }
+
+        it(`should path.sep return correct separator for platform`, function () {
+            let sep = getPathSep();
+            expect(sep).to.be.a('string');
+            expect(sep.length).to.eql(1);
+            if(IS_WINDOWS){
+                expect(sep).to.eql('\\');
+            } else {
+                expect(sep).to.eql('/');
+            }
+        });
+    });
 }
