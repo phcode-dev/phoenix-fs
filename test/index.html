@@ -10,7 +10,7 @@
 <!--    <script src="virtualfs-debug.js"></script>-->
     <script>
         // Electron detection and setup
-        if(window.electronAPI) {
+        if(window.electronAppAPI) {
             window.__ELECTRON__ = true;
         }
         window.addEventListener('keydown', function(event) {
@@ -84,19 +84,19 @@
             }). catch(console.error);
         }
         // Electron detection and setup
-        if(window.electronAPI){
-            window.electronAPI.documentDir().then(d => console.log("Electron documentsDir:", d));
-            window.electronAPI.appLocalDataDir().then(d => console.log("Electron appDataDir:", d));
-            window.electronAPI.getAppPath().then(appPath => {
+        if(window.electronAppAPI){
+            window.electronFSAPI.documentDir().then(d => console.log("Electron documentsDir:", d));
+            window.electronFSAPI.appLocalDataDir().then(d => console.log("Electron appDataDir:", d));
+            window.electronAppAPI.getAppPath().then(appPath => {
                 const nodeSrcPath = appPath + "/../src-tauri/node-src/index.js";
-                return window.electronAPI.spawnProcess('node', ['--inspect', nodeSrcPath]);
+                return window.electronAppAPI.spawnProcess('node', ['--inspect', nodeSrcPath]);
             }).then(async (myInstanceId) => {
-                window.electronAPI.onProcessClose((instanceId, data) => {
+                window.electronAppAPI.onProcessClose((instanceId, data) => {
                     if(instanceId !== myInstanceId) return;
                     window.isNodeTerminated = true;
                     console.log(`Node: command finished with code ${data.code} and signal ${data.signal}`);
                 });
-                window.electronAPI.onProcessStdout((instanceId, line) => {
+                window.electronAppAPI.onProcessStdout((instanceId, line) => {
                     if(instanceId !== myInstanceId) return;
                     if(line){
                         if(line.trim().startsWith("{")){
@@ -108,14 +108,14 @@
                         }
                     }
                 });
-                window.electronAPI.onProcessStderr((instanceId, line) => {
+                window.electronAppAPI.onProcessStderr((instanceId, line) => {
                     if(instanceId !== myInstanceId) return;
                     console.error(`Node: ${line}`);
                 });
 
                 window.execNode = function (commandCode) {
                     const newCommandID = commandId++;
-                    window.electronAPI.writeToProcess(myInstanceId,
+                    window.electronAppAPI.writeToProcess(myInstanceId,
                         JSON.stringify({commandCode: commandCode, commandId: newCommandID}) + "\n"
                     );
                     let resolveP, rejectP;
@@ -188,7 +188,7 @@
             } else if(window.__ELECTRON__) {
                 console.log("setting up electron test reporters to log to system console.");
                 consoleLogToShell = function(message) {
-                    window.electronAPI.consoleLog(message);
+                    window.electronAppAPI.consoleLog(message);
                     return Promise.resolve();
                 };
                 quitIfNeeded = async function(exitStatus) {
@@ -198,9 +198,9 @@
                         window.execNode(NODE_COMMANDS.TERMINATE);
                         await waitForTrue(() => { return window.isNodeTerminated; }, 1000);
                     }
-                    window.electronAPI.getCliArgs().then(argv => {
+                    window.electronAppAPI.getCliArgs().then(argv => {
                         if(argv.includes('--quit-when-done') || argv.includes('-q')) {
-                            window.electronAPI.quitApp(exitStatus);
+                            window.electronAppAPI.quitApp(exitStatus);
                         }
                     });
                 };

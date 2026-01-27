@@ -8,8 +8,8 @@ function _setupTests(testType) {
     function consoleLogToShell(message) {
         if (window.__TAURI__) {
             return window.__TAURI__.invoke("console_log", {message});
-        } else if (window.electronAPI) {
-            return window.electronAPI.consoleLog(message);
+        } else if (window.electronAppAPI) {
+            return window.electronAppAPI.consoleLog(message);
         }
     }
 
@@ -58,8 +58,8 @@ function _setupTests(testType) {
             fs.forceUseNodeWSEndpoint(true);
             if (window.__TAURI__) {
                 appDataDir = await window.__TAURI__.path.appLocalDataDir();
-            } else if (window.electronAPI) {
-                appDataDir = await window.electronAPI.appLocalDataDir();
+            } else if (window.electronFSAPI) {
+                appDataDir = await window.electronFSAPI.appLocalDataDir();
             }
             testPath = fs.getTauriVirtualPath(`${appDataDir}test-phoenix-fs`);
             consoleLogToShell("using tauri websocket test path: "+ testPath);

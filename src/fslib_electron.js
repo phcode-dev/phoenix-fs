@@ -99,7 +99,7 @@ async function openElectronFilePickerAsync(options) {
     options = options || { multiple: false };
 
     if (!options.defaultPath) {
-        options.defaultPath = await globalObject.electronAPI.documentDir();
+        options.defaultPath = await globalObject.electronFSAPI.documentDir();
     }
 
     const dialogOptions = {
@@ -123,7 +123,7 @@ async function openElectronFilePickerAsync(options) {
     }
 
     try {
-        const filePaths = await globalObject.electronAPI.showOpenDialog(dialogOptions);
+        const filePaths = await globalObject.electronFSAPI.showOpenDialog(dialogOptions);
         if (!filePaths || filePaths.length === 0) {
             return null;
         }
@@ -150,7 +150,7 @@ async function openElectronFileSaveDialogueAsync(options) {
     options = options || {};
 
     if (!options.defaultPath) {
-        options.defaultPath = await globalObject.electronAPI.documentDir();
+        options.defaultPath = await globalObject.electronFSAPI.documentDir();
     }
 
     const dialogOptions = {
@@ -163,7 +163,7 @@ async function openElectronFileSaveDialogueAsync(options) {
     }
 
     try {
-        const filePath = await globalObject.electronAPI.showSaveDialog(dialogOptions);
+        const filePath = await globalObject.electronFSAPI.showSaveDialog(dialogOptions);
         if (typeof filePath === 'string' && filePath) {
             return Utils.getTauriVirtualPath(filePath);
         }
@@ -175,7 +175,7 @@ async function openElectronFileSaveDialogueAsync(options) {
 
 async function _getElectronStat(vfsPath) {
     const platformPath = globalObject.fs.getTauriPlatformPath(vfsPath);
-    const stats = await unwrapFsResult(globalObject.electronAPI.fsStat(platformPath));
+    const stats = await unwrapFsResult(globalObject.electronFSAPI.fsStat(platformPath));
     return Utils.createFromNodeStat(vfsPath, stats, Constants.ELECTRON_DEVICE_NAME);
 }
 
@@ -225,7 +225,7 @@ function readdir(path, options, callback) {
     }
 
     const platformPath = Utils.getTauriPlatformPath(path);
-    unwrapFsResult(globalObject.electronAPI.fsReaddir(platformPath))
+    unwrapFsResult(globalObject.electronFSAPI.fsReaddir(platformPath))
         .then((entries) => {
             _readDirHelper(entries, path, options, callback);
         })
@@ -259,7 +259,7 @@ function mkdirs(path, mode, recursive, callback) {
     }
 
     const platformPath = Utils.getTauriPlatformPath(path);
-    unwrapFsResult(globalObject.electronAPI.fsMkdir(platformPath, { recursive, mode }))
+    unwrapFsResult(globalObject.electronFSAPI.fsMkdir(platformPath, { recursive, mode }))
         .then(() => {
             callback(null);
         })
@@ -300,11 +300,11 @@ function unlink(path, callback) {
         .then(stat => {
             const platformPath = Utils.getTauriPlatformPath(path);
             if (stat.isDirectory()) {
-                unwrapFsResult(globalObject.electronAPI.fsRmdir(platformPath, { recursive: true }))
+                unwrapFsResult(globalObject.electronFSAPI.fsRmdir(platformPath, { recursive: true }))
                     .then(() => { callback(null); })
                     .catch(errCallback);
             } else {
-                unwrapFsResult(globalObject.electronAPI.fsUnlink(platformPath))
+                unwrapFsResult(globalObject.electronFSAPI.fsUnlink(platformPath))
                     .then(() => { callback(null); })
                     .catch(errCallback);
             }
@@ -323,7 +323,7 @@ function rename(oldPath, newPath, callback) {
 
     const oldPlatformPath = Utils.getTauriPlatformPath(oldPath);
     const newPlatformPath = Utils.getTauriPlatformPath(newPath);
-    unwrapFsResult(globalObject.electronAPI.fsRename(oldPlatformPath, newPlatformPath))
+    unwrapFsResult(globalObject.electronFSAPI.fsRename(oldPlatformPath, newPlatformPath))
         .then(() => { callback(null); })
         .catch(err => {
             callback(mapNodeErrorMessage(err, oldPath, `Failed to rename ${oldPath} to ${newPath}`));
@@ -379,7 +379,7 @@ function readFile(path, options, callback) {
         }
 
         const platformPath = Utils.getTauriPlatformPath(path);
-        unwrapFsResult(globalObject.electronAPI.fsReadFile(platformPath))
+        unwrapFsResult(globalObject.electronFSAPI.fsReadFile(platformPath))
             .then(contents => {
                 // Electron returns a Buffer, convert to ArrayBuffer
                 let arrayBuffer;
@@ -446,7 +446,7 @@ function writeFile(path, data, options, callback) {
         const platformPath = Utils.getTauriPlatformPath(path);
         // Convert ArrayBuffer to Uint8Array for IPC transfer
         const uint8Array = new Uint8Array(arrayBuffer);
-        unwrapFsResult(globalObject.electronAPI.fsWriteFile(platformPath, Array.from(uint8Array)))
+        unwrapFsResult(globalObject.electronFSAPI.fsWriteFile(platformPath, Array.from(uint8Array)))
             .then(() => {
                 callback(null);
             })
