@@ -1,6 +1,10 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-contextBridge.exposeInMainWorld('electronAPI', {
+contextBridge.exposeInMainWorld('electronAppAPI', {
+    // App info
+    getAppName: () => ipcRenderer.invoke('get-app-name'),
+    getAppPath: () => ipcRenderer.invoke('get-app-path'),
+
     // Process lifecycle
     spawnProcess: (command, args) => ipcRenderer.invoke('spawn-process', command, args),
     writeToProcess: (instanceId, data) => ipcRenderer.invoke('write-to-process', instanceId, data),
@@ -17,14 +21,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Flag to identify Electron environment
     isElectron: true,
 
+    // CLI
+    getCliArgs: () => ipcRenderer.invoke('get-cli-args')
+});
+
+// the electronFSAPI is the fn that you need to copy to your election app impl for the fs to work.
+contextBridge.exposeInMainWorld('electronFSAPI', {
     // Path utilities
     path: {
         sep: process.platform === 'win32' ? '\\' : '/'
     },
-
-    // CLI and paths
-    getCliArgs: () => ipcRenderer.invoke('get-cli-args'),
-    getAppPath: () => ipcRenderer.invoke('get-app-path'),
     documentDir: () => ipcRenderer.invoke('get-documents-dir'),
     homeDir: () => ipcRenderer.invoke('get-home-dir'),
     tempDir: () => ipcRenderer.invoke('get-temp-dir'),

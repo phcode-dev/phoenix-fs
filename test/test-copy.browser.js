@@ -6,7 +6,7 @@ function _setupTests(testTypeSrc, testTypeDst) {
             return window.__TAURI__.invoke("console_log", {message});
         }
         if(window.__ELECTRON__) {
-            window.electronAPI.consoleLog(message);
+            window.electronAppAPI.consoleLog(message);
             return Promise.resolve();
         }
         return Promise.resolve();
@@ -17,7 +17,7 @@ function _setupTests(testTypeSrc, testTypeDst) {
             return window.__TAURI__.path.appLocalDataDir();
         }
         if(window.__ELECTRON__) {
-            return window.electronAPI.appLocalDataDir();
+            return window.electronFSAPI.appLocalDataDir();
         }
         throw new Error("No native environment detected");
     }

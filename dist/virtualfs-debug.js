@@ -18897,7 +18897,7 @@ let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeW
     options = options || {
         multiple: false
     };
-    if (!options.defaultPath) options.defaultPath = await globalObject.electronAPI.documentDir();
+    if (!options.defaultPath) options.defaultPath = await globalObject.electronFSAPI.documentDir();
     const dialogOptions = {
         defaultPath: options.defaultPath,
         title: options.title,
@@ -18908,7 +18908,7 @@ let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeW
     if (options.multiple) dialogOptions.properties.push("multiSelections");
     if (options.filters) dialogOptions.filters = options.filters;
     try {
-        const filePaths = await globalObject.electronAPI.showOpenDialog(dialogOptions);
+        const filePaths = await globalObject.electronFSAPI.showOpenDialog(dialogOptions);
         if (!filePaths || filePaths.length === 0) return null;
         if (options.multiple) return filePaths.map((p)=>$f1a90a4a391136ce$require$Utils.getTauriVirtualPath(p));
         return $f1a90a4a391136ce$require$Utils.getTauriVirtualPath(filePaths[0]);
@@ -18927,14 +18927,14 @@ let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeW
  * @returns {Promise<string|null>} A promise that resolves to the selected file path or null.
  */ async function $f1a90a4a391136ce$var$openElectronFileSaveDialogueAsync(options) {
     options = options || {};
-    if (!options.defaultPath) options.defaultPath = await globalObject.electronAPI.documentDir();
+    if (!options.defaultPath) options.defaultPath = await globalObject.electronFSAPI.documentDir();
     const dialogOptions = {
         defaultPath: options.defaultPath,
         title: options.title
     };
     if (options.filters) dialogOptions.filters = options.filters;
     try {
-        const filePath = await globalObject.electronAPI.showSaveDialog(dialogOptions);
+        const filePath = await globalObject.electronFSAPI.showSaveDialog(dialogOptions);
         if (typeof filePath === "string" && filePath) return $f1a90a4a391136ce$require$Utils.getTauriVirtualPath(filePath);
         return null;
     } catch (err) {
@@ -18943,7 +18943,7 @@ let $f1a90a4a391136ce$var$preferNodeWs = false, $f1a90a4a391136ce$var$forceNodeW
 }
 async function $f1a90a4a391136ce$var$_getElectronStat(vfsPath) {
     const platformPath = globalObject.fs.getTauriPlatformPath(vfsPath);
-    const stats = await $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsStat(platformPath));
+    const stats = await $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronFSAPI.fsStat(platformPath));
     return $f1a90a4a391136ce$require$Utils.createFromNodeStat(vfsPath, stats, $f1a90a4a391136ce$require$Constants.ELECTRON_DEVICE_NAME);
 }
 function $f1a90a4a391136ce$var$_readDirHelper(entries, path, options, callback, useDummyStats) {
@@ -18976,7 +18976,7 @@ function $f1a90a4a391136ce$var$_readDirHelper(entries, path, options, callback, 
         return;
     }
     const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
-    $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsReaddir(platformPath)).then((entries)=>{
+    $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronFSAPI.fsReaddir(platformPath)).then((entries)=>{
         $f1a90a4a391136ce$var$_readDirHelper(entries, path, options, callback);
     }).catch((err)=>{
         callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, "Failed to read directory: "));
@@ -19000,7 +19000,7 @@ function $f1a90a4a391136ce$var$_readDirHelper(entries, path, options, callback, 
         return;
     }
     const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
-    $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsMkdir(platformPath, {
+    $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronFSAPI.fsMkdir(platformPath, {
         recursive: recursive,
         mode: mode
     })).then(()=>{
@@ -19028,12 +19028,12 @@ function $f1a90a4a391136ce$var$unlink(path, callback) {
     }
     $f1a90a4a391136ce$var$_getElectronStat(path).then((stat)=>{
         const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
-        if (stat.isDirectory()) $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsRmdir(platformPath, {
+        if (stat.isDirectory()) $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronFSAPI.fsRmdir(platformPath, {
             recursive: true
         })).then(()=>{
             callback(null);
         }).catch(errCallback);
-        else $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsUnlink(platformPath)).then(()=>{
+        else $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronFSAPI.fsUnlink(platformPath)).then(()=>{
             callback(null);
         }).catch(errCallback);
     }).catch(errCallback);
@@ -19047,7 +19047,7 @@ function $f1a90a4a391136ce$var$rename(oldPath, newPath, callback) {
     }
     const oldPlatformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(oldPath);
     const newPlatformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(newPath);
-    $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsRename(oldPlatformPath, newPlatformPath)).then(()=>{
+    $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronFSAPI.fsRename(oldPlatformPath, newPlatformPath)).then(()=>{
         callback(null);
     }).catch((err)=>{
         callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, oldPath, `Failed to rename ${oldPath} to ${newPath}`));
@@ -19089,7 +19089,7 @@ function $f1a90a4a391136ce$var$rename(oldPath, newPath, callback) {
             return;
         }
         const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
-        $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsReadFile(platformPath)).then((contents)=>{
+        $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronFSAPI.fsReadFile(platformPath)).then((contents)=>{
             // Electron returns a Buffer, convert to ArrayBuffer
             let arrayBuffer;
             if (contents instanceof ArrayBuffer) arrayBuffer = contents;
@@ -19131,7 +19131,7 @@ function $f1a90a4a391136ce$var$rename(oldPath, newPath, callback) {
         const platformPath = $f1a90a4a391136ce$require$Utils.getTauriPlatformPath(path);
         // Convert ArrayBuffer to Uint8Array for IPC transfer
         const uint8Array = new Uint8Array(arrayBuffer);
-        $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronAPI.fsWriteFile(platformPath, Array.from(uint8Array))).then(()=>{
+        $f1a90a4a391136ce$var$unwrapFsResult(globalObject.electronFSAPI.fsWriteFile(platformPath, Array.from(uint8Array))).then(()=>{
             callback(null);
         }).catch((err)=>{
             callback($f1a90a4a391136ce$var$mapNodeErrorMessage(err, path, `Failed to write File at path ${path}`));

@@ -93,8 +93,8 @@ if(window.__TAURI__ || window.__ELECTRON__){
         async function getWindowsDrives() {
             if (window.__TAURI__) {
                 return window.__TAURI__.invoke('_get_windows_drives');
-            } else if (window.electronAPI) {
-                return window.electronAPI.getWindowsDrives();
+            } else if (window.electronFSAPI) {
+                return window.electronFSAPI.getWindowsDrives();
             }
             return null;
         }
@@ -119,8 +119,8 @@ if(window.__TAURI__ || window.__ELECTRON__){
         async function getHomeDir() {
             if (window.__TAURI__) {
                 return window.__TAURI__.path.homeDir();
-            } else if (window.electronAPI) {
-                return window.electronAPI.homeDir();
+            } else if (window.electronFSAPI) {
+                return window.electronFSAPI.homeDir();
             }
             return null;
         }
@@ -145,8 +145,8 @@ if(window.__TAURI__ || window.__ELECTRON__){
         async function getTempDir() {
             if (window.__TAURI__) {
                 return window.__TAURI__.os.tempdir();
-            } else if (window.electronAPI) {
-                return window.electronAPI.tempDir();
+            } else if (window.electronFSAPI) {
+                return window.electronFSAPI.tempDir();
             }
             return null;
         }
@@ -171,8 +171,8 @@ if(window.__TAURI__ || window.__ELECTRON__){
         function getPathSep() {
             if (window.__TAURI__) {
                 return window.__TAURI__.path.sep;
-            } else if (window.electronAPI) {
-                return window.electronAPI.path.sep;
+            } else if (window.electronFSAPI) {
+                return window.electronFSAPI.path.sep;
             }
             return null;
         }
