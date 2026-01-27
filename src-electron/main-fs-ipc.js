@@ -14,6 +14,29 @@ function fsResult(promise) {
     });
 }
 
+/**
+ * Returns the app's local data directory path with trailing separator.
+ * Matches Tauri's appLocalDataDir which uses the bundle identifier.
+ * - Linux: ~/.local/share/{APP_IDENTIFIER}/
+ * - macOS: ~/Library/Application Support/{APP_IDENTIFIER}/
+ * - Windows: %LOCALAPPDATA%/{APP_IDENTIFIER}/
+ */
+function getAppDataDir() {
+    const home = os.homedir();
+    let appDataDir;
+    switch (process.platform) {
+        case 'darwin':
+            appDataDir = path.join(home, 'Library', 'Application Support', APP_IDENTIFIER);
+            break;
+        case 'win32':
+            appDataDir = path.join(process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'), APP_IDENTIFIER);
+            break;
+        default:
+            appDataDir = path.join(process.env.XDG_DATA_HOME || path.join(home, '.local', 'share'), APP_IDENTIFIER);
+    }
+    return appDataDir + path.sep;
+}
+
 function registerFsIpcHandlers() {
     // Directory APIs
     ipcMain.handle('get-documents-dir', () => {
@@ -31,25 +54,7 @@ function registerFsIpcHandlers() {
         return os.tmpdir();
     });
 
-    ipcMain.handle('get-app-data-dir', () => {
-        // Match Tauri's appLocalDataDir which uses the bundle identifier "fs.phcode"
-        // Linux: ~/.local/share/fs.phcode/
-        // macOS: ~/Library/Application Support/fs.phcode/
-        // Windows: %LOCALAPPDATA%/fs.phcode/
-        const home = os.homedir();
-        let appDataDir;
-        switch (process.platform) {
-            case 'darwin':
-                appDataDir = path.join(home, 'Library', 'Application Support', APP_IDENTIFIER);
-                break;
-            case 'win32':
-                appDataDir = path.join(process.env.LOCALAPPDATA || path.join(home, 'AppData', 'Local'), APP_IDENTIFIER);
-                break;
-            default:
-                appDataDir = path.join(process.env.XDG_DATA_HOME || path.join(home, '.local', 'share'), APP_IDENTIFIER);
-        }
-        return appDataDir + path.sep;
-    });
+    ipcMain.handle('get-app-data-dir', () => getAppDataDir());
 
     // Get Windows drive letters (returns null on non-Windows platforms)
     ipcMain.handle('get-windows-drives', async () => {
@@ -118,5 +123,6 @@ function registerFsIpcHandlers() {
 }
 
 module.exports = {
-    registerFsIpcHandlers
+    registerFsIpcHandlers,
+    getAppDataDir
 };
