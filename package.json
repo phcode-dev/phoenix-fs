@@ -1,7 +1,7 @@
 {
   "name": "@phcode/fs",
   "description": "Phoenix virtual file system over filer/ browser fs access/ tauri / electron/ phoenix web socket APIs",
-  "version": "4.0.2",
+  "version": "4.0.3",
   "keywords": [
     "phoenix",
     "browser",
