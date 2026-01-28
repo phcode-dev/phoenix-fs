@@ -41,6 +41,11 @@
         let commandId = 0, pendingCommands = {};
         if(window.__TAURI__){
             window.__TAURI__.path.resolveResource("node-src/index.js").then(async nodeSrcPath=>{
+                // Strip Windows UNC prefix (\\?\) that Tauri adds on Windows
+                // Node 24 doesn't handle UNC paths correctly in module resolution
+                if (window.IS_WINDOWS && nodeSrcPath.startsWith('\\\\?\\')) {
+                    nodeSrcPath = nodeSrcPath.slice(4);
+                }
                 command = new window.__TAURI__.shell.Command('node', ['--inspect', nodeSrcPath]);
                 command.on('close', data => {
                     window.isNodeTerminated = true;
