@@ -3,6 +3,7 @@ const path = require('path');
 
 const { registerAppIpcHandlers, terminateAllProcesses } = require('./main-app-ipc');
 const { registerFsIpcHandlers } = require('./main-fs-ipc');
+const { updateTrustStatus, cleanupTrust } = require('./ipc-security');
 
 let mainWindow;
 
@@ -18,15 +19,27 @@ async function createWindow() {
         icon: path.join(__dirname, '..', 'src-tauri', 'icons', 'icon.png')
     });
 
+    const webContents = mainWindow.webContents;
+    const webContentsId = webContents.id;
+
+    // Set up trust tracking - evaluate on navigation
+    webContents.on('did-navigate', () => {
+        updateTrustStatus(webContents);
+    });
+    webContents.on('did-navigate-in-page', () => {
+        updateTrustStatus(webContents);
+    });
+
+    mainWindow.on('closed', () => {
+        cleanupTrust(webContentsId);
+        mainWindow = null;
+    });
+
     // Load the test page from the http-server
-    mainWindow.loadURL('http://localhost:8081/test/index.html');
+    await mainWindow.loadURL('http://localhost:8081/test/index.html');
 
     // Open DevTools for debugging
     mainWindow.webContents.openDevTools();
-
-    mainWindow.on('closed', () => {
-        mainWindow = null;
-    });
 }
 
 async function gracefulShutdown(exitCode = 0) {

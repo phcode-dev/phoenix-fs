@@ -3,6 +3,8 @@
   "identifier": "fs.phcode",
   "version": "1.0.0",
   "productName": "Phoenix FS",
+  "stage": "dev",
+  "trustedElectronDomains": [],
   "description": "Electron development shell for phoenix-fs testing",
   "main": "main.js",
   "devDependencies": {
