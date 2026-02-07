@@ -51,7 +51,7 @@
     "picomatch": "^4.0.1",
     "browser-mime": "1.0.1",
     "buffer": "^6.0.3",
-    "eslint": "8.19.0",
+    "eslint": "10.0.0",
     "events": "^3.3.0",
     "filer": "1.4.1",
     "http-server": "14.1.0",
